@@ -20,7 +20,7 @@ export class ExplorerComponent implements OnInit {
   private route = inject(ActivatedRoute);
 
   dataset = input.required<'lysoip' | 'wcl'>();
-  private currentDataset = signal<'lysoip' | 'wcl'>('lysoip');
+  currentDataset = signal<'lysoip' | 'wcl'>('lysoip');
 
   isLoading = signal(true);
   searchTerm = signal('');
@@ -89,7 +89,9 @@ export class ExplorerComponent implements OnInit {
         this.parseData(content);
         
         const params = this.route.snapshot.queryParams;
-        if (!params['flipped'] && this.flippedProjectIds().size === 0) {
+        
+        // Handle Default Flips
+        if (!params['flipped']) {
           const idsToFlip = new Set<string>();
           this.projects().forEach(p => {
             const name = p.projectName.toLowerCase();
@@ -104,6 +106,7 @@ export class ExplorerComponent implements OnInit {
           }
         }
 
+        // Handle Default Genes
         if (!params['genes'] && this.selectedGeneIds().size === 0) {
           this.applyDefaultGenes();
         }
@@ -247,6 +250,11 @@ export class ExplorerComponent implements OnInit {
     });
   }
 
+  isDefaultFlip(p: ProjectMetadata): boolean {
+    const name = p.projectName.toLowerCase();
+    return (name.includes('dmso') && name.includes('mli2')) || (name.includes('ko') && name.includes('wt'));
+  }
+
   drop(event: CdkDragDrop<string[]>) {
     this.sortStack.update((stack: ('organ' | 'protein' | 'mutation')[]) => {
       const newStack = [...stack];
@@ -270,10 +278,7 @@ export class ExplorerComponent implements OnInit {
     
     const idsToFlip = new Set<string>();
     this.projects().forEach(p => {
-      const name = p.projectName.toLowerCase();
-      const isMli2 = name.includes('dmso') && name.includes('mli2');
-      const isKo = name.includes('ko') && name.includes('wt');
-      if (isMli2 || isKo) {
+      if (this.isDefaultFlip(p)) {
         idsToFlip.add(p.projectId);
       }
     });
