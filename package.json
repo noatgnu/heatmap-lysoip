@@ -11,12 +11,15 @@
   "private": true,
   "packageManager": "npm@11.8.0",
   "dependencies": {
+    "@angular/cdk": "^21.2.0",
     "@angular/common": "^21.2.0",
     "@angular/compiler": "^21.2.0",
     "@angular/core": "^21.2.0",
     "@angular/forms": "^21.2.0",
     "@angular/platform-browser": "^21.2.0",
     "@angular/router": "^21.2.0",
+    "angular-plotly.js": "^20.0.0",
+    "plotly.js-dist-min": "^3.4.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },
@@ -25,6 +28,7 @@
     "@angular/cli": "^21.2.0",
     "@angular/compiler-cli": "^21.2.0",
     "@tailwindcss/postcss": "^4.1.12",
+    "@types/plotly.js-dist-min": "^2.3.4",
     "jsdom": "^28.0.0",
     "postcss": "^8.5.3",
     "prettier": "^3.8.1",
