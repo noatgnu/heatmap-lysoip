@@ -68,6 +68,19 @@
     </div>
 
     <div class="bg-white shadow rounded-lg p-4">
+      <h4 class="text-sm font-bold text-gray-900 mb-4 uppercase tracking-wider">Flip Signs</h4>
+      <p class="text-xs text-gray-500 mb-2 italic">Invert Log2FC signs for specific projects.</p>
+      <div class="space-y-1 max-h-48 overflow-y-auto border rounded p-2 bg-gray-50">
+        @for (p of filteredProjects(); track p.projectId) {
+          <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-1 rounded">
+            <input type="checkbox" [checked]="flippedProjectIds().has(p.projectId)" (change)="toggleFlip(p.projectId)" class="rounded border-gray-300 text-red-600 focus:ring-red-500">
+            <span class="text-xs text-gray-700 truncate" [title]="p.projectName">{{ p.projectName }}</span>
+          </label>
+        }
+      </div>
+    </div>
+
+    <div class="bg-white shadow rounded-lg p-4">
       <h4 class="text-sm font-bold text-gray-900 mb-4 uppercase tracking-wider">Filter by Organ/Cell Line</h4>
       <div class="space-y-1 max-h-48 overflow-y-auto border rounded p-2 bg-gray-50">
         @for (organ of organs(); track organ) {
