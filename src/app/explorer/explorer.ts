@@ -20,6 +20,7 @@ export class ExplorerComponent implements OnInit {
   private route = inject(ActivatedRoute);
 
   dataset = input.required<'lysoip' | 'wcl'>();
+  private currentDataset = signal<'lysoip' | 'wcl'>('lysoip');
 
   isLoading = signal(true);
   searchTerm = signal('');
@@ -44,11 +45,14 @@ export class ExplorerComponent implements OnInit {
   ];
 
   constructor() {
-    this.route.params.subscribe(params => {
-      const ds = params['dataset'];
-      if (ds === 'lysoip' || ds === 'wcl') {
-        this.dataset.set(ds);
-      }
+    effect(() => {
+      const ds = this.dataset();
+      this.currentDataset.set(ds);
+      this.selectedOrgans.set(new Set());
+      this.selectedProteins.set(new Set());
+      this.selectedMutations.set(new Set());
+      this.flippedProjectIds.set(new Set());
+      this.loadData(ds);
     });
 
     effect(() => {
@@ -60,20 +64,11 @@ export class ExplorerComponent implements OnInit {
         flipped: Array.from(this.flippedProjectIds()).join(',') || null,
         sort: this.sortStack().join(',')
       };
-      this.router.navigate([this.dataset()], {
+      this.router.navigate([this.currentDataset()], {
         queryParams,
         queryParamsHandling: 'merge',
         replaceUrl: true
       });
-    });
-
-    effect(() => {
-      const currentDataset = this.dataset();
-      this.selectedOrgans.set(new Set());
-      this.selectedProteins.set(new Set());
-      this.selectedMutations.set(new Set());
-      this.flippedProjectIds.set(new Set());
-      this.loadData(currentDataset);
     });
   }
 
@@ -94,7 +89,7 @@ export class ExplorerComponent implements OnInit {
         this.parseData(content);
         
         const params = this.route.snapshot.queryParams;
-        if (!params['flipped'] && (this.flippedProjectIds().size === 0 || params['dataset'])) {
+        if (!params['flipped'] && this.flippedProjectIds().size === 0) {
           const idsToFlip = new Set<string>();
           this.projects().forEach(p => {
             const name = p.projectName.toLowerCase();
