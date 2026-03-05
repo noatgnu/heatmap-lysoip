@@ -291,6 +291,7 @@ export class ExplorerComponent implements OnInit {
 
       let projectName = fullProjectName.replace(/^\d{8}[_0-9]*\s*/, '');
       projectName = projectName.replace(/\n/g, ' ');
+      projectName = projectName.replace(/\s*\([^)]*\+[^)]*\)/g, '').trim();
 
       let organ = 'Other';
       if (projectName.toLowerCase().includes('brain')) organ = 'Brain';
