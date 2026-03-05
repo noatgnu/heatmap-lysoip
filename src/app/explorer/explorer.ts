@@ -39,6 +39,15 @@ export class ExplorerComponent implements OnInit {
     else if (preset === 'protein') this.sortStack.set(['protein', 'mutation', 'organ']);
   }
 
+  private defaultGenes = [
+    'TMEM175', 'OGA', 'NOD2', 'USP30', 'STING1', 'ATP13A2', 'MCOLN1', 'TLR2', 'GPNMB', 'GCG',
+    'MAPT', 'PARP1', 'BECN1', 'CACNA1D', 'TREM2', 'NFE2L2', 'GBAP1', 'TGM2', 'VPS35', 'CTSB',
+    'CDK5', 'GRN', 'FYN', 'NR4A2', 'PSAP', 'SYNJ1', 'FBXO7', 'VPS13C', 'GALC', 'SCARB2',
+    'HMOX1', 'TFEB', 'ZNF746', 'PARK7', 'DNAJC6', 'KLK6', 'USP15', 'CD38', 'RAB32', 'SMPD1',
+    'RILPL1', 'HLA-DRB5', 'SOD1', 'AIMP2', 'CSNK2B', 'RIT2', 'DYRK1A', 'TRAP1', 'SPTLC2', 'NPC1',
+    'GPR37', 'TMEM230', 'KANSL1', 'DNAJC13', 'EIF2AK1', 'PAM', 'MPTP', 'CD84', 'NLRP12'
+  ];
+
   constructor() {    effect(() => {
       const ds = this.dataset();
       this.selectedOrgans.set(new Set());
@@ -75,14 +84,22 @@ export class ExplorerComponent implements OnInit {
         
         const params = this.route.snapshot.queryParams;
         if (!params['genes'] && this.selectedGeneIds().size === 0) {
-          const lrrk2 = this.allGenes().find((g: GeneData) => g.gene.toLowerCase() === 'lrrk2');
-          if (lrrk2) {
-            this.selectedGeneIds.set(new Set([lrrk2.uniprotId]));
-          }
+          this.applyDefaultGenes();
         }
         
         this.isLoading.set(false);
       });
+  }
+
+  private applyDefaultGenes() {
+    const ids = new Set<string>();
+    const lowerDefault = this.defaultGenes.map(g => g.toLowerCase());
+    this.allGenes().forEach((gene: GeneData) => {
+      if (lowerDefault.includes(gene.gene.toLowerCase())) {
+        ids.add(gene.uniprotId);
+      }
+    });
+    this.selectedGeneIds.set(ids);
   }
 
   applyCurtainFilter(data: string) {
@@ -210,13 +227,7 @@ export class ExplorerComponent implements OnInit {
     this.selectedMutations.set(new Set());
     this.sortStack.set(['organ', 'protein', 'mutation']);
     this.searchTerm.set('');
-    
-    const lrrk2 = this.allGenes().find((g: GeneData) => g.gene.toLowerCase() === 'lrrk2');
-    if (lrrk2) {
-      this.selectedGeneIds.set(new Set([lrrk2.uniprotId]));
-    } else {
-      this.selectedGeneIds.set(new Set());
-    }
+    this.applyDefaultGenes();
   }
 
   ngOnInit() {
@@ -228,8 +239,7 @@ export class ExplorerComponent implements OnInit {
     if (params['genes']) {
       this.selectedGeneIds.set(new Set(params['genes'].split(',')));
     } else {
-      const lrrk2 = this.allGenes().find((g: GeneData) => g.gene.toLowerCase() === 'lrrk2');
-      if (lrrk2) this.selectedGeneIds.set(new Set([lrrk2.uniprotId]));
+      this.applyDefaultGenes();
     }
     
     if (params['organs']) {
