@@ -94,15 +94,19 @@ export class ExplorerComponent implements OnInit {
         this.parseData(content);
         
         const params = this.route.snapshot.queryParams;
-        if (!params['flipped'] && this.flippedProjectIds().size === 0) {
+        if (!params['flipped'] && (this.flippedProjectIds().size === 0 || params['dataset'])) {
           const idsToFlip = new Set<string>();
           this.projects().forEach(p => {
             const name = p.projectName.toLowerCase();
-            if (name.includes('dmso-mli2') || name.includes('ko-wt')) {
+            const isMli2 = name.includes('dmso') && name.includes('mli2');
+            const isKo = name.includes('ko') && name.includes('wt');
+            if (isMli2 || isKo) {
               idsToFlip.add(p.projectId);
             }
           });
-          this.flippedProjectIds.set(idsToFlip);
+          if (idsToFlip.size > 0) {
+            this.flippedProjectIds.set(idsToFlip);
+          }
         }
 
         if (!params['genes'] && this.selectedGeneIds().size === 0) {
@@ -272,7 +276,9 @@ export class ExplorerComponent implements OnInit {
     const idsToFlip = new Set<string>();
     this.projects().forEach(p => {
       const name = p.projectName.toLowerCase();
-      if (name.includes('dmso-mli2') || name.includes('ko-wt')) {
+      const isMli2 = name.includes('dmso') && name.includes('mli2');
+      const isKo = name.includes('ko') && name.includes('wt');
+      if (isMli2 || isKo) {
         idsToFlip.add(p.projectId);
       }
     });
