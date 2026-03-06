@@ -23,20 +23,28 @@ export class CurtainFilterComponent implements OnInit {
   categories = signal<string[]>([]);
   selectedCategory = signal<string>('');
   filters = signal<DataFilterList[]>([]);
+  filterSearchTerm = signal<string>('');
   isLoadingFilters = signal(false);
 
   pageSize = 10;
   currentPage = signal(0);
 
+  filteredFilters = computed(() => {
+    const term = this.filterSearchTerm().toLowerCase().trim();
+    const all = this.filters();
+    if (!term) return all;
+    return all.filter(f => f.name.toLowerCase().includes(term));
+  });
+
   pagedFilters = computed(() => {
-    const filters = this.filters();
+    const filters = this.filteredFilters();
     if (!Array.isArray(filters)) return [];
     const start = this.currentPage() * this.pageSize;
     return filters.slice(start, start + this.pageSize);
   });
 
   totalPages = computed(() => {
-    const filters = this.filters();
+    const filters = this.filteredFilters();
     return Array.isArray(filters) ? Math.ceil(filters.length / this.pageSize) : 0;
   });
 
