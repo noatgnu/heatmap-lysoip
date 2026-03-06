@@ -327,8 +327,8 @@ export class ExplorerComponent implements OnInit {
 
   isDefaultFlip(p: ProjectMetadata): boolean {
     const name = p.projectName.toLowerCase();
-    const isMli2 = name.includes('dmso') && name.includes('mli2');
-    const isKo = name.includes('ko') && name.includes('wt');
+    const isMli2 = name.includes('dmso-mli2') || name.includes('mli2-dmso');
+    const isKo = name.includes('ko-wt') || name.includes('wt-ko');
     return isMli2 || isKo;
   }
 
