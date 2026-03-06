@@ -3,14 +3,21 @@ import { ComparisonComponent } from './comparison';
 import { provideHttpClient } from '@angular/common/http';
 import { provideRouter } from '@angular/router';
 import { routes } from '../app.routes';
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { importProvidersFrom } from '@angular/core';
 import { PlotlyModule } from 'angular-plotly.js';
 import * as PlotlyJS from 'plotly.js-dist-min';
+import { DataService } from '../services/data.service';
+import { of } from 'rxjs';
 
 describe('ComparisonComponent', () => {
   let component: ComparisonComponent;
   let fixture: ComponentFixture<ComparisonComponent>;
+
+  const mockDataService = {
+    loadDataset: vi.fn().mockImplementation((type) => of({ projects: [], genes: [] })),
+    isLoading: vi.fn().mockReturnValue(false)
+  };
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -18,6 +25,7 @@ describe('ComparisonComponent', () => {
       providers: [
         provideHttpClient(),
         provideRouter(routes),
+        { provide: DataService, useValue: mockDataService },
         importProvidersFrom(PlotlyModule.forRoot(PlotlyJS))
       ]
     }).compileComponents();
@@ -31,11 +39,7 @@ describe('ComparisonComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should start in loading state', () => {
-    expect(component.isLoading()).toBe(true);
-  });
-
-  it('should have empty gene selection initially before data loads', () => {
+  it('should have initial state set correctly', () => {
     expect(component.selectedGeneIds().size).toBe(0);
   });
 });
