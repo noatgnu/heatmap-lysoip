@@ -1,4 +1,4 @@
-import { Component, input, computed, signal, effect, untracked } from '@angular/core';
+import { Component, input, computed, signal, effect, untracked, ElementRef, viewChild, output } from '@angular/core';
 import { PlotlyModule } from 'angular-plotly.js';
 import { GeneData, ProjectMetadata } from '../models';
 
@@ -7,7 +7,7 @@ import { GeneData, ProjectMetadata } from '../models';
   standalone: true,
   imports: [PlotlyModule],
   template: `
-    <div class="w-full overflow-x-auto overflow-y-auto max-h-[800px] border border-gray-200 rounded bg-white">
+    <div #plotContainer class="w-full overflow-x-auto overflow-y-auto max-h-[800px] border border-gray-200 rounded bg-white">
       @if (genes().length > 0 && projects().length > 0) {
         <plotly-plot
           [data]="graphData().data"
@@ -15,6 +15,8 @@ import { GeneData, ProjectMetadata } from '../models';
           [revision]="revision()"
           [useResizeHandler]="true"
           [style]="{position: 'relative', width: '100%', height: (graphData().layout.height || 800) + 'px'}"
+          (hover)="onHover($event)"
+          (unhover)="onUnhover()"
         ></plotly-plot>
       } @else {
         <div class="flex flex-col justify-center items-center h-[600px] text-gray-400">
@@ -32,11 +34,32 @@ export class HeatmapComponent {
   projects = input.required<ProjectMetadata[]>();
   allProjects = input.required<ProjectMetadata[]>();
 
+  geneHovered = output<string | null>();
+
+  plotContainer = viewChild<ElementRef<HTMLElement>>('plotContainer');
+
   revision = signal(0);
+
+  getPlotElement(): HTMLElement | null {
+    return this.plotContainer()?.nativeElement ?? null;
+  }
+
+  onHover(event: any) {
+    if (event?.points?.[0]?.y) {
+      const yLabel = event.points[0].y as string;
+      const match = yLabel.match(/<([^>]+)>/);
+      if (match) {
+        this.geneHovered.emit(match[1]);
+      }
+    }
+  }
+
+  onUnhover() {
+    this.geneHovered.emit(null);
+  }
 
   constructor() {
     effect(() => {
-      // Trigger revision when graphData changes
       this.graphData();
       untracked(() => this.revision.update(r => r + 1));
     });

@@ -1,29 +1,41 @@
-import { Component, OnInit, inject, signal, computed, effect, input } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { Component, OnInit, inject, signal, computed, effect, input, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
+import { ScrollingModule } from '@angular/cdk/scrolling';
 import { CurtainFilterComponent } from '../curtain-filter/curtain-filter';
 import { HeatmapComponent } from '../heatmap/heatmap';
+import { SkeletonLoaderComponent } from '../components/skeleton-loader/skeleton-loader';
+import { FilterChipsComponent, FilterChip } from '../components/filter-chips/filter-chips';
+import { CollapsibleSectionComponent } from '../components/collapsible-section/collapsible-section';
 import { GeneData, ProjectMetadata } from '../models';
+import { DataService } from '../services/data.service';
+import { ExportService } from '../services/export.service';
+import { PreferencesService, FilterPreset } from '../services/preferences';
 
 @Component({
   selector: 'app-explorer',
   standalone: true,
-  imports: [FormsModule, DragDropModule, CurtainFilterComponent, HeatmapComponent, RouterLink],
+  imports: [FormsModule, DragDropModule, ScrollingModule, CurtainFilterComponent, HeatmapComponent, SkeletonLoaderComponent, FilterChipsComponent, CollapsibleSectionComponent, RouterLink],
   templateUrl: './explorer.html',
   styleUrl: './explorer.scss'
 })
 export class ExplorerComponent implements OnInit {
-  private http = inject(HttpClient);
+  private dataService = inject(DataService);
+  private exportService = inject(ExportService);
+  private preferencesService = inject(PreferencesService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+
+  heatmapComponent = viewChild(HeatmapComponent);
 
   dataset = input.required<'lysoip' | 'wcl'>();
   currentDataset = signal<'lysoip' | 'wcl'>('lysoip');
 
   isLoading = signal(true);
   searchTerm = signal('');
+  highlightedIndex = signal(-1);
+  hoveredGeneId = signal<string | null>(null);
   projects = signal<ProjectMetadata[]>([]);
   allGenes = signal<GeneData[]>([]);
   selectedGeneIds = signal<Set<string>>(new Set());
@@ -80,39 +92,34 @@ export class ExplorerComponent implements OnInit {
 
   loadData(type: 'lysoip' | 'wcl') {
     this.isLoading.set(true);
-    const fileName = type === 'lysoip' 
-      ? 'zzz-FinalDestination_LysoIP_summary_FORMATTED_ForFiltering_20240708.txt'
-      : 'zzz-FinalDestination_WCL_summary_FORMATTED_Forfiltering_20240708.txt';
 
-    this.http.get(fileName, { responseType: 'text' })
-      .subscribe((content: string) => {
-        this.parseData(content);
-        
-        const params = this.route.snapshot.queryParams;
-        
-        // Handle Default Flips
-        if (!params['flipped']) {
-          const idsToFlip = new Set<string>();
-          this.projects().forEach(p => {
-            const name = p.projectName.toLowerCase();
-            const isMli2 = name.includes('dmso') && name.includes('mli2');
-            const isKo = name.includes('ko') && name.includes('wt');
-            if (isMli2 || isKo) {
-              idsToFlip.add(p.projectId);
-            }
-          });
-          if (idsToFlip.size > 0) {
-            this.flippedProjectIds.set(idsToFlip);
+    this.dataService.loadDataset(type).subscribe(({ projects, genes }) => {
+      this.projects.set(projects);
+      this.allGenes.set(genes);
+
+      const params = this.route.snapshot.queryParams;
+
+      if (!params['flipped']) {
+        const idsToFlip = new Set<string>();
+        projects.forEach(p => {
+          const name = p.projectName.toLowerCase();
+          const isMli2 = name.includes('dmso') && name.includes('mli2');
+          const isKo = name.includes('ko') && name.includes('wt');
+          if (isMli2 || isKo) {
+            idsToFlip.add(p.projectId);
           }
+        });
+        if (idsToFlip.size > 0) {
+          this.flippedProjectIds.set(idsToFlip);
         }
+      }
 
-        // Handle Default Genes
-        if (!params['genes'] && this.selectedGeneIds().size === 0) {
-          this.applyDefaultGenes();
-        }
-        
-        this.isLoading.set(false);
-      });
+      if (!params['genes'] && this.selectedGeneIds().size === 0) {
+        this.applyDefaultGenes();
+      }
+
+      this.isLoading.set(false);
+    });
   }
 
   private applyDefaultGenes() {
@@ -148,6 +155,14 @@ export class ExplorerComponent implements OnInit {
   organs = computed(() => Array.from(new Set(this.projects().map((p: ProjectMetadata) => p.organ))).sort());
   proteins = computed(() => Array.from(new Set(this.projects().map((p: ProjectMetadata) => p.protein))).sort());
   mutations = computed(() => Array.from(new Set(this.projects().map((p: ProjectMetadata) => p.mutation))).sort());
+
+  activeFilterChips = computed((): FilterChip[] => {
+    const chips: FilterChip[] = [];
+    this.selectedOrgans().forEach(v => chips.push({ type: 'organ', value: v }));
+    this.selectedProteins().forEach(v => chips.push({ type: 'protein', value: v }));
+    this.selectedMutations().forEach(v => chips.push({ type: 'mutation', value: v }));
+    return chips;
+  });
 
   searchResults = computed(() => {
     const term = this.searchTerm().toLowerCase().trim();
@@ -267,6 +282,26 @@ export class ExplorerComponent implements OnInit {
     navigator.clipboard.writeText(window.location.href);
   }
 
+  async exportAsPng() {
+    const heatmap = this.heatmapComponent();
+    if (heatmap) {
+      const element = heatmap.getPlotElement();
+      if (element) {
+        const filename = `heatmap_${this.currentDataset()}_${new Date().toISOString().slice(0, 10)}`;
+        await this.exportService.exportHeatmapAsPng(element, filename);
+      }
+    }
+  }
+
+  exportAsCsv() {
+    const filename = `heatmap_${this.currentDataset()}_${new Date().toISOString().slice(0, 10)}.csv`;
+    this.exportService.exportAsCsv(this.displayedGenes(), this.filteredProjects(), filename);
+  }
+
+  async copyGeneList() {
+    await this.exportService.copyGeneListToClipboard(this.displayedGenes(), 'genes');
+  }
+
   clearAllProteins() {
     this.selectedGeneIds.set(new Set());
   }
@@ -329,6 +364,7 @@ export class ExplorerComponent implements OnInit {
       return newSet;
     });
     this.searchTerm.set('');
+    this.highlightedIndex.set(-1);
   }
 
   removeGene(uniprotId: string) {
@@ -339,118 +375,57 @@ export class ExplorerComponent implements OnInit {
     });
   }
 
-  parseData(content: string) {
-    const rows = this.parseTSV(content);
-    if (rows.length < 3) return;
-
-    const row1 = rows[0];
-    const row2 = rows[1];
-
-    const projects: ProjectMetadata[] = [];
-    for (let i = 6; i < row1.length; i += 3) {
-      const projectId = row1[i];
-      let fullProjectName = (row2[i] || '').trim();
-      if (!projectId && !fullProjectName) continue;
-
-      let projectName = fullProjectName.replace(/^\d{8}[_0-9]*\s*/, '');
-      projectName = projectName.replace(/\n/g, ' ');
-      projectName = projectName.replace(/\s*\([^)]*\+[^)]*\)/g, '').trim();
-
-      let organ = 'Other';
-      if (projectName.toLowerCase().includes('brain')) organ = 'Brain';
-      else if (projectName.toLowerCase().includes('lung')) organ = 'Lung';
-      else if (projectName.toLowerCase().includes('mefs')) organ = 'MEFs';
-      else if (projectName.toLowerCase().includes('a549')) organ = 'A549';
-
-      let protein = 'Other';
-      if (projectName.toLowerCase().includes('vps35')) protein = 'VPS35';
-      else if (projectName.toLowerCase().includes('lrrk2')) protein = 'LRRK2';
-      else if (projectName.toLowerCase().includes('gba')) protein = 'GBA';
-
-      let mutation = 'Other';
-      const mutMatch = projectName.match(/(D620N|R1441C|G2019S|KO|D409V|E326K|L444P|N370S)/i);
-      if (mutMatch) {
-        mutation = mutMatch[0].toUpperCase();
-      }
-      
-      const isMLi2 = projectName.toLowerCase().includes('mli2');
-      if (isMLi2) {
-        mutation = mutation === 'Other' ? 'MLi2' : mutation + ' + MLi2';
-      }
-
-      if (projectName.toLowerCase().includes('wt')) {
-        if (mutation === 'Other') mutation = 'WT';
-        else if (!isMLi2) mutation = mutation + ' (vs WT)';
-      }
-
-      projects.push({
-        projectId: (projectId || '').trim(),
-        projectName,
-        log2fcIndex: i + 1,
-        organ,
-        protein,
-        mutation
-      });
-    }
-
-    const genes: GeneData[] = [];
-    for (let i = 3; i < rows.length; i++) {
-      const r = rows[i];
-      if (r.length < 2) continue;
-      const uniprotId = (r[0] || '').trim();
-      const gene = (r[1] || '').trim();
-      if (!uniprotId && !gene) continue;
-
-      const log2fcs = projects.map((p: ProjectMetadata) => {
-        const valStr = r[p.log2fcIndex];
-        const val = parseFloat(valStr);
-        return isNaN(val) ? null : val;
-      });
-
-      genes.push({
-        uniprotId,
-        gene,
-        log2fcs,
-        searchString: `${uniprotId} ${gene}`.toLowerCase()
-      });
-    }
-
-    this.projects.set(projects);
-    this.allGenes.set(genes);
+  trackByUniprotId(_index: number, gene: GeneData): string {
+    return gene.uniprotId;
   }
 
-  parseTSV(content: string): string[][] {
-    const rows: string[][] = [];
-    let currentRow: string[] = [];
-    let currentCell = '';
-    let inQuotes = false;
+  onGeneHovered(uniprotId: string | null) {
+    this.hoveredGeneId.set(uniprotId);
+  }
 
-    for (let i = 0; i < content.length; i++) {
-      const char = content[i];
+  removeFilterChip(chip: FilterChip) {
+    this.toggleFilter(chip.type, chip.value);
+  }
 
-      if (char === '"') {
-        inQuotes = !inQuotes;
-      } else if (char === '\t' && !inQuotes) {
-        currentRow.push(currentCell);
-        currentCell = '';
-      } else if (char === '\n' && !inQuotes) {
-        if (currentCell.endsWith('\r')) {
-          currentCell = currentCell.slice(0, -1);
+  clearAllFilters() {
+    this.selectedOrgans.set(new Set());
+    this.selectedProteins.set(new Set());
+    this.selectedMutations.set(new Set());
+  }
+
+  onSearchKeydown(event: KeyboardEvent) {
+    const results = this.searchResults();
+    const currentIndex = this.highlightedIndex();
+
+    switch (event.key) {
+      case 'ArrowDown':
+        event.preventDefault();
+        if (results.length > 0) {
+          this.highlightedIndex.set(
+            currentIndex < results.length - 1 ? currentIndex + 1 : 0
+          );
         }
-        currentRow.push(currentCell);
-        rows.push(currentRow);
-        currentRow = [];
-        currentCell = '';
-      } else {
-        currentCell += char;
-      }
+        break;
+      case 'ArrowUp':
+        event.preventDefault();
+        if (results.length > 0) {
+          this.highlightedIndex.set(
+            currentIndex > 0 ? currentIndex - 1 : results.length - 1
+          );
+        }
+        break;
+      case 'Enter':
+        event.preventDefault();
+        if (currentIndex >= 0 && currentIndex < results.length) {
+          this.addGene(results[currentIndex]);
+        }
+        break;
+      case 'Escape':
+        event.preventDefault();
+        this.searchTerm.set('');
+        this.highlightedIndex.set(-1);
+        break;
     }
-
-    if (currentCell || currentRow.length > 0) {
-      currentRow.push(currentCell);
-      rows.push(currentRow);
-    }
-
-    return rows;
   }
+
 }

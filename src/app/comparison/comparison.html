@@ -1,0 +1,102 @@
+<div class="min-h-screen bg-gray-100 py-6 px-4">
+  <div class="max-w-full mx-auto">
+    <div class="bg-white shadow rounded-lg mb-6">
+      <div class="px-4 py-4 border-b border-gray-200 flex justify-between items-center">
+        <div>
+          <h1 class="text-xl font-bold text-gray-900">Dataset Comparison</h1>
+          <p class="text-sm text-gray-500">Side-by-side LysoIP vs WCL heatmap comparison</p>
+        </div>
+        <a
+          routerLink="/lysoip"
+          class="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+        >
+          <svg class="mr-1.5 h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+          </svg>
+          Back to Explorer
+        </a>
+      </div>
+
+      <div class="px-4 py-4 bg-gray-50">
+        <div class="max-w-md relative mb-4">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Search Common Genes</label>
+          <input
+            type="text"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+            placeholder="Search genes present in both datasets..."
+            [value]="searchTerm()"
+            (input)="searchTerm.set($any($event.target).value)"
+            [disabled]="isLoading()"
+          />
+
+          @if (searchResults().length > 0) {
+            <div class="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md py-1 border border-gray-200 max-h-60 overflow-auto">
+              @for (gene of searchResults(); track gene.uniprotId) {
+                <div
+                  (click)="addGene(gene)"
+                  class="cursor-pointer px-3 py-2 hover:bg-indigo-600 hover:text-white text-gray-900 text-sm"
+                >
+                  {{ gene.uniprotId }} - {{ gene.gene }}
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-bold text-gray-500 uppercase">Selected Genes ({{ displayedLysoipGenes().length }})</span>
+          @if (displayedLysoipGenes().length > 0) {
+            <button (click)="clearAllGenes()" class="text-xs text-red-600 hover:text-red-800">Clear All</button>
+          }
+        </div>
+
+        <div class="flex flex-wrap gap-2 max-h-24 overflow-y-auto">
+          @for (gene of displayedLysoipGenes(); track gene.uniprotId) {
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-indigo-100 text-indigo-800 border border-indigo-200">
+              {{ gene.gene }}
+              <button (click)="removeGene(gene.uniprotId)" class="ml-1 text-indigo-400 hover:text-indigo-600">
+                <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+              </button>
+            </span>
+          } @empty {
+            <span class="text-sm text-gray-400 italic">No genes selected</span>
+          }
+        </div>
+      </div>
+    </div>
+
+    @if (isLoading()) {
+      <div class="grid grid-cols-2 gap-6">
+        <div class="bg-white shadow rounded-lg p-4">
+          <h2 class="text-lg font-bold text-indigo-600 mb-4">LysoIP</h2>
+          <app-skeleton-loader variant="heatmap"></app-skeleton-loader>
+        </div>
+        <div class="bg-white shadow rounded-lg p-4">
+          <h2 class="text-lg font-bold text-emerald-600 mb-4">WCL</h2>
+          <app-skeleton-loader variant="heatmap"></app-skeleton-loader>
+        </div>
+      </div>
+    } @else {
+      <div class="grid grid-cols-2 gap-6">
+        <div class="bg-white shadow rounded-lg p-4">
+          <h2 class="text-lg font-bold text-indigo-600 mb-4">LysoIP Dataset</h2>
+          <app-heatmap
+            [genes]="displayedLysoipGenes()"
+            [projects]="lysoipProjects()"
+            [allProjects]="lysoipProjects()"
+          ></app-heatmap>
+        </div>
+        <div class="bg-white shadow rounded-lg p-4">
+          <h2 class="text-lg font-bold text-emerald-600 mb-4">WCL Dataset</h2>
+          <app-heatmap
+            [genes]="displayedWclGenes()"
+            [projects]="wclProjects()"
+            [allProjects]="wclProjects()"
+          ></app-heatmap>
+        </div>
+      </div>
+    }
+  </div>
+</div>
