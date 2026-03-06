@@ -5,6 +5,7 @@ export interface ProjectMetadata {
   organ: string;
   protein: string;
   mutation: string;
+  treatment: string;
 }
 
 export interface GeneData {

@@ -1,7 +1,7 @@
 import { Component, input, output } from '@angular/core';
 
 export interface FilterChip {
-  type: 'organ' | 'protein' | 'mutation';
+  type: 'organ' | 'protein' | 'mutation' | 'treatment';
   value: string;
 }
 
@@ -20,7 +20,7 @@ export interface FilterChip {
             [class]="getChipClass(chip.type)"
             class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
           >
-            <span class="capitalize">{{ chip.type }}:</span>&nbsp;{{ chip.value }}
+            <span class="capitalize">{{ chip.type === 'organ' ? 'Organ/Cell' : chip.type }}:</span>&nbsp;{{ chip.value }}
             <button
               type="button"
               (click)="removeFilter.emit(chip)"
@@ -51,11 +51,12 @@ export class FilterChipsComponent {
   removeFilter = output<FilterChip>();
   clearAll = output<void>();
 
-  getChipClass(type: 'organ' | 'protein' | 'mutation'): string {
+  getChipClass(type: 'organ' | 'protein' | 'mutation' | 'treatment'): string {
     const classes: Record<string, string> = {
       organ: 'bg-emerald-100 text-emerald-800 border border-emerald-200',
       protein: 'bg-blue-100 text-blue-800 border border-blue-200',
-      mutation: 'bg-amber-100 text-amber-800 border border-amber-200'
+      mutation: 'bg-amber-100 text-amber-800 border border-amber-200',
+      treatment: 'bg-purple-100 text-purple-800 border border-purple-200'
     };
     return classes[type] || 'bg-gray-100 text-gray-800';
   }
