@@ -13,9 +13,9 @@ describe('ExportService', () => {
   ];
 
   const mockProjects: ProjectMetadata[] = [
-    { projectId: '1', projectName: 'Project A', log2fcIndex: 7, organ: 'Brain', protein: 'LRRK2', mutation: 'R1441C' },
-    { projectId: '2', projectName: 'Project B', log2fcIndex: 10, organ: 'Lung', protein: 'VPS35', mutation: 'D620N' },
-    { projectId: '3', projectName: 'Project C', log2fcIndex: 13, organ: 'MEFs', protein: 'GBA', mutation: 'KO' }
+    { projectId: '1', projectName: 'Project A', log2fcIndex: 7, organ: 'Brain', protein: 'LRRK2', mutation: 'WT', knockout: 'None', treatment: 'None', fraction: 'Lyso' },
+    { projectId: '2', projectName: 'Project B', log2fcIndex: 10, organ: 'Lung', protein: 'VPS35', mutation: 'D620N', knockout: 'None', treatment: 'None', fraction: 'Lyso' },
+    { projectId: '3', projectName: 'Project C', log2fcIndex: 13, organ: 'MEFs', protein: 'LRRK2', mutation: 'R1441C', knockout: 'None', treatment: 'MLi2', fraction: 'Lyso' }
   ];
 
   const mockPlotlyService = {
