@@ -43,10 +43,12 @@ export class ExplorerComponent implements OnInit {
   selectedOrgans = signal<Set<string>>(new Set());
   selectedProteins = signal<Set<string>>(new Set());
   selectedMutations = signal<Set<string>>(new Set());
+  selectedKnockouts = signal<Set<string>>(new Set());
   selectedTreatments = signal<Set<string>>(new Set());
+  selectedFractions = signal<Set<string>>(new Set());
   flippedProjectIds = signal<Set<string>>(new Set());
   
-  sortStack = signal<('organ' | 'protein' | 'mutation' | 'treatment')[]>(['organ', 'protein', 'mutation', 'treatment']);
+  sortStack = signal<('organ' | 'protein' | 'mutation' | 'knockout' | 'treatment' | 'fraction')[]>(['organ', 'protein', 'mutation', 'knockout', 'treatment', 'fraction']);
 
   private defaultGenes = [
     'TMEM175', 'OGA', 'NOD2', 'USP30', 'STING1', 'ATP13A2', 'MCOLN1', 'TLR2', 'GPNMB', 'GCG',
@@ -64,7 +66,9 @@ export class ExplorerComponent implements OnInit {
       this.selectedOrgans.set(new Set());
       this.selectedProteins.set(new Set());
       this.selectedMutations.set(new Set());
+      this.selectedKnockouts.set(new Set());
       this.selectedTreatments.set(new Set());
+      this.selectedFractions.set(new Set());
       this.flippedProjectIds.set(new Set());
       this.loadData(ds);
     });
@@ -75,7 +79,9 @@ export class ExplorerComponent implements OnInit {
         organs: Array.from(this.selectedOrgans()).join(',') || null,
         proteins: Array.from(this.selectedProteins()).join(',') || null,
         mutations: Array.from(this.selectedMutations()).join(',') || null,
+        knockouts: Array.from(this.selectedKnockouts()).join(',') || null,
         treatments: Array.from(this.selectedTreatments()).join(',') || null,
+        fractions: Array.from(this.selectedFractions()).join(',') || null,
         flipped: Array.from(this.flippedProjectIds()).join(',') || null,
         sort: this.sortStack().join(',')
       };
@@ -87,11 +93,13 @@ export class ExplorerComponent implements OnInit {
     });
   }
 
-  setPreset(preset: 'organ' | 'mutation' | 'protein' | 'treatment') {
-    if (preset === 'organ') this.sortStack.set(['organ', 'protein', 'mutation', 'treatment']);
-    else if (preset === 'mutation') this.sortStack.set(['mutation', 'treatment', 'organ', 'protein']);
-    else if (preset === 'protein') this.sortStack.set(['protein', 'mutation', 'treatment', 'organ']);
-    else if (preset === 'treatment') this.sortStack.set(['treatment', 'mutation', 'organ', 'protein']);
+  setPreset(preset: 'organ' | 'mutation' | 'protein' | 'treatment' | 'fraction' | 'knockout') {
+    if (preset === 'organ') this.sortStack.set(['organ', 'protein', 'mutation', 'knockout', 'treatment', 'fraction']);
+    else if (preset === 'mutation') this.sortStack.set(['mutation', 'treatment', 'fraction', 'organ', 'protein', 'knockout']);
+    else if (preset === 'protein') this.sortStack.set(['protein', 'mutation', 'knockout', 'treatment', 'fraction', 'organ']);
+    else if (preset === 'treatment') this.sortStack.set(['treatment', 'mutation', 'fraction', 'organ', 'protein', 'knockout']);
+    else if (preset === 'fraction') this.sortStack.set(['fraction', 'organ', 'protein', 'mutation', 'treatment', 'knockout']);
+    else if (preset === 'knockout') this.sortStack.set(['knockout', 'mutation', 'treatment', 'fraction', 'organ', 'protein']);
   }
 
   loadData(type: 'lysoip' | 'wcl') {
@@ -156,14 +164,18 @@ export class ExplorerComponent implements OnInit {
   organs = computed(() => Array.from(new Set(this.projects().map((p: ProjectMetadata) => p.organ))).sort());
   proteins = computed(() => Array.from(new Set(this.projects().map((p: ProjectMetadata) => p.protein))).sort());
   mutations = computed(() => Array.from(new Set(this.projects().map((p: ProjectMetadata) => p.mutation))).sort());
+  knockouts = computed(() => Array.from(new Set(this.projects().map((p: ProjectMetadata) => p.knockout))).sort());
   treatments = computed(() => Array.from(new Set(this.projects().map((p: ProjectMetadata) => p.treatment))).sort());
+  fractions = computed(() => Array.from(new Set(this.projects().map((p: ProjectMetadata) => p.fraction))).sort());
 
   activeFilterChips = computed((): FilterChip[] => {
     const chips: FilterChip[] = [];
     this.selectedOrgans().forEach(v => chips.push({ type: 'organ', value: v }));
     this.selectedProteins().forEach(v => chips.push({ type: 'protein', value: v }));
     this.selectedMutations().forEach(v => chips.push({ type: 'mutation', value: v }));
+    this.selectedKnockouts().forEach(v => chips.push({ type: 'knockout' as any, value: v }));
     this.selectedTreatments().forEach(v => chips.push({ type: 'treatment', value: v }));
+    this.selectedFractions().forEach(v => chips.push({ type: 'fraction' as any, value: v }));
     return chips;
   });
 
@@ -197,15 +209,19 @@ export class ExplorerComponent implements OnInit {
     const sOrgans = this.selectedOrgans();
     const sProteins = this.selectedProteins();
     const sMutations = this.selectedMutations();
+    const sKnockouts = this.selectedKnockouts();
     const sTreatments = this.selectedTreatments();
+    const sFractions = this.selectedFractions();
     const stack = this.sortStack();
 
     let filtered = projs.filter((p: ProjectMetadata) => {
       const organMatch = sOrgans.size === 0 || sOrgans.has(p.organ);
       const proteinMatch = sProteins.size === 0 || sProteins.has(p.protein);
       const mutationMatch = sMutations.size === 0 || sMutations.has(p.mutation);
+      const knockoutMatch = sKnockouts.size === 0 || sKnockouts.has(p.knockout);
       const treatmentMatch = sTreatments.size === 0 || sTreatments.has(p.treatment);
-      return organMatch && proteinMatch && mutationMatch && treatmentMatch;
+      const fractionMatch = sFractions.size === 0 || sFractions.has(p.fraction);
+      return organMatch && proteinMatch && mutationMatch && knockoutMatch && treatmentMatch && fractionMatch;
     });
 
     return [...filtered].sort((a: ProjectMetadata, b: ProjectMetadata) => {
@@ -218,13 +234,21 @@ export class ExplorerComponent implements OnInit {
         'e326k': 5,
         'l444p': 6,
         'n370s': 7,
-        'ko': 8,
+        'none': 8,
         'wt': 9
+      };
+      const knockoutPriority: Record<string, number> = {
+        'none': 1,
+        'ko': 2
       };
       const treatmentPriority: Record<string, number> = {
         'none': 1,
-        'mli2': 2,
-        'mito': 3
+        'mli2': 2
+      };
+      const fractionPriority: Record<string, number> = {
+        'lyso': 1,
+        'mito': 2,
+        'wcl': 3
       };
       
       for (const criterion of stack) {
@@ -242,11 +266,23 @@ export class ExplorerComponent implements OnInit {
           cmp = pA - pB;
           if (cmp === 0) cmp = a.mutation.localeCompare(b.mutation);
         }
+        else if (criterion === 'knockout') {
+          const pA = knockoutPriority[a.knockout.toLowerCase()] || 99;
+          const pB = knockoutPriority[b.knockout.toLowerCase()] || 99;
+          cmp = pA - pB;
+          if (cmp === 0) cmp = a.knockout.localeCompare(b.knockout);
+        }
         else if (criterion === 'treatment') {
           const pA = treatmentPriority[a.treatment.toLowerCase()] || 99;
           const pB = treatmentPriority[b.treatment.toLowerCase()] || 99;
           cmp = pA - pB;
           if (cmp === 0) cmp = a.treatment.localeCompare(b.treatment);
+        }
+        else if (criterion === 'fraction') {
+          const pA = fractionPriority[a.fraction.toLowerCase()] || 99;
+          const pB = fractionPriority[b.fraction.toLowerCase()] || 99;
+          cmp = pA - pB;
+          if (cmp === 0) cmp = a.fraction.localeCompare(b.fraction);
         }
         
         if (cmp !== 0) return cmp;
@@ -255,12 +291,14 @@ export class ExplorerComponent implements OnInit {
     });
   });
 
-  toggleFilter(type: 'organ' | 'protein' | 'mutation' | 'treatment', value: string) {
+  toggleFilter(type: 'organ' | 'protein' | 'mutation' | 'knockout' | 'treatment' | 'fraction', value: string) {
     const map = {
       organ: this.selectedOrgans,
       protein: this.selectedProteins,
       mutation: this.selectedMutations,
-      treatment: this.selectedTreatments
+      knockout: this.selectedKnockouts,
+      treatment: this.selectedTreatments,
+      fraction: this.selectedFractions
     };
     const target = map[type];
     target.update((set: Set<string>) => {
@@ -282,11 +320,13 @@ export class ExplorerComponent implements OnInit {
 
   isDefaultFlip(p: ProjectMetadata): boolean {
     const name = p.projectName.toLowerCase();
-    return (name.includes('dmso') && name.includes('mli2')) || (name.includes('ko') && name.includes('wt'));
+    const isMli2 = name.includes('dmso') && name.includes('mli2');
+    const isKo = name.includes('ko') && name.includes('wt');
+    return isMli2 || isKo;
   }
 
   drop(event: CdkDragDrop<string[]>) {
-    this.sortStack.update((stack: ('organ' | 'protein' | 'mutation' | 'treatment')[]) => {
+    this.sortStack.update((stack: ('organ' | 'protein' | 'mutation' | 'knockout' | 'treatment' | 'fraction')[]) => {
       const newStack = [...stack];
       moveItemInArray(newStack, event.previousIndex, event.currentIndex);
       return newStack;
@@ -325,7 +365,9 @@ export class ExplorerComponent implements OnInit {
     this.selectedOrgans.set(new Set());
     this.selectedProteins.set(new Set());
     this.selectedMutations.set(new Set());
+    this.selectedKnockouts.set(new Set());
     this.selectedTreatments.set(new Set());
+    this.selectedFractions.set(new Set());
     
     const idsToFlip = new Set<string>();
     this.projects().forEach(p => {
@@ -335,7 +377,7 @@ export class ExplorerComponent implements OnInit {
     });
     this.flippedProjectIds.set(idsToFlip);
 
-    this.sortStack.set(['organ', 'protein', 'mutation', 'treatment']);
+    this.sortStack.set(['organ', 'protein', 'mutation', 'knockout', 'treatment', 'fraction']);
     this.searchTerm.set('');
     this.applyDefaultGenes();
   }
@@ -364,8 +406,16 @@ export class ExplorerComponent implements OnInit {
       this.selectedMutations.set(new Set(params['mutations'].split(',')));
     }
 
+    if (params['knockouts']) {
+      this.selectedKnockouts.set(new Set(params['knockouts'].split(',')));
+    }
+
     if (params['treatments']) {
       this.selectedTreatments.set(new Set(params['treatments'].split(',')));
+    }
+
+    if (params['fractions']) {
+      this.selectedFractions.set(new Set(params['fractions'].split(',')));
     }
 
     if (params['flipped']) {
@@ -411,7 +461,9 @@ export class ExplorerComponent implements OnInit {
     this.selectedOrgans.set(new Set());
     this.selectedProteins.set(new Set());
     this.selectedMutations.set(new Set());
+    this.selectedKnockouts.set(new Set());
     this.selectedTreatments.set(new Set());
+    this.selectedFractions.set(new Set());
   }
 
   onSearchKeydown(event: KeyboardEvent) {

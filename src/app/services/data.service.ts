@@ -98,17 +98,25 @@ export class DataService {
       else if (projectName.toLowerCase().includes('lrrk2')) protein = 'LRRK2';
       else if (projectName.toLowerCase().includes('gba')) protein = 'GBA';
 
-      let mutation = 'Other';
-      const mutMatch = projectName.match(/(D620N|R1441C|G2019S|KO|D409V|E326K|L444P|N370S)/i);
+      let mutation = 'None';
+      const mutMatch = projectName.match(/(D620N|R1441C|G2019S|D409V|E326K|L444P|N370S)/i);
       if (mutMatch) {
         mutation = mutMatch[0].toUpperCase();
       } else if (projectName.toLowerCase().includes('wt')) {
         mutation = 'WT';
       }
 
+      let knockout = 'None';
+      if (projectName.toLowerCase().includes('ko') || projectName.toLowerCase().includes('knockout')) {
+        const koMatch = projectName.match(/([A-Z0-9]+-ko)/i);
+        knockout = koMatch ? koMatch[0].toUpperCase() : 'KO';
+      }
+
       let treatment = 'None';
       if (projectName.toLowerCase().includes('mli2')) treatment = 'MLi2';
-      if (projectName.toLowerCase().includes('mito')) treatment = 'Mito';
+
+      let fraction = content.includes('LysoIP') ? 'Lyso' : 'WCL';
+      if (projectName.toLowerCase().includes('mito')) fraction = 'Mito';
 
       projects.push({
         projectId: (projectId || '').trim(),
@@ -117,7 +125,9 @@ export class DataService {
         organ,
         protein,
         mutation,
-        treatment
+        knockout,
+        treatment,
+        fraction
       });
     }
 

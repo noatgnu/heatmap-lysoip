@@ -40,10 +40,12 @@
 
     <app-collapsible-section title="Grouping Presets">
       <div class="flex flex-col gap-2 p-1">
-        <button (click)="setPreset('organ')" class="text-left text-[11px] font-medium px-3 py-2 bg-white hover:bg-gray-50 rounded border border-gray-200 transition-colors shadow-sm">Organ > Protein > Mutation > Treatment</button>
-        <button (click)="setPreset('protein')" class="text-left text-[11px] font-medium px-3 py-2 bg-white hover:bg-gray-50 rounded border border-gray-200 transition-colors shadow-sm">Protein > Mutation > Treatment > Organ</button>
-        <button (click)="setPreset('mutation')" class="text-left text-[11px] font-medium px-3 py-2 bg-white hover:bg-gray-50 rounded border border-gray-200 transition-colors shadow-sm">Mutation > Treatment > Organ > Protein</button>
-        <button (click)="setPreset('treatment')" class="text-left text-[11px] font-medium px-3 py-2 bg-white hover:bg-gray-50 rounded border border-gray-200 transition-colors shadow-sm">Treatment > Mutation > Organ > Protein</button>
+        <button (click)="setPreset('organ')" class="text-left text-[11px] font-medium px-3 py-2 bg-white hover:bg-gray-50 rounded border border-gray-200 transition-colors shadow-sm">Organ > Protein > Mutation > Knockout > Treatment > Fraction</button>
+        <button (click)="setPreset('protein')" class="text-left text-[11px] font-medium px-3 py-2 bg-white hover:bg-gray-50 rounded border border-gray-200 transition-colors shadow-sm">Protein > Mutation > Knockout > Treatment > Fraction > Organ</button>
+        <button (click)="setPreset('mutation')" class="text-left text-[11px] font-medium px-3 py-2 bg-white hover:bg-gray-50 rounded border border-gray-200 transition-colors shadow-sm">Mutation > Knockout > Treatment > Fraction > Organ > Protein</button>
+        <button (click)="setPreset('knockout')" class="text-left text-[11px] font-medium px-3 py-2 bg-white hover:bg-gray-50 rounded border border-gray-200 transition-colors shadow-sm">Knockout > Mutation > Treatment > Fraction > Organ > Protein</button>
+        <button (click)="setPreset('treatment')" class="text-left text-[11px] font-medium px-3 py-2 bg-white hover:bg-gray-50 rounded border border-gray-200 transition-colors shadow-sm">Treatment > Mutation > Fraction > Organ > Protein > Knockout</button>
+        <button (click)="setPreset('fraction')" class="text-left text-[11px] font-medium px-3 py-2 bg-white hover:bg-gray-50 rounded border border-gray-200 transition-colors shadow-sm">Fraction > Organ > Protein > Mutation > Treatment > Knockout</button>
       </div>
     </app-collapsible-section>
 
@@ -114,12 +116,34 @@
       </div>
     </app-collapsible-section>
 
+    <app-collapsible-section title="Filter by Knockout" [defaultOpen]="false">
+      <div class="space-y-1 max-h-48 overflow-y-auto border rounded p-2 bg-gray-50">
+        @for (ko of knockouts(); track ko) {
+          <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-1 rounded">
+            <input type="checkbox" [checked]="selectedKnockouts().has(ko)" (change)="toggleFilter('knockout', ko)" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+            <span class="text-sm text-gray-700">{{ ko }}</span>
+          </label>
+        }
+      </div>
+    </app-collapsible-section>
+
     <app-collapsible-section title="Filter by Treatment" [defaultOpen]="false">
       <div class="space-y-1 max-h-48 overflow-y-auto border rounded p-2 bg-gray-50">
         @for (t of treatments(); track t) {
           <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-1 rounded">
             <input type="checkbox" [checked]="selectedTreatments().has(t)" (change)="toggleFilter('treatment', t)" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
             <span class="text-sm text-gray-700">{{ t }}</span>
+          </label>
+        }
+      </div>
+    </app-collapsible-section>
+
+    <app-collapsible-section title="Filter by Fraction" [defaultOpen]="false">
+      <div class="space-y-1 max-h-48 overflow-y-auto border rounded p-2 bg-gray-50">
+        @for (f of fractions(); track f) {
+          <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-1 rounded">
+            <input type="checkbox" [checked]="selectedFractions().has(f)" (change)="toggleFilter('fraction', f)" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+            <span class="text-sm text-gray-700">{{ f }}</span>
           </label>
         }
       </div>
@@ -266,7 +290,7 @@
                   &lt;{{ gene.uniprotId }}&gt;&lt;{{ gene.gene }}&gt;
                   <button type="button" (click)="removeGene(gene.uniprotId)" class="flex-shrink-0 ml-1.5 h-4 w-4 rounded-full inline-flex items-center justify-center text-indigo-400 hover:bg-indigo-200 hover:text-indigo-500 focus:outline-none focus:bg-indigo-500 focus:text-white transition-colors">
                     <span class="sr-only">Remove protein</span>
-                    <svg class="h-2 w-2" stroke="currentColor" fill="none" viewBox="0 0 8 8"><path stroke-linecap="round" stroke-width="1.5" d="M1 1l6 6m0-6L1 7" /></svg>
+                    <svg class="h-2 w-2" stroke="currentColor" fill="none" viewBox="0 0 8 8"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 1l6 6m0-6L1 7" /></svg>
                   </button>
                 </span>
               </div>
