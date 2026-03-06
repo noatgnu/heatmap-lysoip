@@ -2,7 +2,7 @@
   
   <div class="w-64 flex-shrink-0 flex flex-col gap-6">
     
-    <div class="bg-white shadow rounded-lg p-4">
+    <div class="bg-white shadow rounded-lg p-4 border border-gray-200">
       <h4 class="text-sm font-bold text-gray-900 mb-4 uppercase tracking-wider">Dataset Selection</h4>
       <div class="flex flex-col gap-2">
         <a 
@@ -12,7 +12,7 @@
           [class.text-white]="dataset() === 'lysoip'"
           [class.bg-gray-100]="dataset() !== 'lysoip'"
           [class.text-gray-700]="dataset() !== 'lysoip'"
-          class="px-4 py-2 text-sm font-medium rounded-md transition-colors text-left flex justify-between items-center no-underline"
+          class="px-4 py-2 text-sm font-medium rounded-md transition-colors text-left flex justify-between items-center no-underline border border-transparent shadow-sm"
         >
           LysoIP
           @if (dataset() === 'lysoip') {
@@ -26,7 +26,7 @@
           [class.text-white]="dataset() === 'wcl'"
           [class.bg-gray-100]="dataset() !== 'wcl'"
           [class.text-gray-700]="dataset() !== 'wcl'"
-          class="px-4 py-2 text-sm font-medium rounded-md transition-colors text-left flex justify-between items-center no-underline"
+          class="px-4 py-2 text-sm font-medium rounded-md transition-colors text-left flex justify-between items-center no-underline border border-transparent shadow-sm"
         >
           WCL
           @if (dataset() === 'wcl') {
@@ -39,10 +39,11 @@
     <app-curtain-filter (filterSelected)="applyCurtainFilter($event)"></app-curtain-filter>
 
     <app-collapsible-section title="Grouping Presets">
-      <div class="flex flex-col gap-2">
-        <button (click)="setPreset('organ')" class="text-left text-xs font-medium px-3 py-2 bg-gray-50 hover:bg-gray-100 rounded border border-gray-200 transition-colors">Organ > Protein > Mutation</button>
-        <button (click)="setPreset('protein')" class="text-left text-xs font-medium px-3 py-2 bg-gray-50 hover:bg-gray-100 rounded border border-gray-200 transition-colors">Protein > Mutation > Organ</button>
-        <button (click)="setPreset('mutation')" class="text-left text-xs font-medium px-3 py-2 bg-gray-50 hover:bg-gray-100 rounded border border-gray-200 transition-colors">Mutation > Organ > Protein</button>
+      <div class="flex flex-col gap-2 p-1">
+        <button (click)="setPreset('organ')" class="text-left text-[11px] font-medium px-3 py-2 bg-white hover:bg-gray-50 rounded border border-gray-200 transition-colors shadow-sm">Organ > Protein > Mutation > Treatment</button>
+        <button (click)="setPreset('protein')" class="text-left text-[11px] font-medium px-3 py-2 bg-white hover:bg-gray-50 rounded border border-gray-200 transition-colors shadow-sm">Protein > Mutation > Treatment > Organ</button>
+        <button (click)="setPreset('mutation')" class="text-left text-[11px] font-medium px-3 py-2 bg-white hover:bg-gray-50 rounded border border-gray-200 transition-colors shadow-sm">Mutation > Treatment > Organ > Protein</button>
+        <button (click)="setPreset('treatment')" class="text-left text-[11px] font-medium px-3 py-2 bg-white hover:bg-gray-50 rounded border border-gray-200 transition-colors shadow-sm">Treatment > Mutation > Organ > Protein</button>
       </div>
     </app-collapsible-section>
 
@@ -50,23 +51,23 @@
       <div
         cdkDropList
         (cdkDropListDropped)="drop($event)"
-        class="space-y-2"
+        class="space-y-2 p-1"
       >
         @for (item of sortStack(); track item) {
           <div
             cdkDrag
-            class="flex items-center justify-between bg-gray-50 p-3 rounded border border-gray-200 cursor-move hover:bg-gray-100 transition-colors"
+            class="flex items-center justify-between bg-white p-3 rounded border border-gray-200 cursor-move hover:bg-gray-50 transition-colors shadow-sm"
           >
             <span class="text-sm font-medium capitalize">{{ item === 'organ' ? 'Organ/Cell Line' : item }}</span>
             <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"/></svg>
           </div>
         }
       </div>
-      <p class="mt-2 text-xs text-gray-500 italic">Drag to change nesting order.</p>
+      <p class="mt-2 text-xs text-gray-500 italic px-1">Drag to change nesting order.</p>
     </app-collapsible-section>
 
     <app-collapsible-section title="Flip Signs" [defaultOpen]="false">
-      <p class="text-xs text-gray-500 mb-2 italic">Invert Log2FC signs for specific projects.</p>
+      <p class="text-xs text-gray-500 mb-2 italic px-1">Invert Log2FC signs for specific projects.</p>
       <div class="space-y-1 max-h-48 overflow-y-auto border rounded p-2 bg-gray-50">
         @for (p of filteredProjects(); track p.projectId) {
           <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-1 rounded group">
@@ -80,7 +81,7 @@
       </div>
     </app-collapsible-section>
 
-    <app-collapsible-section title="Filter by Organ/Cell Line">
+    <app-collapsible-section title="Filter by Organ/Cell Line" [defaultOpen]="false">
       <div class="space-y-1 max-h-48 overflow-y-auto border rounded p-2 bg-gray-50">
         @for (organ of organs(); track organ) {
           <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-1 rounded">
@@ -91,7 +92,7 @@
       </div>
     </app-collapsible-section>
 
-    <app-collapsible-section title="Filter by Protein">
+    <app-collapsible-section title="Filter by Protein" [defaultOpen]="false">
       <div class="space-y-1 max-h-48 overflow-y-auto border rounded p-2 bg-gray-50">
         @for (protein of proteins(); track protein) {
           <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-1 rounded">
@@ -102,7 +103,7 @@
       </div>
     </app-collapsible-section>
 
-    <app-collapsible-section title="Filter by Mutation">
+    <app-collapsible-section title="Filter by Mutation" [defaultOpen]="false">
       <div class="space-y-1 max-h-48 overflow-y-auto border rounded p-2 bg-gray-50">
         @for (mut of mutations(); track mut) {
           <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-1 rounded">
@@ -113,12 +114,23 @@
       </div>
     </app-collapsible-section>
 
+    <app-collapsible-section title="Filter by Treatment" [defaultOpen]="false">
+      <div class="space-y-1 max-h-48 overflow-y-auto border rounded p-2 bg-gray-50">
+        @for (t of treatments(); track t) {
+          <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-1 rounded">
+            <input type="checkbox" [checked]="selectedTreatments().has(t)" (change)="toggleFilter('treatment', t)" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+            <span class="text-sm text-gray-700">{{ t }}</span>
+          </label>
+        }
+      </div>
+    </app-collapsible-section>
+
   </div>
 
-  <div class="flex-1 flex flex-col gap-6">
-    <div class="w-full bg-white shadow rounded-lg overflow-hidden flex flex-col">
+  <div class="flex-1 flex flex-col gap-6 min-w-0">
+    <div class="w-full bg-white shadow rounded-lg overflow-hidden flex flex-col border border-gray-200">
       
-      <div class="px-4 py-5 sm:px-6 border-b border-gray-200 flex justify-between items-center">
+      <div class="px-4 py-5 sm:px-6 border-b border-gray-200 flex justify-between items-center bg-white">
         <div>
           <h3 class="text-lg leading-6 font-medium text-gray-900 uppercase tracking-tight">
             <span class="text-indigo-600 font-bold">{{ dataset() === 'lysoip' ? 'LysoIP' : 'WCL' }}</span> Log2FC Heatmap Explorer
@@ -221,7 +233,7 @@
             </div>
           } @else if (displayedGenes().length <= 20) {
             <div class="flex flex-wrap gap-2 min-h-[32px]">
-              @for (gene of displayedGenes(); track gene.uniprotId) {
+              @for (gene of displayedGenes(); track trackByUniprotId($index, gene)) {
                 <span
                   [class.bg-indigo-100]="hoveredGeneId() !== gene.uniprotId"
                   [class.bg-indigo-500]="hoveredGeneId() === gene.uniprotId"
