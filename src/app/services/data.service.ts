@@ -102,17 +102,13 @@ export class DataService {
       const mutMatch = projectName.match(/(D620N|R1441C|G2019S|KO|D409V|E326K|L444P|N370S)/i);
       if (mutMatch) {
         mutation = mutMatch[0].toUpperCase();
+      } else if (projectName.toLowerCase().includes('wt')) {
+        mutation = 'WT';
       }
 
-      const isMLi2 = projectName.toLowerCase().includes('mli2');
-      if (isMLi2) {
-        mutation = mutation === 'Other' ? 'MLi2' : mutation + ' + MLi2';
-      }
-
-      if (projectName.toLowerCase().includes('wt')) {
-        if (mutation === 'Other') mutation = 'WT';
-        else if (!isMLi2) mutation = mutation + ' (vs WT)';
-      }
+      let treatment = 'None';
+      if (projectName.toLowerCase().includes('mli2')) treatment = 'MLi2';
+      if (projectName.toLowerCase().includes('mito')) treatment = 'Mito';
 
       projects.push({
         projectId: (projectId || '').trim(),
@@ -120,7 +116,8 @@ export class DataService {
         log2fcIndex: i + 1,
         organ,
         protein,
-        mutation
+        mutation,
+        treatment
       });
     }
 
