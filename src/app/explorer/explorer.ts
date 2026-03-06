@@ -135,7 +135,8 @@ export class ExplorerComponent implements OnInit {
     const ids = new Set<string>();
     const lowerDefault = this.defaultGenes.map(g => g.toLowerCase());
     this.allGenes().forEach((gene: GeneData) => {
-      if (lowerDefault.includes(gene.gene.toLowerCase())) {
+      const geneParts = gene.gene.toLowerCase().split(';').map(p => p.trim());
+      if (geneParts.some(p => lowerDefault.includes(p))) {
         ids.add(gene.uniprotId);
       }
     });
@@ -147,7 +148,13 @@ export class ExplorerComponent implements OnInit {
     const matchedIds = new Set<string>();
     
     this.allGenes().forEach((gene: GeneData) => {
-      if (geneTerms.includes(gene.gene.toLowerCase()) || geneTerms.includes(gene.uniprotId.toLowerCase())) {
+      const gParts = gene.gene.toLowerCase().split(';').map(p => p.trim());
+      const uParts = gene.uniprotId.toLowerCase().split(';').map(p => p.trim());
+      
+      const match = gParts.some(p => geneTerms.includes(p)) || 
+                    uParts.some(p => geneTerms.includes(p));
+                    
+      if (match) {
         matchedIds.add(gene.uniprotId);
       }
     });
