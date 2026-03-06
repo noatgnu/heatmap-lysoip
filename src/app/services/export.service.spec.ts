@@ -13,9 +13,9 @@ describe('ExportService', () => {
   ];
 
   const mockProjects: ProjectMetadata[] = [
-    { projectId: '1', projectName: 'Project A', log2fcIndex: 7, organ: 'Brain', protein: 'LRRK2', mutation: 'WT', knockout: 'None', treatment: 'None', fraction: 'Lyso' },
-    { projectId: '2', projectName: 'Project B', log2fcIndex: 10, organ: 'Lung', protein: 'VPS35', mutation: 'D620N', knockout: 'None', treatment: 'None', fraction: 'Lyso' },
-    { projectId: '3', projectName: 'Project C', log2fcIndex: 13, organ: 'MEFs', protein: 'LRRK2', mutation: 'R1441C', knockout: 'None', treatment: 'MLi2', fraction: 'Lyso' }
+    { projectId: '1', projectName: 'Project A', log2fcIndex: 7, organ: 'Brain', protein: 'LRRK2', mutation: 'WT', knockout: 'None', treatment: 'None', fraction: 'Lyso', date: '20210101' },
+    { projectId: '2', projectName: 'Project B', log2fcIndex: 10, organ: 'Lung', protein: 'VPS35', mutation: 'D620N', knockout: 'None', treatment: 'None', fraction: 'Lyso', date: '20210102' },
+    { projectId: '3', projectName: 'Project C', log2fcIndex: 13, organ: 'MEFs', protein: 'LRRK2', mutation: 'R1441C', knockout: 'None', treatment: 'MLi2', fraction: 'Lyso', date: '20210103' }
   ];
 
   const mockPlotlyService = {
@@ -64,11 +64,13 @@ describe('ExportService', () => {
 
   describe('copyGeneListToClipboard', () => {
     beforeEach(() => {
-      Object.assign(navigator, {
-        clipboard: {
+      if (!navigator.clipboard) {
+        (navigator as any).clipboard = {
           writeText: vi.fn().mockResolvedValue(undefined)
-        }
-      });
+        };
+      } else {
+        vi.spyOn(navigator.clipboard, 'writeText').mockResolvedValue(undefined);
+      }
     });
 
     it('should copy gene names to clipboard', async () => {

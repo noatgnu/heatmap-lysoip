@@ -1,5 +1,7 @@
 import { Injectable, signal } from '@angular/core';
 
+export type SortCriterion = 'organ' | 'protein' | 'mutation' | 'knockout' | 'treatment';
+
 export interface FilterPreset {
   id: string;
   name: string;
@@ -8,7 +10,10 @@ export interface FilterPreset {
   organs: string[];
   proteins: string[];
   mutations: string[];
-  sortStack: ('organ' | 'protein' | 'mutation')[];
+  knockouts: string[];
+  treatments: string[];
+  fractions: string[];
+  sortStack: SortCriterion[];
   flippedProjectIds: string[];
   createdAt: number;
 }
@@ -58,7 +63,10 @@ export class PreferencesService {
     organs: Set<string>,
     proteins: Set<string>,
     mutations: Set<string>,
-    sortStack: ('organ' | 'protein' | 'mutation')[],
+    knockouts: Set<string>,
+    treatments: Set<string>,
+    fractions: Set<string>,
+    sortStack: SortCriterion[],
     flippedProjectIds: Set<string>
   ): FilterPreset {
     const preset: FilterPreset = {
@@ -69,6 +77,9 @@ export class PreferencesService {
       organs: Array.from(organs),
       proteins: Array.from(proteins),
       mutations: Array.from(mutations),
+      knockouts: Array.from(knockouts),
+      treatments: Array.from(treatments),
+      fractions: Array.from(fractions),
       sortStack: [...sortStack],
       flippedProjectIds: Array.from(flippedProjectIds),
       createdAt: Date.now()

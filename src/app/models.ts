@@ -8,6 +8,7 @@ export interface ProjectMetadata {
   knockout: string;
   treatment: string;
   fraction: string;
+  date: string;
 }
 
 export interface GeneData {

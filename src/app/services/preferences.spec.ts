@@ -1,10 +1,12 @@
 import { TestBed } from '@angular/core/testing';
-import { PreferencesService, FilterPreset } from './preferences';
+import { PreferencesService, FilterPreset, SortCriterion } from './preferences';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 describe('PreferencesService', () => {
   let service: PreferencesService;
   let mockStorage: Record<string, string>;
+
+  const defaultSortStack: SortCriterion[] = ['organ', 'protein', 'mutation', 'knockout', 'treatment'];
 
   beforeEach(() => {
     mockStorage = {};
@@ -38,7 +40,10 @@ describe('PreferencesService', () => {
         new Set(['Brain']),
         new Set(['LRRK2']),
         new Set(['R1441C']),
-        ['organ', 'protein', 'mutation'],
+        new Set(['none']),
+        new Set(['none']),
+        new Set(['lyso']),
+        defaultSortStack,
         new Set(['1'])
       );
 
@@ -48,7 +53,10 @@ describe('PreferencesService', () => {
       expect(preset.organs).toEqual(['Brain']);
       expect(preset.proteins).toEqual(['LRRK2']);
       expect(preset.mutations).toEqual(['R1441C']);
-      expect(preset.sortStack).toEqual(['organ', 'protein', 'mutation']);
+      expect(preset.knockouts).toEqual(['none']);
+      expect(preset.treatments).toEqual(['none']);
+      expect(preset.fractions).toEqual(['lyso']);
+      expect(preset.sortStack).toEqual(defaultSortStack);
       expect(preset.flippedProjectIds).toEqual(['1']);
       expect(service.presets().length).toBe(1);
     });
@@ -61,7 +69,10 @@ describe('PreferencesService', () => {
         new Set(),
         new Set(),
         new Set(),
-        ['organ', 'protein', 'mutation'],
+        new Set(),
+        new Set(),
+        new Set(),
+        defaultSortStack,
         new Set()
       );
 
@@ -80,7 +91,10 @@ describe('PreferencesService', () => {
           new Set(),
           new Set(),
           new Set(),
-          ['organ', 'protein', 'mutation'],
+          new Set(),
+          new Set(),
+          new Set(),
+          defaultSortStack,
           new Set()
         );
       }
@@ -99,7 +113,10 @@ describe('PreferencesService', () => {
         new Set(),
         new Set(),
         new Set(),
-        ['organ', 'protein', 'mutation'],
+        new Set(),
+        new Set(),
+        new Set(),
+        defaultSortStack,
         new Set()
       );
 
@@ -118,7 +135,10 @@ describe('PreferencesService', () => {
         new Set(),
         new Set(),
         new Set(),
-        ['organ', 'protein', 'mutation'],
+        new Set(),
+        new Set(),
+        new Set(),
+        defaultSortStack,
         new Set()
       );
 
@@ -134,9 +154,9 @@ describe('PreferencesService', () => {
 
   describe('getPresetsForDataset', () => {
     it('should filter presets by dataset', () => {
-      service.savePreset('LysoIP 1', 'lysoip', new Set(), new Set(), new Set(), new Set(), ['organ', 'protein', 'mutation'], new Set());
-      service.savePreset('WCL 1', 'wcl', new Set(), new Set(), new Set(), new Set(), ['organ', 'protein', 'mutation'], new Set());
-      service.savePreset('LysoIP 2', 'lysoip', new Set(), new Set(), new Set(), new Set(), ['organ', 'protein', 'mutation'], new Set());
+      service.savePreset('LysoIP 1', 'lysoip', new Set(), new Set(), new Set(), new Set(), new Set(), new Set(), new Set(), defaultSortStack, new Set());
+      service.savePreset('WCL 1', 'wcl', new Set(), new Set(), new Set(), new Set(), new Set(), new Set(), new Set(), defaultSortStack, new Set());
+      service.savePreset('LysoIP 2', 'lysoip', new Set(), new Set(), new Set(), new Set(), new Set(), new Set(), new Set(), defaultSortStack, new Set());
 
       const lysoipPresets = service.getPresetsForDataset('lysoip');
       const wclPresets = service.getPresetsForDataset('wcl');
@@ -148,8 +168,8 @@ describe('PreferencesService', () => {
 
   describe('clearAllPresets', () => {
     it('should remove all presets', () => {
-      service.savePreset('One', 'lysoip', new Set(), new Set(), new Set(), new Set(), ['organ', 'protein', 'mutation'], new Set());
-      service.savePreset('Two', 'wcl', new Set(), new Set(), new Set(), new Set(), ['organ', 'protein', 'mutation'], new Set());
+      service.savePreset('One', 'lysoip', new Set(), new Set(), new Set(), new Set(), new Set(), new Set(), new Set(), defaultSortStack, new Set());
+      service.savePreset('Two', 'wcl', new Set(), new Set(), new Set(), new Set(), new Set(), new Set(), new Set(), defaultSortStack, new Set());
 
       service.clearAllPresets();
 
@@ -166,7 +186,10 @@ describe('PreferencesService', () => {
         new Set(),
         new Set(),
         new Set(),
-        ['organ', 'protein', 'mutation'],
+        new Set(),
+        new Set(),
+        new Set(),
+        defaultSortStack,
         new Set()
       );
 
@@ -187,7 +210,10 @@ describe('PreferencesService', () => {
           organs: [],
           proteins: [],
           mutations: [],
-          sortStack: ['organ', 'protein', 'mutation'],
+          knockouts: [],
+          treatments: [],
+          fractions: [],
+          sortStack: defaultSortStack,
           flippedProjectIds: [],
           createdAt: Date.now()
         }

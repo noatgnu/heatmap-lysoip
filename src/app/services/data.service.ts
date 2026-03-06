@@ -83,6 +83,12 @@ export class DataService {
       let fullProjectName = (row2[i] || '').trim();
       if (!projectId && !fullProjectName) continue;
 
+      let date = '';
+      const dateMatch = fullProjectName.match(/^\d{8}[_0-9]*/);
+      if (dateMatch) {
+        date = dateMatch[0].replace(/_$/, '');
+      }
+
       let projectName = fullProjectName.replace(/^\d{8}[_0-9]*\s*/, '');
       projectName = projectName.replace(/\n/g, ' ');
       projectName = projectName.replace(/\s*\([^)]*\+[^)]*\)/g, '').trim();
@@ -127,7 +133,8 @@ export class DataService {
         mutation,
         knockout,
         treatment,
-        fraction
+        fraction,
+        date
       });
     }
 

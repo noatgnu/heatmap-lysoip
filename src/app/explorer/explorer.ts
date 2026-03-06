@@ -11,7 +11,7 @@ import { CollapsibleSectionComponent } from '../components/collapsible-section/c
 import { GeneData, ProjectMetadata } from '../models';
 import { DataService } from '../services/data.service';
 import { ExportService } from '../services/export.service';
-import { PreferencesService } from '../services/preferences';
+import { PreferencesService, FilterPreset, SortCriterion } from '../services/preferences';
 
 @Component({
   selector: 'app-explorer',
@@ -48,7 +48,12 @@ export class ExplorerComponent implements OnInit {
   selectedFractions = signal<Set<string>>(new Set());
   flippedProjectIds = signal<Set<string>>(new Set());
   
-  sortStack = signal<('organ' | 'protein' | 'mutation' | 'knockout' | 'treatment' | 'fraction')[]>(['organ', 'protein', 'mutation', 'knockout', 'treatment', 'fraction']);
+  sortStack = signal<SortCriterion[]>(['organ', 'protein', 'mutation', 'knockout', 'treatment']);
+
+  showPresetInput = signal(false);
+  presetName = signal('');
+
+  currentPresets = computed(() => this.preferencesService.getPresetsForDataset(this.currentDataset()));
 
   private defaultGenes = [
     'TMEM175', 'OGA', 'NOD2', 'USP30', 'STING1', 'ATP13A2', 'MCOLN1', 'TLR2', 'GPNMB', 'GCG',
@@ -94,12 +99,11 @@ export class ExplorerComponent implements OnInit {
   }
 
   setPreset(preset: 'organ' | 'mutation' | 'protein' | 'treatment' | 'fraction' | 'knockout') {
-    if (preset === 'organ') this.sortStack.set(['organ', 'protein', 'mutation', 'knockout', 'treatment', 'fraction']);
-    else if (preset === 'mutation') this.sortStack.set(['mutation', 'treatment', 'fraction', 'organ', 'protein', 'knockout']);
-    else if (preset === 'protein') this.sortStack.set(['protein', 'mutation', 'knockout', 'treatment', 'fraction', 'organ']);
-    else if (preset === 'treatment') this.sortStack.set(['treatment', 'mutation', 'fraction', 'organ', 'protein', 'knockout']);
-    else if (preset === 'fraction') this.sortStack.set(['fraction', 'organ', 'protein', 'mutation', 'treatment', 'knockout']);
-    else if (preset === 'knockout') this.sortStack.set(['knockout', 'mutation', 'treatment', 'fraction', 'organ', 'protein']);
+    if (preset === 'organ') this.sortStack.set(['organ', 'protein', 'mutation', 'knockout', 'treatment']);
+    else if (preset === 'mutation') this.sortStack.set(['mutation', 'treatment', 'organ', 'protein', 'knockout']);
+    else if (preset === 'protein') this.sortStack.set(['protein', 'mutation', 'knockout', 'treatment', 'organ']);
+    else if (preset === 'treatment') this.sortStack.set(['treatment', 'mutation', 'organ', 'protein', 'knockout']);
+    else if (preset === 'knockout') this.sortStack.set(['knockout', 'mutation', 'treatment', 'organ', 'protein']);
   }
 
   loadData(type: 'lysoip' | 'wcl') {
@@ -294,7 +298,7 @@ export class ExplorerComponent implements OnInit {
         
         if (cmp !== 0) return cmp;
       }
-      return 0;
+      return a.date.localeCompare(b.date);
     });
   });
 
@@ -333,7 +337,7 @@ export class ExplorerComponent implements OnInit {
   }
 
   drop(event: CdkDragDrop<string[]>) {
-    this.sortStack.update((stack: ('organ' | 'protein' | 'mutation' | 'knockout' | 'treatment' | 'fraction')[]) => {
+    this.sortStack.update((stack: SortCriterion[]) => {
       const newStack = [...stack];
       moveItemInArray(newStack, event.previousIndex, event.currentIndex);
       return newStack;
@@ -384,7 +388,7 @@ export class ExplorerComponent implements OnInit {
     });
     this.flippedProjectIds.set(idsToFlip);
 
-    this.sortStack.set(['organ', 'protein', 'mutation', 'knockout', 'treatment', 'fraction']);
+    this.sortStack.set(['organ', 'protein', 'mutation', 'knockout', 'treatment']);
     this.searchTerm.set('');
     this.applyDefaultGenes();
   }
@@ -506,6 +510,51 @@ export class ExplorerComponent implements OnInit {
         this.highlightedIndex.set(-1);
         break;
     }
+  }
+
+  togglePresetInput() {
+    this.showPresetInput.update(v => !v);
+    if (!this.showPresetInput()) {
+      this.presetName.set('');
+    }
+  }
+
+  saveCurrentPreset() {
+    const name = this.presetName().trim();
+    if (!name) return;
+
+    this.preferencesService.savePreset(
+      name,
+      this.currentDataset(),
+      this.selectedGeneIds(),
+      this.selectedOrgans(),
+      this.selectedProteins(),
+      this.selectedMutations(),
+      this.selectedKnockouts(),
+      this.selectedTreatments(),
+      this.selectedFractions(),
+      this.sortStack(),
+      this.flippedProjectIds()
+    );
+
+    this.presetName.set('');
+    this.showPresetInput.set(false);
+  }
+
+  loadPreset(preset: FilterPreset) {
+    this.selectedGeneIds.set(new Set(preset.geneIds));
+    this.selectedOrgans.set(new Set(preset.organs));
+    this.selectedProteins.set(new Set(preset.proteins));
+    this.selectedMutations.set(new Set(preset.mutations));
+    this.selectedKnockouts.set(new Set(preset.knockouts || []));
+    this.selectedTreatments.set(new Set(preset.treatments || []));
+    this.selectedFractions.set(new Set(preset.fractions || []));
+    this.sortStack.set([...preset.sortStack]);
+    this.flippedProjectIds.set(new Set(preset.flippedProjectIds));
+  }
+
+  deletePreset(preset: FilterPreset) {
+    this.preferencesService.deletePreset(preset.id);
   }
 
 }

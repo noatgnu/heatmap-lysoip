@@ -40,12 +40,46 @@
 
     <app-collapsible-section title="Grouping Presets">
       <div class="flex flex-col gap-2 p-1">
-        <button (click)="setPreset('organ')" class="text-left text-[11px] font-medium px-3 py-2 bg-white hover:bg-gray-50 rounded border border-gray-200 transition-colors shadow-sm">Organ > Protein > Mutation > Knockout > Treatment > Fraction</button>
-        <button (click)="setPreset('protein')" class="text-left text-[11px] font-medium px-3 py-2 bg-white hover:bg-gray-50 rounded border border-gray-200 transition-colors shadow-sm">Protein > Mutation > Knockout > Treatment > Fraction > Organ</button>
-        <button (click)="setPreset('mutation')" class="text-left text-[11px] font-medium px-3 py-2 bg-white hover:bg-gray-50 rounded border border-gray-200 transition-colors shadow-sm">Mutation > Knockout > Treatment > Fraction > Organ > Protein</button>
-        <button (click)="setPreset('knockout')" class="text-left text-[11px] font-medium px-3 py-2 bg-white hover:bg-gray-50 rounded border border-gray-200 transition-colors shadow-sm">Knockout > Mutation > Treatment > Fraction > Organ > Protein</button>
-        <button (click)="setPreset('treatment')" class="text-left text-[11px] font-medium px-3 py-2 bg-white hover:bg-gray-50 rounded border border-gray-200 transition-colors shadow-sm">Treatment > Mutation > Fraction > Organ > Protein > Knockout</button>
-        <button (click)="setPreset('fraction')" class="text-left text-[11px] font-medium px-3 py-2 bg-white hover:bg-gray-50 rounded border border-gray-200 transition-colors shadow-sm">Fraction > Organ > Protein > Mutation > Treatment > Knockout</button>
+        <button (click)="setPreset('organ')" class="text-left text-[11px] font-medium px-3 py-2 bg-white hover:bg-gray-50 rounded border border-gray-200 transition-colors shadow-sm">Organ > Protein > Mutation > Knockout > Treatment</button>
+        <button (click)="setPreset('protein')" class="text-left text-[11px] font-medium px-3 py-2 bg-white hover:bg-gray-50 rounded border border-gray-200 transition-colors shadow-sm">Protein > Mutation > Knockout > Treatment > Organ</button>
+        <button (click)="setPreset('mutation')" class="text-left text-[11px] font-medium px-3 py-2 bg-white hover:bg-gray-50 rounded border border-gray-200 transition-colors shadow-sm">Mutation > Treatment > Organ > Protein > Knockout</button>
+        <button (click)="setPreset('knockout')" class="text-left text-[11px] font-medium px-3 py-2 bg-white hover:bg-gray-50 rounded border border-gray-200 transition-colors shadow-sm">Knockout > Mutation > Treatment > Organ > Protein</button>
+        <button (click)="setPreset('treatment')" class="text-left text-[11px] font-medium px-3 py-2 bg-white hover:bg-gray-50 rounded border border-gray-200 transition-colors shadow-sm">Treatment > Mutation > Organ > Protein > Knockout</button>
+      </div>
+    </app-collapsible-section>
+
+    <app-collapsible-section title="Saved Presets" [defaultOpen]="false">
+      <div class="flex flex-col gap-2 p-1">
+        @if (showPresetInput()) {
+          <div class="flex gap-2">
+            <input
+              type="text"
+              class="flex-1 px-2 py-1 text-xs border border-gray-300 rounded"
+              placeholder="Preset name..."
+              [value]="presetName()"
+              (input)="presetName.set($any($event.target).value)"
+              (keyup.enter)="saveCurrentPreset()"
+            />
+            <button (click)="saveCurrentPreset()" class="px-2 py-1 text-xs bg-indigo-600 text-white rounded hover:bg-indigo-700">Save</button>
+            <button (click)="togglePresetInput()" class="px-2 py-1 text-xs bg-gray-200 text-gray-700 rounded hover:bg-gray-300">Cancel</button>
+          </div>
+        } @else {
+          <button (click)="togglePresetInput()" class="text-left text-[11px] font-medium px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded border border-indigo-200 transition-colors shadow-sm">
+            + Save Current State
+          </button>
+        }
+        @for (preset of currentPresets(); track preset.id) {
+          <div class="flex items-center gap-2 px-3 py-2 bg-white rounded border border-gray-200 shadow-sm group">
+            <button (click)="loadPreset(preset)" class="flex-1 text-left text-[11px] font-medium text-gray-700 hover:text-indigo-600 truncate">{{ preset.name }}</button>
+            <button (click)="deletePreset(preset)" class="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-600 transition-opacity">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+          </div>
+        } @empty {
+          @if (!showPresetInput()) {
+            <p class="text-xs text-gray-400 italic px-1">No saved presets yet.</p>
+          }
+        }
       </div>
     </app-collapsible-section>
 
@@ -74,7 +108,12 @@
         @for (p of filteredProjects(); track p.projectId) {
           <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-1 rounded group">
             <input type="checkbox" [checked]="flippedProjectIds().has(p.projectId)" (change)="toggleFlip(p.projectId)" class="rounded border-gray-300 text-red-600 focus:ring-red-500">
-            <span class="text-xs text-gray-700 truncate flex-1" [title]="p.projectName">{{ p.projectName }}</span>
+            <div class="flex flex-col min-w-0 flex-1">
+              <span class="text-xs text-gray-700 truncate" [title]="p.projectName">{{ p.projectName }}</span>
+              @if (p.date) {
+                <span class="text-[10px] text-gray-400 tabular-nums">{{ p.date }}</span>
+              }
+            </div>
             @if (isDefaultFlip(p)) {
               <span class="text-[10px] font-bold text-gray-400 uppercase ml-1">Default</span>
             }

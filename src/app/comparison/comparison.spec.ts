@@ -5,7 +5,7 @@ import { provideRouter } from '@angular/router';
 import { routes } from '../app.routes';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { importProvidersFrom } from '@angular/core';
-import { PlotlyModule } from 'angular-plotly.js';
+import { PlotlyModule, PlotlyService } from 'angular-plotly.js';
 import * as PlotlyJS from 'plotly.js-dist-min';
 import { DataService } from '../services/data.service';
 import { of } from 'rxjs';
@@ -19,6 +19,15 @@ describe('ComparisonComponent', () => {
     isLoading: vi.fn().mockReturnValue(false)
   };
 
+  const mockPlotlyService = {
+    getPlotly: () => Promise.resolve({
+      newPlot: vi.fn(),
+      react: vi.fn(),
+      redraw: vi.fn(),
+      purge: vi.fn()
+    })
+  };
+
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [ComparisonComponent],
@@ -26,6 +35,7 @@ describe('ComparisonComponent', () => {
         provideHttpClient(),
         provideRouter(routes),
         { provide: DataService, useValue: mockDataService },
+        { provide: PlotlyService, useValue: mockPlotlyService },
         importProvidersFrom(PlotlyModule.forRoot(PlotlyJS))
       ]
     }).compileComponents();

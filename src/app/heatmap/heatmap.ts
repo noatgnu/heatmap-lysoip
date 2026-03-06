@@ -73,7 +73,7 @@ export class HeatmapComponent {
     if (genes.length === 0 || projs.length === 0) return { data: [], layout: { height: 800 } };
 
     const projIndices = projs.map((p: ProjectMetadata) => allProjs.indexOf(p));
-    const x = projs.map((p: ProjectMetadata) => p.projectName);
+    const x = projs.map((p: ProjectMetadata) => p.date ? `${p.date} ${p.projectName}` : p.projectName);
     const y = genes.map((g: GeneData) => `<${g.uniprotId}><${g.gene}>`);
     const z = genes.map((g: GeneData) => projIndices.map((idx: number) => g.log2fcs[idx]));
 
