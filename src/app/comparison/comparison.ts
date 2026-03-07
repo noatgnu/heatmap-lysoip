@@ -26,6 +26,12 @@ export class ComparisonComponent {
   searchTerm = signal('');
   selectedGeneIds = signal<Set<string>>(new Set());
 
+  lysoipOnlySearchTerm = signal('');
+  selectedLysoipOnlyIds = signal<Set<string>>(new Set());
+
+  wclOnlySearchTerm = signal('');
+  selectedWclOnlyIds = signal<Set<string>>(new Set());
+
   private defaultGenes = [
     'TMEM175', 'OGA', 'NOD2', 'USP30', 'STING1', 'ATP13A2', 'MCOLN1', 'TLR2', 'GPNMB',
     'MAPT', 'PARP1', 'BECN1', 'TREM2', 'VPS35', 'CTSB', 'LRRK2', 'GBA'
@@ -69,6 +75,24 @@ export class ComparisonComponent {
     return wcl.genes.filter(g => lysoipIds.has(g.uniprotId));
   });
 
+  lysoipOnlyGenes = computed(() => {
+    const lysoip = this.lysoipData();
+    const wcl = this.wclData();
+    if (!lysoip || !wcl) return [];
+
+    const wclIds = new Set(wcl.genes.map(g => g.uniprotId));
+    return lysoip.genes.filter(g => !wclIds.has(g.uniprotId));
+  });
+
+  wclOnlyGenes = computed(() => {
+    const lysoip = this.lysoipData();
+    const wcl = this.wclData();
+    if (!lysoip || !wcl) return [];
+
+    const lysoipIds = new Set(lysoip.genes.map(g => g.uniprotId));
+    return wcl.genes.filter(g => !lysoipIds.has(g.uniprotId));
+  });
+
   displayedLysoipGenes = computed(() => {
     const data = this.lysoipData();
     if (!data) return [];
@@ -83,6 +107,16 @@ export class ComparisonComponent {
     return data.genes.filter(g => selected.has(g.uniprotId));
   });
 
+  displayedLysoipOnlyGenes = computed(() => {
+    const selected = this.selectedLysoipOnlyIds();
+    return this.lysoipOnlyGenes().filter(g => selected.has(g.uniprotId));
+  });
+
+  displayedWclOnlyGenes = computed(() => {
+    const selected = this.selectedWclOnlyIds();
+    return this.wclOnlyGenes().filter(g => selected.has(g.uniprotId));
+  });
+
   lysoipProjects = computed(() => this.lysoipData()?.projects ?? []);
   wclProjects = computed(() => this.wclData()?.projects ?? []);
 
@@ -90,6 +124,22 @@ export class ComparisonComponent {
     const term = this.searchTerm().toLowerCase().trim();
     if (term.length < 2) return [];
     return this.commonGenes()
+      .filter(g => g.searchString.includes(term))
+      .slice(0, 10);
+  });
+
+  lysoipOnlySearchResults = computed(() => {
+    const term = this.lysoipOnlySearchTerm().toLowerCase().trim();
+    if (term.length < 2) return [];
+    return this.lysoipOnlyGenes()
+      .filter(g => g.searchString.includes(term))
+      .slice(0, 10);
+  });
+
+  wclOnlySearchResults = computed(() => {
+    const term = this.wclOnlySearchTerm().toLowerCase().trim();
+    if (term.length < 2) return [];
+    return this.wclOnlyGenes()
       .filter(g => g.searchString.includes(term))
       .slice(0, 10);
   });
@@ -113,5 +163,47 @@ export class ComparisonComponent {
 
   clearAllGenes() {
     this.selectedGeneIds.set(new Set());
+  }
+
+  addLysoipOnlyGene(gene: GeneData) {
+    this.selectedLysoipOnlyIds.update(set => {
+      const newSet = new Set(set);
+      newSet.add(gene.uniprotId);
+      return newSet;
+    });
+    this.lysoipOnlySearchTerm.set('');
+  }
+
+  removeLysoipOnlyGene(uniprotId: string) {
+    this.selectedLysoipOnlyIds.update(set => {
+      const newSet = new Set(set);
+      newSet.delete(uniprotId);
+      return newSet;
+    });
+  }
+
+  clearLysoipOnlyGenes() {
+    this.selectedLysoipOnlyIds.set(new Set());
+  }
+
+  addWclOnlyGene(gene: GeneData) {
+    this.selectedWclOnlyIds.update(set => {
+      const newSet = new Set(set);
+      newSet.add(gene.uniprotId);
+      return newSet;
+    });
+    this.wclOnlySearchTerm.set('');
+  }
+
+  removeWclOnlyGene(uniprotId: string) {
+    this.selectedWclOnlyIds.update(set => {
+      const newSet = new Set(set);
+      newSet.delete(uniprotId);
+      return newSet;
+    });
+  }
+
+  clearWclOnlyGenes() {
+    this.selectedWclOnlyIds.set(new Set());
   }
 }
