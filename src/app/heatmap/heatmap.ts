@@ -123,8 +123,8 @@ export class HeatmapComponent {
             thickness: 15,
             xanchor: 'center',
             x: 0.5,
-            yanchor: 'bottom',
-            y: 1.12,
+            yanchor: 'top',
+            y: -0.15,
             tickvals: [-maxAbs, 0, maxAbs],
             ticktext: [(-maxAbs).toFixed(1), '0', maxAbs.toFixed(1)]
           }
@@ -132,7 +132,7 @@ export class HeatmapComponent {
       ],
       layout: {
         title: '',
-        margin: { l: 300, b: 50, t: 280, r: 100 },
+        margin: { l: 300, b: 100, t: 200, r: 50 },
         xaxis: {
           tickangle: 90,
           side: 'top',
@@ -151,7 +151,7 @@ export class HeatmapComponent {
         annotations: [
           {
             x: 0.25,
-            y: 1.18,
+            y: -0.22,
             xref: 'paper',
             yref: 'paper',
             text: 'Decrease activity',
@@ -160,7 +160,7 @@ export class HeatmapComponent {
           },
           {
             x: 0.75,
-            y: 1.18,
+            y: -0.22,
             xref: 'paper',
             yref: 'paper',
             text: 'Increase activity',
