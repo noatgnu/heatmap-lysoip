@@ -7,19 +7,19 @@ import { GeneData, ProjectMetadata } from '../models';
   standalone: true,
   imports: [PlotlyModule],
   template: `
-    <div #plotContainer class="w-full overflow-x-auto overflow-y-auto max-h-[800px] border border-gray-200 rounded bg-white">
+    <div #plotContainer class="w-full overflow-x-auto overflow-y-auto border border-gray-200 rounded bg-white">
       @if (genes().length > 0 && projects().length > 0) {
         <plotly-plot
           [data]="graphData().data"
           [layout]="graphData().layout"
           [revision]="revision()"
           [useResizeHandler]="true"
-          [style]="{position: 'relative', width: '100%', height: (graphData().layout.height || 800) + 'px'}"
+          [style]="{position: 'relative', width: graphData().layout.width + 'px', height: (graphData().layout.height || 600) + 'px'}"
           (hover)="onHover($event)"
           (unhover)="onUnhover()"
         ></plotly-plot>
       } @else {
-        <div class="flex flex-col justify-center items-center h-[600px] text-gray-400">
+        <div class="flex flex-col justify-center items-center h-[400px] text-gray-400">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
           </svg>
@@ -45,9 +45,9 @@ export class HeatmapComponent {
   }
 
   onHover(event: any) {
-    if (event?.points?.[0]?.y) {
-      const yLabel = event.points[0].y as string;
-      const match = yLabel.match(/<([^>]+)>/);
+    if (event?.points?.[0]?.x) {
+      const xLabel = event.points[0].x as string;
+      const match = xLabel.match(/<([^>]+)>/);
       if (match) {
         this.geneHovered.emit(match[1]);
       }
@@ -70,12 +70,16 @@ export class HeatmapComponent {
     const projs = this.projects();
     const allProjs = this.allProjects();
 
-    if (genes.length === 0 || projs.length === 0) return { data: [], layout: { height: 800 } };
+    if (genes.length === 0 || projs.length === 0) return { data: [], layout: { height: 600, width: 800 } };
 
     const projIndices = projs.map((p: ProjectMetadata) => allProjs.indexOf(p));
-    const x = projs.map((p: ProjectMetadata) => p.date ? `${p.date} ${p.projectName}` : p.projectName);
-    const y = genes.map((g: GeneData) => `<${g.uniprotId}><${g.gene}>`);
-    const z = genes.map((g: GeneData) => projIndices.map((idx: number) => g.log2fcs[idx]));
+
+    const x = genes.map((g: GeneData) => `<${g.uniprotId}><${g.gene}>`);
+    const y = projs.map((p: ProjectMetadata) => p.date ? `${p.date} ${p.projectName}` : p.projectName);
+
+    const z = projs.map((_p: ProjectMetadata, projIdx: number) =>
+      genes.map((g: GeneData) => g.log2fcs[projIndices[projIdx]])
+    );
 
     let maxAbs = 0;
     z.forEach((row: (number | null)[]) => row.forEach((val: number | null) => {
@@ -84,8 +88,11 @@ export class HeatmapComponent {
         if (absVal > maxAbs) maxAbs = absVal;
       }
     }));
-    
+
     if (maxAbs === 0) maxAbs = 1;
+
+    const width = Math.max(800, genes.length * 25 + 350);
+    const height = Math.max(400, projs.length * 25 + 200);
 
     return {
       data: [
@@ -108,40 +115,63 @@ export class HeatmapComponent {
           xgap: 1,
           ygap: 1,
           colorbar: {
-            title: 'Log2 FC',
-            lenmode: 'pixels',
-            len: 300,
+            title: '',
+            orientation: 'h',
+            lenmode: 'fraction',
+            len: 0.5,
             thicknessmode: 'pixels',
-            thickness: 20,
-            yanchor: 'top',
-            y: 1,
-            xpad: 40
+            thickness: 15,
+            xanchor: 'center',
+            x: 0.5,
+            yanchor: 'bottom',
+            y: 1.12,
+            tickvals: [-maxAbs, 0, maxAbs],
+            ticktext: [(-maxAbs).toFixed(1), '0', maxAbs.toFixed(1)]
           }
         }
       ],
       layout: {
-        title: 'Heatmap - Log2 FC',
-        margin: { l: 200, b: 100, t: 400, r: 100 },
-        xaxis: { 
-          tickangle: 90, 
+        title: '',
+        margin: { l: 300, b: 50, t: 280, r: 100 },
+        xaxis: {
+          tickangle: 90,
           side: 'top',
           fixedrange: false,
           zeroline: false,
           showgrid: false,
           constrain: 'domain'
         },
-        yaxis: { 
+        yaxis: {
           autorange: 'reversed',
           fixedrange: false,
-          scaleanchor: 'x',
-          scaleratio: 1,
           zeroline: false,
           showgrid: false,
           constrain: 'domain'
         },
+        annotations: [
+          {
+            x: 0.25,
+            y: 1.18,
+            xref: 'paper',
+            yref: 'paper',
+            text: 'Decrease activity',
+            showarrow: false,
+            font: { size: 11, color: 'rgb(5, 48, 97)' }
+          },
+          {
+            x: 0.75,
+            y: 1.18,
+            xref: 'paper',
+            yref: 'paper',
+            text: 'Increase activity',
+            showarrow: false,
+            font: { size: 11, color: 'rgb(103, 0, 31)' }
+          }
+        ],
         plot_bgcolor: '#ccc',
         paper_bgcolor: 'white',
-        height: Math.max(800, genes.length * 25 + 450)
+        width: width,
+        height: height
       }
     };
   });

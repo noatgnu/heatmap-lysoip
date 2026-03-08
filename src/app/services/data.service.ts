@@ -22,8 +22,8 @@ export class DataService {
   isLoading = signal(false);
 
   private readonly fileNames: Record<DatasetType, string> = {
-    lysoip: 'zzz-FinalDestination_LysoIP_summary_FORMATTED_ForFiltering_20240708.txt',
-    wcl: 'zzz-FinalDestination_WCL_summary_FORMATTED_Forfiltering_20240708.txt'
+    lysoip: 'zzz-FinalDestination_LysoIP_summary_FORMATTED_ForFiltering_20240708_renamed.txt',
+    wcl: 'zzz-FinalDestination_WCL_summary_FORMATTED_Forfiltering_20240708_renamed.txt'
   };
 
   /**
@@ -84,13 +84,20 @@ export class DataService {
       if (!projectId && !fullProjectName) continue;
 
       let date = '';
-      const dateMatch = fullProjectName.match(/^\d{8}[_0-9]*/);
-      if (dateMatch) {
-        date = dateMatch[0].replace(/_$/, '');
+      let projectName = fullProjectName.replace(/\n/g, ' ');
+
+      const dateAtEndMatch = projectName.match(/\(Date\s*(\d{8})\)/i);
+      if (dateAtEndMatch) {
+        date = dateAtEndMatch[1];
+        projectName = projectName.replace(/\s*\(Date\s*\d{8}\)/i, '').trim();
+      } else {
+        const dateAtStartMatch = projectName.match(/^(\d{8})[_0-9]*/);
+        if (dateAtStartMatch) {
+          date = dateAtStartMatch[1];
+          projectName = projectName.replace(/^\d{8}[_0-9]*\s*/, '');
+        }
       }
 
-      let projectName = fullProjectName.replace(/^\d{8}[_0-9]*\s*/, '');
-      projectName = projectName.replace(/\n/g, ' ');
       projectName = projectName.replace(/\s*\([^)]*\+[^)]*\)/g, '').trim();
 
       let organ = 'Other';

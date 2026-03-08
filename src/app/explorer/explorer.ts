@@ -302,6 +302,14 @@ export class ExplorerComponent implements OnInit {
     });
   });
 
+  gbaProjects = computed(() =>
+    this.filteredProjects().filter(p => p.projectName.toUpperCase().includes('GBA'))
+  );
+
+  nonGbaProjects = computed(() =>
+    this.filteredProjects().filter(p => !p.projectName.toUpperCase().includes('GBA'))
+  );
+
   toggleFilter(type: 'organ' | 'protein' | 'mutation' | 'knockout' | 'treatment' | 'fraction', value: string) {
     const map = {
       organ: this.selectedOrgans,
@@ -331,8 +339,10 @@ export class ExplorerComponent implements OnInit {
 
   isDefaultFlip(p: ProjectMetadata): boolean {
     const name = p.projectName.toLowerCase();
-    const isMli2 = name.includes('dmso-mli2') || name.includes('mli2-dmso');
-    const isKo = name.includes('ko-wt') || name.includes('wt-ko');
+    const isMli2 = name.includes('dmso vs mli2') || name.includes('mli2 vs dmso') ||
+                   name.includes('dmso-mli2') || name.includes('mli2-dmso');
+    const isKo = name.includes('ko vs wt') || name.includes('wt vs ko') ||
+                 name.includes('ko-wt') || name.includes('wt-ko');
     return isMli2 || isKo;
   }
 
