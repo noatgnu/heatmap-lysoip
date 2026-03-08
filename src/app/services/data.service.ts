@@ -84,21 +84,17 @@ export class DataService {
       if (!projectId && !fullProjectName) continue;
 
       let date = '';
-      let projectName = fullProjectName.replace(/\n/g, ' ');
+      let projectName = fullProjectName.replace(/\n/g, ' ').trim();
 
       const dateAtEndMatch = projectName.match(/\(Date\s*(\d{8})\)/i);
       if (dateAtEndMatch) {
         date = dateAtEndMatch[1];
-        projectName = projectName.replace(/\s*\(Date\s*\d{8}\)/i, '').trim();
       } else {
-        const dateAtStartMatch = projectName.match(/^(\d{8})[_0-9]*/);
+        const dateAtStartMatch = projectName.match(/^(\d{8})/);
         if (dateAtStartMatch) {
           date = dateAtStartMatch[1];
-          projectName = projectName.replace(/^\d{8}[_0-9]*\s*/, '');
         }
       }
-
-      projectName = projectName.replace(/\s*\([^)]*\+[^)]*\)/g, '').trim();
 
       let organ = 'Other';
       if (projectName.toLowerCase().includes('brain')) organ = 'Brain';
