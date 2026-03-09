@@ -93,9 +93,16 @@ export class HeatmapComponent {
 
     const maxProjectNameLength = Math.max(...y.map(name => name.length));
     const leftMargin = Math.max(300, maxProjectNameLength * 6 + 20);
+    const topMargin = 200;
+    const bottomMargin = 100;
+    const rightMargin = 50;
 
-    const width = Math.max(800, genes.length * 25 + leftMargin + 50);
-    const height = Math.max(400, projs.length * 25 + 200);
+    const cellSize = 25;
+    const plotWidth = genes.length * cellSize;
+    const plotHeight = projs.length * cellSize;
+
+    const width = Math.max(800, plotWidth + leftMargin + rightMargin);
+    const height = Math.max(400, plotHeight + topMargin + bottomMargin);
 
     return {
       data: [
@@ -136,21 +143,19 @@ export class HeatmapComponent {
       ],
       layout: {
         title: '',
-        margin: { l: leftMargin, b: 100, t: 200, r: 50 },
+        margin: { l: leftMargin, b: bottomMargin, t: topMargin, r: rightMargin },
         xaxis: {
           tickangle: 90,
           side: 'top',
           fixedrange: false,
           zeroline: false,
-          showgrid: false,
-          constrain: 'domain'
+          showgrid: false
         },
         yaxis: {
           autorange: 'reversed',
           fixedrange: false,
           zeroline: false,
-          showgrid: false,
-          constrain: 'domain'
+          showgrid: false
         },
         annotations: [
           {
