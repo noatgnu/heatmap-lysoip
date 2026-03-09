@@ -107,7 +107,7 @@ export class HeatmapComponent {
     const maxProjectNameLength = Math.max(...y.map(name => name.length));
     const leftMargin = Math.max(400, maxProjectNameLength * 9 + 80);
     const topMargin = 200;
-    const bottomMargin = 140;
+    const bottomMargin = 160;
     const rightMargin = 50;
 
     const cellSize = 25;
@@ -173,7 +173,7 @@ export class HeatmapComponent {
         annotations: [
           {
             x: 0.25,
-            y: -0.18,
+            y: -0.22,
             xref: 'paper',
             yref: 'paper',
             text: 'Decrease activity',
@@ -182,7 +182,7 @@ export class HeatmapComponent {
           },
           {
             x: 0.75,
-            y: -0.18,
+            y: -0.22,
             xref: 'paper',
             yref: 'paper',
             text: 'Increase activity',
