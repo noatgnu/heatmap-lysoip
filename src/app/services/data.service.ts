@@ -87,6 +87,7 @@ export class DataService {
 
       let date = '';
       let projectName = fullProjectName.replace(/\n/g, ' ').trim();
+      projectName = projectName.replace(/ko vs wt/gi, 'WT vs KO');
 
       const dateAtEndMatch = projectName.match(/\(Date\s*(\d{8})\)/i);
       if (dateAtEndMatch) {
