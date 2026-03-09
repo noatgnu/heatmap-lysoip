@@ -161,6 +161,57 @@ export class ComparisonComponent {
     this.wclProjects().filter(p => p.projectName.toUpperCase().includes('GBA'))
   );
 
+  lysoipLrrk2Summary = computed(() =>
+    this.calculateSummary(this.displayedLysoipGenes(), this.lysoipLrrk2Projects(), this.lysoipProjects())
+  );
+  lysoipGbaSummary = computed(() =>
+    this.calculateSummary(this.displayedLysoipGenes(), this.lysoipGbaProjects(), this.lysoipProjects())
+  );
+  wclLrrk2Summary = computed(() =>
+    this.calculateSummary(this.displayedWclGenes(), this.wclLrrk2Projects(), this.wclProjects())
+  );
+  wclGbaSummary = computed(() =>
+    this.calculateSummary(this.displayedWclGenes(), this.wclGbaProjects(), this.wclProjects())
+  );
+  lysoipOnlySummary = computed(() =>
+    this.calculateSummary(this.displayedLysoipOnlyGenes(), this.lysoipProjects(), this.lysoipProjects())
+  );
+  wclOnlySummary = computed(() =>
+    this.calculateSummary(this.displayedWclOnlyGenes(), this.wclProjects(), this.wclProjects())
+  );
+
+  private calculateSummary(
+    genes: GeneData[],
+    projects: ProjectMetadata[],
+    allProjects: ProjectMetadata[]
+  ): { increase: number; decrease: number; total: number } {
+    const log2fcCut = this.log2fcCutoff();
+    const confCut = this.confidenceCutoff();
+    const projIndices = new Set(projects.map(p => allProjects.indexOf(p)));
+
+    let increase = 0;
+    let decrease = 0;
+    let total = 0;
+
+    genes.forEach(g => {
+      g.log2fcs.forEach((val, idx) => {
+        if (!projIndices.has(idx) || val === null) return;
+
+        const conf = g.confidences[idx];
+        const passesConf = confCut === null || confCut <= 0 || (conf !== null && conf >= confCut);
+        const passesLog2fc = log2fcCut === null || log2fcCut <= 0 || Math.abs(val) >= log2fcCut;
+
+        if (passesConf && passesLog2fc) {
+          total++;
+          if (val > 0) increase++;
+          else if (val < 0) decrease++;
+        }
+      });
+    });
+
+    return { increase, decrease, total };
+  }
+
   searchResults = computed(() => {
     const term = this.searchTerm().toLowerCase().trim();
     if (term.length < 2) return [];

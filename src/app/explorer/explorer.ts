@@ -337,6 +337,39 @@ export class ExplorerComponent implements OnInit {
     this.filteredProjects().filter(p => !p.projectName.toUpperCase().includes('GBA'))
   );
 
+  lrrk2Summary = computed(() => this.calculateHeatmapSummary(this.nonGbaProjects()));
+  gbaSummary = computed(() => this.calculateHeatmapSummary(this.gbaProjects()));
+
+  private calculateHeatmapSummary(projects: ProjectMetadata[]): { increase: number; decrease: number; total: number } {
+    const genes = this.displayedGenes();
+    const allProjs = this.projects();
+    const log2fcCut = this.log2fcCutoff();
+    const confCut = this.confidenceCutoff();
+    const projIndices = new Set(projects.map(p => allProjs.indexOf(p)));
+
+    let increase = 0;
+    let decrease = 0;
+    let total = 0;
+
+    genes.forEach(g => {
+      g.log2fcs.forEach((val, idx) => {
+        if (!projIndices.has(idx) || val === null) return;
+
+        const conf = g.confidences[idx];
+        const passesConf = confCut === null || confCut <= 0 || (conf !== null && conf >= confCut);
+        const passesLog2fc = log2fcCut === null || log2fcCut <= 0 || Math.abs(val) >= log2fcCut;
+
+        if (passesConf && passesLog2fc) {
+          total++;
+          if (val > 0) increase++;
+          else if (val < 0) decrease++;
+        }
+      });
+    });
+
+    return { increase, decrease, total };
+  }
+
   toggleFilter(type: 'organ' | 'protein' | 'mutation' | 'knockout' | 'treatment' | 'fraction', value: string) {
     const map = {
       organ: this.selectedOrgans,
