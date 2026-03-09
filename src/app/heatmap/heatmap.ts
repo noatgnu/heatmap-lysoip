@@ -91,7 +91,10 @@ export class HeatmapComponent {
 
     if (maxAbs === 0) maxAbs = 1;
 
-    const width = Math.max(800, genes.length * 25 + 350);
+    const maxProjectNameLength = Math.max(...y.map(name => name.length));
+    const leftMargin = Math.max(300, maxProjectNameLength * 6 + 20);
+
+    const width = Math.max(800, genes.length * 25 + leftMargin + 50);
     const height = Math.max(400, projs.length * 25 + 200);
 
     return {
@@ -133,7 +136,7 @@ export class HeatmapComponent {
       ],
       layout: {
         title: '',
-        margin: { l: 300, b: 100, t: 200, r: 50 },
+        margin: { l: leftMargin, b: 100, t: 200, r: 50 },
         xaxis: {
           tickangle: 90,
           side: 'top',
