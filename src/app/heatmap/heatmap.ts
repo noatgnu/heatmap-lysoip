@@ -107,7 +107,7 @@ export class HeatmapComponent {
     const maxProjectNameLength = Math.max(...y.map(name => name.length));
     const leftMargin = Math.max(400, maxProjectNameLength * 9 + 80);
     const topMargin = 200;
-    const bottomMargin = 150;
+    const bottomMargin = 120;
     const rightMargin = 50;
 
     const cellSize = 25;
@@ -147,7 +147,7 @@ export class HeatmapComponent {
             xanchor: 'center',
             x: 0.5,
             yanchor: 'top',
-            y: -0.14,
+            y: -0.10,
             tickvals: [-maxAbs, 0, maxAbs],
             ticktext: [(-maxAbs).toFixed(1), '0', maxAbs.toFixed(1)],
             tickfont: { size: 9 }
@@ -173,7 +173,7 @@ export class HeatmapComponent {
         annotations: [
           {
             x: 0.25,
-            y: -0.18,
+            y: -0.14,
             xref: 'paper',
             yref: 'paper',
             text: 'Decrease activity',
@@ -182,7 +182,7 @@ export class HeatmapComponent {
           },
           {
             x: 0.75,
-            y: -0.18,
+            y: -0.14,
             xref: 'paper',
             yref: 'paper',
             text: 'Increase activity',
@@ -192,10 +192,9 @@ export class HeatmapComponent {
           ...perGeneSummary.flatMap((s, i) => [
             {
               x: x[i],
-              y: projs.length - 0.5,
-              yshift: 18,
+              y: -0.02,
               xref: 'x',
-              yref: 'y',
+              yref: 'paper',
               text: `↑${s.increase}`,
               showarrow: false,
               font: { size: 9, color: 'rgb(103, 0, 31)' },
@@ -203,10 +202,9 @@ export class HeatmapComponent {
             },
             {
               x: x[i],
-              y: projs.length - 0.5,
-              yshift: 32,
+              y: -0.05,
               xref: 'x',
-              yref: 'y',
+              yref: 'paper',
               text: `↓${s.decrease}`,
               showarrow: false,
               font: { size: 9, color: 'rgb(5, 48, 97)' },
