@@ -49,7 +49,8 @@ export class ExplorerComponent implements OnInit {
   flippedProjectIds = signal<Set<string>>(new Set());
   log2fcCutoff = signal<number | null>(null);
   confidenceCutoff = signal<number | null>(null);
-  
+  geneSortOrder = signal<'none' | 'increase' | 'decrease'>('none');
+
   sortStack = signal<SortCriterion[]>(['organ', 'protein', 'mutation', 'knockout', 'treatment']);
 
   showPresetInput = signal(false);
@@ -212,9 +213,10 @@ export class ExplorerComponent implements OnInit {
     const allProjs = this.projects();
     const log2fcCut = this.log2fcCutoff();
     const confCut = this.confidenceCutoff();
+    const sortOrder = this.geneSortOrder();
     const filteredProjIndices = new Set(this.filteredProjects().map(p => allProjs.indexOf(p)));
 
-    return this.allGenes()
+    const genes = this.allGenes()
       .filter((g: GeneData) => selected.has(g.uniprotId))
       .map(g => {
         const log2fcs = g.log2fcs.map((val, idx) => {
@@ -240,7 +242,38 @@ export class ExplorerComponent implements OnInit {
           return passesLog2fc && passesConf;
         });
       });
+
+    if (sortOrder === 'none') return genes;
+
+    return [...genes].sort((a, b) => {
+      const countA = this.countDirectionForGene(a, filteredProjIndices, log2fcCut, confCut, sortOrder);
+      const countB = this.countDirectionForGene(b, filteredProjIndices, log2fcCut, confCut, sortOrder);
+      return countB - countA;
+    });
   });
+
+  private countDirectionForGene(
+    gene: GeneData,
+    projIndices: Set<number>,
+    log2fcCut: number | null,
+    confCut: number | null,
+    direction: 'increase' | 'decrease'
+  ): number {
+    let count = 0;
+    gene.log2fcs.forEach((val, idx) => {
+      if (!projIndices.has(idx) || val === null) return;
+
+      const conf = gene.confidences[idx];
+      const passesConf = confCut === null || confCut <= 0 || (conf !== null && conf >= confCut);
+      const passesLog2fc = log2fcCut === null || log2fcCut <= 0 || Math.abs(val) >= log2fcCut;
+
+      if (passesConf && passesLog2fc) {
+        if (direction === 'increase' && val > 0) count++;
+        else if (direction === 'decrease' && val < 0) count++;
+      }
+    });
+    return count;
+  }
 
   filteredProjects = computed(() => {
     const projs = this.projects();
@@ -451,6 +484,7 @@ export class ExplorerComponent implements OnInit {
     this.selectedFractions.set(new Set());
     this.log2fcCutoff.set(null);
     this.confidenceCutoff.set(null);
+    this.geneSortOrder.set('none');
 
     const idsToFlip = new Set<string>();
     this.projects().forEach(p => {
@@ -667,6 +701,10 @@ export class ExplorerComponent implements OnInit {
 
   clearConfidenceCutoff() {
     this.confidenceCutoff.set(null);
+  }
+
+  setGeneSortOrder(order: 'none' | 'increase' | 'decrease') {
+    this.geneSortOrder.set(order);
   }
 
 }

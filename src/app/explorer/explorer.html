@@ -361,9 +361,23 @@
         <div class="flex flex-col gap-3">
           <div class="flex justify-between items-center">
             <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Selected Proteins ({{ displayedGenes().length }})</span>
-            @if (displayedGenes().length > 0) {
-              <button (click)="clearAllProteins()" class="text-xs font-medium text-red-600 hover:text-red-800 transition-colors">Clear All</button>
-            }
+            <div class="flex items-center gap-3">
+              <div class="flex items-center gap-2">
+                <label class="text-xs text-gray-500">Sort by:</label>
+                <select
+                  class="text-xs border border-gray-300 rounded px-2 py-1 bg-white focus:ring-indigo-500 focus:border-indigo-500"
+                  [value]="geneSortOrder()"
+                  (change)="setGeneSortOrder($any($event.target).value)"
+                >
+                  <option value="none">Default</option>
+                  <option value="increase">Most Increased</option>
+                  <option value="decrease">Most Decreased</option>
+                </select>
+              </div>
+              @if (displayedGenes().length > 0) {
+                <button (click)="clearAllProteins()" class="text-xs font-medium text-red-600 hover:text-red-800 transition-colors">Clear All</button>
+              }
+            </div>
           </div>
           @if (displayedGenes().length === 0) {
             <div class="min-h-[32px] flex items-center">

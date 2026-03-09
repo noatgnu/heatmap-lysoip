@@ -33,6 +33,7 @@ export class ComparisonComponent {
   selectedWclOnlyIds = signal<Set<string>>(new Set());
   log2fcCutoff = signal<number | null>(null);
   confidenceCutoff = signal<number | null>(null);
+  geneSortOrder = signal<'none' | 'increase' | 'decrease'>('none');
 
   private defaultGenes = [
     'TMEM175', 'OGA', 'NOD2', 'USP30', 'STING1', 'ATP13A2', 'MCOLN1', 'TLR2', 'GPNMB',
@@ -99,33 +100,80 @@ export class ComparisonComponent {
     const data = this.lysoipData();
     if (!data) return [];
     const selected = this.selectedGeneIds();
-    return data.genes
+    const sortOrder = this.geneSortOrder();
+    const genes = data.genes
       .filter(g => selected.has(g.uniprotId))
       .filter(g => this.passesCutoffs(g));
+    return this.sortGenes(genes, data.projects, sortOrder);
   });
 
   displayedWclGenes = computed(() => {
     const data = this.wclData();
     if (!data) return [];
     const selected = this.selectedGeneIds();
-    return data.genes
+    const sortOrder = this.geneSortOrder();
+    const genes = data.genes
       .filter(g => selected.has(g.uniprotId))
       .filter(g => this.passesCutoffs(g));
+    return this.sortGenes(genes, data.projects, sortOrder);
   });
 
   displayedLysoipOnlyGenes = computed(() => {
+    const data = this.lysoipData();
+    if (!data) return [];
     const selected = this.selectedLysoipOnlyIds();
-    return this.lysoipOnlyGenes()
+    const sortOrder = this.geneSortOrder();
+    const genes = this.lysoipOnlyGenes()
       .filter(g => selected.has(g.uniprotId))
       .filter(g => this.passesCutoffs(g));
+    return this.sortGenes(genes, data.projects, sortOrder);
   });
 
   displayedWclOnlyGenes = computed(() => {
+    const data = this.wclData();
+    if (!data) return [];
     const selected = this.selectedWclOnlyIds();
-    return this.wclOnlyGenes()
+    const sortOrder = this.geneSortOrder();
+    const genes = this.wclOnlyGenes()
       .filter(g => selected.has(g.uniprotId))
       .filter(g => this.passesCutoffs(g));
+    return this.sortGenes(genes, data.projects, sortOrder);
   });
+
+  private sortGenes(
+    genes: GeneData[],
+    projects: ProjectMetadata[],
+    sortOrder: 'none' | 'increase' | 'decrease'
+  ): GeneData[] {
+    if (sortOrder === 'none') return genes;
+    const projIndices = new Set(projects.map((_, idx) => idx));
+    return [...genes].sort((a, b) => {
+      const countA = this.countDirectionForGene(a, projIndices, sortOrder);
+      const countB = this.countDirectionForGene(b, projIndices, sortOrder);
+      return countB - countA;
+    });
+  }
+
+  private countDirectionForGene(
+    gene: GeneData,
+    projIndices: Set<number>,
+    direction: 'increase' | 'decrease'
+  ): number {
+    const log2fcCut = this.log2fcCutoff();
+    const confCut = this.confidenceCutoff();
+    let count = 0;
+    gene.log2fcs.forEach((val, idx) => {
+      if (!projIndices.has(idx) || val === null) return;
+      const conf = gene.confidences[idx];
+      const passesConf = confCut === null || confCut <= 0 || (conf !== null && conf >= confCut);
+      const passesLog2fc = log2fcCut === null || log2fcCut <= 0 || Math.abs(val) >= log2fcCut;
+      if (passesConf && passesLog2fc) {
+        if (direction === 'increase' && val > 0) count++;
+        else if (direction === 'decrease' && val < 0) count++;
+      }
+    });
+    return count;
+  }
 
   private passesCutoffs(gene: GeneData): boolean {
     const log2fcCut = this.log2fcCutoff();
@@ -323,5 +371,9 @@ export class ComparisonComponent {
 
   clearConfidenceCutoff() {
     this.confidenceCutoff.set(null);
+  }
+
+  setGeneSortOrder(order: 'none' | 'increase' | 'decrease') {
+    this.geneSortOrder.set(order);
   }
 }
