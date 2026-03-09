@@ -8,8 +8,8 @@ describe('ExportService', () => {
   let service: ExportService;
 
   const mockGenes: GeneData[] = [
-    { uniprotId: 'P12345', gene: 'TP53', log2fcs: [1.5, -0.8, null], searchString: 'p12345 tp53' },
-    { uniprotId: 'Q67890', gene: 'BRCA1', log2fcs: [2.1, 0.5, 1.2], searchString: 'q67890 brca1' }
+    { uniprotId: 'P12345', gene: 'TP53', log2fcs: [1.5, -0.8, null], confidences: [0.8, 0.5, null], searchString: 'p12345 tp53' },
+    { uniprotId: 'Q67890', gene: 'BRCA1', log2fcs: [2.1, 0.5, 1.2], confidences: [0.9, 0.7, 0.6], searchString: 'q67890 brca1' }
   ];
 
   const mockProjects: ProjectMetadata[] = [

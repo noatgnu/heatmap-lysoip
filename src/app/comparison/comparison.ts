@@ -31,6 +31,8 @@ export class ComparisonComponent {
 
   wclOnlySearchTerm = signal('');
   selectedWclOnlyIds = signal<Set<string>>(new Set());
+  log2fcCutoff = signal<number | null>(null);
+  confidenceCutoff = signal<number | null>(null);
 
   private defaultGenes = [
     'TMEM175', 'OGA', 'NOD2', 'USP30', 'STING1', 'ATP13A2', 'MCOLN1', 'TLR2', 'GPNMB',
@@ -97,28 +99,67 @@ export class ComparisonComponent {
     const data = this.lysoipData();
     if (!data) return [];
     const selected = this.selectedGeneIds();
-    return data.genes.filter(g => selected.has(g.uniprotId));
+    return data.genes
+      .filter(g => selected.has(g.uniprotId))
+      .filter(g => this.passesCutoffs(g));
   });
 
   displayedWclGenes = computed(() => {
     const data = this.wclData();
     if (!data) return [];
     const selected = this.selectedGeneIds();
-    return data.genes.filter(g => selected.has(g.uniprotId));
+    return data.genes
+      .filter(g => selected.has(g.uniprotId))
+      .filter(g => this.passesCutoffs(g));
   });
 
   displayedLysoipOnlyGenes = computed(() => {
     const selected = this.selectedLysoipOnlyIds();
-    return this.lysoipOnlyGenes().filter(g => selected.has(g.uniprotId));
+    return this.lysoipOnlyGenes()
+      .filter(g => selected.has(g.uniprotId))
+      .filter(g => this.passesCutoffs(g));
   });
 
   displayedWclOnlyGenes = computed(() => {
     const selected = this.selectedWclOnlyIds();
-    return this.wclOnlyGenes().filter(g => selected.has(g.uniprotId));
+    return this.wclOnlyGenes()
+      .filter(g => selected.has(g.uniprotId))
+      .filter(g => this.passesCutoffs(g));
   });
+
+  private passesCutoffs(gene: GeneData): boolean {
+    const log2fcCut = this.log2fcCutoff();
+    const confCut = this.confidenceCutoff();
+    const hasLog2fcCutoff = log2fcCut !== null && log2fcCut > 0;
+    const hasConfCutoff = confCut !== null && confCut > 0;
+
+    if (!hasLog2fcCutoff && !hasConfCutoff) return true;
+
+    return gene.log2fcs.some((val, idx) => {
+      if (val === null) return false;
+      const passesLog2fc = !hasLog2fcCutoff || Math.abs(val) >= log2fcCut!;
+      const conf = gene.confidences[idx];
+      const passesConf = !hasConfCutoff || (conf !== null && conf >= confCut!);
+      return passesLog2fc && passesConf;
+    });
+  }
 
   lysoipProjects = computed(() => this.lysoipData()?.projects ?? []);
   wclProjects = computed(() => this.wclData()?.projects ?? []);
+
+  lysoipLrrk2Projects = computed(() =>
+    this.lysoipProjects().filter(p => !p.projectName.toUpperCase().includes('GBA'))
+  );
+  lysoipGbaProjects = computed(() =>
+    this.lysoipProjects().filter(p => p.projectName.toUpperCase().includes('GBA'))
+  );
+
+  wclLrrk2Projects = computed(() =>
+    this.wclProjects().filter(p => !p.projectName.toUpperCase().includes('GBA'))
+  );
+  wclGbaProjects = computed(() =>
+    this.wclProjects().filter(p => p.projectName.toUpperCase().includes('GBA'))
+  );
 
   searchResults = computed(() => {
     const term = this.searchTerm().toLowerCase().trim();
@@ -205,5 +246,31 @@ export class ComparisonComponent {
 
   clearWclOnlyGenes() {
     this.selectedWclOnlyIds.set(new Set());
+  }
+
+  setLog2fcCutoff(value: string) {
+    const num = parseFloat(value);
+    if (isNaN(num) || num <= 0) {
+      this.log2fcCutoff.set(null);
+    } else {
+      this.log2fcCutoff.set(num);
+    }
+  }
+
+  clearLog2fcCutoff() {
+    this.log2fcCutoff.set(null);
+  }
+
+  setConfidenceCutoff(value: string) {
+    const num = parseFloat(value);
+    if (isNaN(num) || num <= 0) {
+      this.confidenceCutoff.set(null);
+    } else {
+      this.confidenceCutoff.set(num);
+    }
+  }
+
+  clearConfidenceCutoff() {
+    this.confidenceCutoff.set(null);
   }
 }

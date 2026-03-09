@@ -120,13 +120,14 @@ export class HeatmapComponent {
             lenmode: 'fraction',
             len: 0.5,
             thicknessmode: 'pixels',
-            thickness: 15,
+            thickness: 12,
             xanchor: 'center',
             x: 0.5,
             yanchor: 'top',
-            y: -0.15,
+            y: -0.12,
             tickvals: [-maxAbs, 0, maxAbs],
-            ticktext: [(-maxAbs).toFixed(1), '0', maxAbs.toFixed(1)]
+            ticktext: [(-maxAbs).toFixed(1), '0', maxAbs.toFixed(1)],
+            tickfont: { size: 9 }
           }
         }
       ],
@@ -151,21 +152,21 @@ export class HeatmapComponent {
         annotations: [
           {
             x: 0.25,
-            y: -0.22,
+            y: -0.08,
             xref: 'paper',
             yref: 'paper',
             text: 'Decrease activity',
             showarrow: false,
-            font: { size: 11, color: 'rgb(5, 48, 97)' }
+            font: { size: 10, color: 'rgb(5, 48, 97)' }
           },
           {
             x: 0.75,
-            y: -0.22,
+            y: -0.08,
             xref: 'paper',
             yref: 'paper',
             text: 'Increase activity',
             showarrow: false,
-            font: { size: 11, color: 'rgb(103, 0, 31)' }
+            font: { size: 10, color: 'rgb(103, 0, 31)' }
           }
         ],
         plot_bgcolor: '#ccc',

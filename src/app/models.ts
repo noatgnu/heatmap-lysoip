@@ -15,5 +15,6 @@ export interface GeneData {
   uniprotId: string;
   gene: string;
   log2fcs: (number | null)[];
+  confidences: (number | null)[];
   searchString: string;
 }

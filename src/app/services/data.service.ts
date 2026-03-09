@@ -77,8 +77,10 @@ export class DataService {
     const row1 = rows[0];
     const row2 = rows[1];
 
+    const stride = this.detectColumnStride(row1);
+
     const projects: ProjectMetadata[] = [];
-    for (let i = 6; i < row1.length; i += 3) {
+    for (let i = 6; i < row1.length; i += stride) {
       const projectId = row1[i];
       let fullProjectName = (row2[i] || '').trim();
       if (!projectId && !fullProjectName) continue;
@@ -155,15 +157,37 @@ export class DataService {
         return isNaN(val) ? null : val;
       });
 
+      const confidences = projects.map((p: ProjectMetadata) => {
+        const valStr = r[p.log2fcIndex - 1];
+        const val = parseFloat(valStr);
+        return isNaN(val) ? null : val;
+      });
+
       genes.push({
         uniprotId,
         gene,
         log2fcs,
+        confidences,
         searchString: `${uniprotId} ${gene}`.toLowerCase()
       });
     }
 
     return { projects, genes };
+  }
+
+  /**
+   * Detects the column stride between projects (2 or 3 columns per project).
+   * LysoIP has 3 columns per project (Conf, Log2FC, IP enrich).
+   * WCL has 2 columns per project (Conf, Log2FC).
+   */
+  private detectColumnStride(projectIdRow: string[]): number {
+    if (projectIdRow.length > 8) {
+      const col8 = (projectIdRow[8] || '').trim();
+      if (col8 && /^\d/.test(col8)) {
+        return 2;
+      }
+    }
+    return 3;
   }
 
   /**

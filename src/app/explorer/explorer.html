@@ -188,6 +188,74 @@
       </div>
     </app-collapsible-section>
 
+    <app-collapsible-section title="Value Cutoffs" [defaultOpen]="false">
+      <div class="p-2 bg-gray-50 border rounded space-y-3">
+        <p class="text-xs text-gray-500 italic">Show genes meeting cutoffs in at least one experiment.</p>
+
+        <div>
+          <label class="text-xs font-medium text-gray-600 mb-1 block">|Log2FC| ≥</label>
+          <div class="flex items-center gap-2">
+            <input
+              type="number"
+              step="0.1"
+              min="0"
+              placeholder="e.g. 0.5"
+              [value]="log2fcCutoff() ?? ''"
+              (input)="setLog2fcCutoff($any($event.target).value)"
+              class="flex-1 px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-indigo-500 focus:border-indigo-500"
+            />
+            @if (log2fcCutoff() !== null) {
+              <button
+                (click)="clearLog2fcCutoff()"
+                class="px-2 py-1.5 text-xs bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+              >
+                Clear
+              </button>
+            }
+          </div>
+        </div>
+
+        <div>
+          <label class="text-xs font-medium text-gray-600 mb-1 block">Confidence ≥</label>
+          <div class="flex items-center gap-2">
+            <input
+              type="number"
+              step="0.1"
+              min="0"
+              max="1"
+              placeholder="e.g. 0.5"
+              [value]="confidenceCutoff() ?? ''"
+              (input)="setConfidenceCutoff($any($event.target).value)"
+              class="flex-1 px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-indigo-500 focus:border-indigo-500"
+            />
+            @if (confidenceCutoff() !== null) {
+              <button
+                (click)="clearConfidenceCutoff()"
+                class="px-2 py-1.5 text-xs bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+              >
+                Clear
+              </button>
+            }
+          </div>
+        </div>
+
+        @if ((log2fcCutoff() !== null && log2fcCutoff()! > 0) || (confidenceCutoff() !== null && confidenceCutoff()! > 0)) {
+          <div class="text-xs text-indigo-600 pt-1 border-t border-gray-200">
+            Active:
+            @if (log2fcCutoff() !== null && log2fcCutoff()! > 0) {
+              <span>|Log2FC| ≥ {{ log2fcCutoff() }}</span>
+            }
+            @if (log2fcCutoff() !== null && log2fcCutoff()! > 0 && confidenceCutoff() !== null && confidenceCutoff()! > 0) {
+              <span> AND </span>
+            }
+            @if (confidenceCutoff() !== null && confidenceCutoff()! > 0) {
+              <span>Conf ≥ {{ confidenceCutoff() }}</span>
+            }
+          </div>
+        }
+      </div>
+    </app-collapsible-section>
+
   </div>
 
   <div class="flex-1 flex flex-col gap-6 min-w-0">

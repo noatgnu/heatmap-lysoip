@@ -47,6 +47,8 @@ export class ExplorerComponent implements OnInit {
   selectedTreatments = signal<Set<string>>(new Set());
   selectedFractions = signal<Set<string>>(new Set());
   flippedProjectIds = signal<Set<string>>(new Set());
+  log2fcCutoff = signal<number | null>(null);
+  confidenceCutoff = signal<number | null>(null);
   
   sortStack = signal<SortCriterion[]>(['organ', 'protein', 'mutation', 'knockout', 'treatment']);
 
@@ -75,10 +77,14 @@ export class ExplorerComponent implements OnInit {
       this.selectedTreatments.set(new Set());
       this.selectedFractions.set(new Set());
       this.flippedProjectIds.set(new Set());
+      this.log2fcCutoff.set(null);
+      this.confidenceCutoff.set(null);
       this.loadData(ds);
     });
 
     effect(() => {
+      const log2fcCut = this.log2fcCutoff();
+      const confCut = this.confidenceCutoff();
       const queryParams = {
         genes: Array.from(this.selectedGeneIds()).join(',') || null,
         organs: Array.from(this.selectedOrgans()).join(',') || null,
@@ -88,7 +94,9 @@ export class ExplorerComponent implements OnInit {
         treatments: Array.from(this.selectedTreatments()).join(',') || null,
         fractions: Array.from(this.selectedFractions()).join(',') || null,
         flipped: Array.from(this.flippedProjectIds()).join(',') || null,
-        sort: this.sortStack().join(',')
+        sort: this.sortStack().join(','),
+        cutoff: log2fcCut !== null && log2fcCut > 0 ? log2fcCut.toString() : null,
+        conf: confCut !== null && confCut > 0 ? confCut.toString() : null
       };
       this.router.navigate([this.currentDataset()], {
         queryParams,
@@ -202,6 +210,9 @@ export class ExplorerComponent implements OnInit {
     const selected = this.selectedGeneIds();
     const flipped = this.flippedProjectIds();
     const allProjs = this.projects();
+    const log2fcCut = this.log2fcCutoff();
+    const confCut = this.confidenceCutoff();
+    const filteredProjIndices = new Set(this.filteredProjects().map(p => allProjs.indexOf(p)));
 
     return this.allGenes()
       .filter((g: GeneData) => selected.has(g.uniprotId))
@@ -212,6 +223,22 @@ export class ExplorerComponent implements OnInit {
           return flipped.has(projId) ? val * -1 : val;
         });
         return { ...g, log2fcs };
+      })
+      .filter(g => {
+        const hasLog2fcCutoff = log2fcCut !== null && log2fcCut > 0;
+        const hasConfCutoff = confCut !== null && confCut > 0;
+        if (!hasLog2fcCutoff && !hasConfCutoff) return true;
+
+        return g.log2fcs.some((val, idx) => {
+          if (!filteredProjIndices.has(idx)) return false;
+          if (val === null) return false;
+
+          const passesLog2fc = !hasLog2fcCutoff || Math.abs(val) >= log2fcCut!;
+          const conf = g.confidences[idx];
+          const passesConf = !hasConfCutoff || (conf !== null && conf >= confCut!);
+
+          return passesLog2fc && passesConf;
+        });
       });
   });
 
@@ -389,7 +416,9 @@ export class ExplorerComponent implements OnInit {
     this.selectedKnockouts.set(new Set());
     this.selectedTreatments.set(new Set());
     this.selectedFractions.set(new Set());
-    
+    this.log2fcCutoff.set(null);
+    this.confidenceCutoff.set(null);
+
     const idsToFlip = new Set<string>();
     this.projects().forEach(p => {
       if (this.isDefaultFlip(p)) {
@@ -445,6 +474,20 @@ export class ExplorerComponent implements OnInit {
     
     if (params['sort']) {
       this.sortStack.set(params['sort'].split(',') as any);
+    }
+
+    if (params['cutoff']) {
+      const val = parseFloat(params['cutoff']);
+      if (!isNaN(val) && val > 0) {
+        this.log2fcCutoff.set(val);
+      }
+    }
+
+    if (params['conf']) {
+      const val = parseFloat(params['conf']);
+      if (!isNaN(val) && val > 0) {
+        this.confidenceCutoff.set(val);
+      }
     }
   }
 
@@ -565,6 +608,32 @@ export class ExplorerComponent implements OnInit {
 
   deletePreset(preset: FilterPreset) {
     this.preferencesService.deletePreset(preset.id);
+  }
+
+  setLog2fcCutoff(value: string) {
+    const num = parseFloat(value);
+    if (isNaN(num) || num <= 0) {
+      this.log2fcCutoff.set(null);
+    } else {
+      this.log2fcCutoff.set(num);
+    }
+  }
+
+  clearLog2fcCutoff() {
+    this.log2fcCutoff.set(null);
+  }
+
+  setConfidenceCutoff(value: string) {
+    const num = parseFloat(value);
+    if (isNaN(num) || num <= 0) {
+      this.confidenceCutoff.set(null);
+    } else {
+      this.confidenceCutoff.set(num);
+    }
+  }
+
+  clearConfidenceCutoff() {
+    this.confidenceCutoff.set(null);
   }
 
 }
