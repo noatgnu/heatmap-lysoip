@@ -81,6 +81,19 @@ export class HeatmapComponent {
       genes.map((g: GeneData) => g.log2fcs[projIndices[projIdx]])
     );
 
+    const perGeneSummary = genes.map((g: GeneData, geneIdx: number) => {
+      let increase = 0;
+      let decrease = 0;
+      projIndices.forEach(projIdx => {
+        const val = g.log2fcs[projIdx];
+        if (val !== null) {
+          if (val > 0) increase++;
+          else if (val < 0) decrease++;
+        }
+      });
+      return { increase, decrease };
+    });
+
     let maxAbs = 0;
     z.forEach((row: (number | null)[]) => row.forEach((val: number | null) => {
       if (val !== null) {
@@ -92,9 +105,9 @@ export class HeatmapComponent {
     if (maxAbs === 0) maxAbs = 1;
 
     const maxProjectNameLength = Math.max(...y.map(name => name.length));
-    const leftMargin = Math.max(300, maxProjectNameLength * 6 + 20);
+    const leftMargin = Math.max(400, maxProjectNameLength * 9 + 80);
     const topMargin = 200;
-    const bottomMargin = 100;
+    const bottomMargin = 150;
     const rightMargin = 50;
 
     const cellSize = 25;
@@ -134,7 +147,7 @@ export class HeatmapComponent {
             xanchor: 'center',
             x: 0.5,
             yanchor: 'top',
-            y: -0.12,
+            y: -0.14,
             tickvals: [-maxAbs, 0, maxAbs],
             ticktext: [(-maxAbs).toFixed(1), '0', maxAbs.toFixed(1)],
             tickfont: { size: 9 }
@@ -160,7 +173,7 @@ export class HeatmapComponent {
         annotations: [
           {
             x: 0.25,
-            y: -0.08,
+            y: -0.18,
             xref: 'paper',
             yref: 'paper',
             text: 'Decrease activity',
@@ -169,13 +182,37 @@ export class HeatmapComponent {
           },
           {
             x: 0.75,
-            y: -0.08,
+            y: -0.18,
             xref: 'paper',
             yref: 'paper',
             text: 'Increase activity',
             showarrow: false,
             font: { size: 10, color: 'rgb(103, 0, 31)' }
-          }
+          },
+          ...perGeneSummary.flatMap((s, i) => [
+            {
+              x: x[i],
+              y: projs.length - 0.5,
+              yshift: 18,
+              xref: 'x',
+              yref: 'y',
+              text: `↑${s.increase}`,
+              showarrow: false,
+              font: { size: 9, color: 'rgb(103, 0, 31)' },
+              yanchor: 'top'
+            },
+            {
+              x: x[i],
+              y: projs.length - 0.5,
+              yshift: 32,
+              xref: 'x',
+              yref: 'y',
+              text: `↓${s.decrease}`,
+              showarrow: false,
+              font: { size: 9, color: 'rgb(5, 48, 97)' },
+              yanchor: 'top'
+            }
+          ])
         ],
         plot_bgcolor: '#ccc',
         paper_bgcolor: 'white',
