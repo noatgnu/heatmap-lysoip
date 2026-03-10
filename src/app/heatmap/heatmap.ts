@@ -147,7 +147,8 @@ export class HeatmapComponent {
             xanchor: 'center',
             x: 0.5,
             yanchor: 'top',
-            y: -0.10,
+            y: 0,
+            ypad: 30,
             tickvals: [-maxAbs, 0, maxAbs],
             ticktext: [(-maxAbs).toFixed(1), '0', maxAbs.toFixed(1)],
             tickfont: { size: 9 }
@@ -173,7 +174,8 @@ export class HeatmapComponent {
         annotations: [
           {
             x: 0.25,
-            y: -0.22,
+            y: 0,
+            yshift: -90,
             xref: 'paper',
             yref: 'paper',
             text: 'Decrease activity',
@@ -182,7 +184,8 @@ export class HeatmapComponent {
           },
           {
             x: 0.75,
-            y: -0.22,
+            y: 0,
+            yshift: -90,
             xref: 'paper',
             yref: 'paper',
             text: 'Increase activity',
@@ -192,7 +195,8 @@ export class HeatmapComponent {
           ...perGeneSummary.flatMap((s, i) => [
             {
               x: x[i],
-              y: -0.02,
+              y: 0,
+              yshift: -15,
               xref: 'x',
               yref: 'paper',
               text: `↑${s.increase}`,
@@ -202,7 +206,8 @@ export class HeatmapComponent {
             },
             {
               x: x[i],
-              y: -0.05,
+              y: 0,
+              yshift: -30,
               xref: 'x',
               yref: 'paper',
               text: `↓${s.decrease}`,
