@@ -424,7 +424,7 @@ export class ExplorerComponent implements OnInit {
         decrease,
         total
       };
-    }).filter(item => item.total >= minTotal);
+    }).filter(item => item.total > minTotal);
   }
 
   selectGeneFromPlot(uniprotId: string) {
