@@ -43,6 +43,7 @@ export class ExplorerComponent implements OnInit {
   projects = signal<ProjectMetadata[]>([]);
   allGenes = signal<GeneData[]>([]);
   selectedGeneIds = signal<Set<string>>(new Set());
+  pendingBulkSelection = signal<string[] | null>(null);
 
   selectedOrgans = signal<Set<string>>(new Set());
   selectedProteins = signal<Set<string>>(new Set());
@@ -56,6 +57,9 @@ export class ExplorerComponent implements OnInit {
   confidenceCutoff = signal<number | null>(null);
   rankCutoff = signal<number>(10);
   geneSortOrder = signal<'none' | 'increase' | 'decrease'>('none');
+  
+  rankCutoff = signal<number>(10);
+  uiRevision = signal<number>(0);
 
   sortStack = signal<SortCriterion[]>(['organ', 'protein', 'mutation', 'knockout', 'treatment']);
 
@@ -428,12 +432,40 @@ export class ExplorerComponent implements OnInit {
     }).filter(item => item.total > minTotal);
   }
 
-  selectGeneFromPlot(uniprotId: string) {
-    this.selectedGeneIds.update(set => {
-      const newSet = new Set(set);
-      newSet.add(uniprotId);
-      return newSet;
-    });
+  selectGenesFromPlot(uniprotIds: string[]) {
+    if (uniprotIds.length === 1) {
+      this.selectedGeneIds.update(set => {
+        const newSet = new Set(set);
+        newSet.add(uniprotIds[0]);
+        return newSet;
+      });
+    } else if (uniprotIds.length > 1) {
+      this.pendingBulkSelection.set(uniprotIds);
+    }
+  }
+
+  confirmBulkAdd() {
+    const ids = this.pendingBulkSelection();
+    if (ids) {
+      this.selectedGeneIds.update(set => {
+        const newSet = new Set(set);
+        ids.forEach(id => newSet.add(id));
+        return newSet;
+      });
+    }
+    this.pendingBulkSelection.set(null);
+  }
+
+  confirmBulkReplace() {
+    const ids = this.pendingBulkSelection();
+    if (ids) {
+      this.selectedGeneIds.set(new Set(ids));
+    }
+    this.pendingBulkSelection.set(null);
+  }
+
+  cancelBulkSelection() {
+    this.pendingBulkSelection.set(null);
   }
 
   private calculateHeatmapSummary(projects: ProjectMetadata[]): { increase: number; decrease: number; total: number } {

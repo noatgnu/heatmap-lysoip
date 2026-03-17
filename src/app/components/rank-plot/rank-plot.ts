@@ -13,8 +13,9 @@ export class RankPlotComponent {
   data = input.required<RankItem[]>();
   selectedGeneIds = input<Set<string>>(new Set());
   title = input<string>('Protein Rank Plot');
+  uiRevision = input<any>(0);
   
-  geneSelected = output<string>();
+  genesSelected = output<string[]>();
 
   revision = signal(0);
 
@@ -34,28 +35,29 @@ export class RankPlotComponent {
     
     const x = sorted.map((_, i) => i + 1);
     const y = sorted.map(d => d.score);
+    const ids = sorted.map(d => d.uniprotId);
     const text = sorted.map(d => `<${d.uniprotId}><${d.gene}><br>Score: ${d.score.toFixed(2)}<br>Inc: ${d.increase}, Dec: ${d.decrease}, Total: ${d.total}`);
     
     const colors = y.map(val => val >= 0 ? 'rgb(103, 0, 31)' : 'rgb(5, 48, 97)');
     
     const symbols = sorted.map(d => {
-      const ids = d.uniprotId.split(';').map(id => id.trim());
-      return ids.some(id => selected.has(id)) ? 'diamond' : 'circle';
+      const parts = d.uniprotId.split(';').map(id => id.trim());
+      return parts.some(id => selected.has(id)) ? 'diamond' : 'circle';
     });
 
     const sizes = sorted.map(d => {
-      const ids = d.uniprotId.split(';').map(id => id.trim());
-      return ids.some(id => selected.has(id)) ? 12 : 6;
+      const parts = d.uniprotId.split(';').map(id => id.trim());
+      return parts.some(id => selected.has(id)) ? 12 : 6;
     });
 
     const opacities = sorted.map(d => {
-      const ids = d.uniprotId.split(';').map(id => id.trim());
-      return ids.some(id => selected.has(id)) ? 1.0 : 0.5;
+      const parts = d.uniprotId.split(';').map(id => id.trim());
+      return parts.some(id => selected.has(id)) ? 1.0 : 0.5;
     });
 
     const lineWidths = sorted.map(d => {
-      const ids = d.uniprotId.split(';').map(id => id.trim());
-      return ids.some(id => selected.has(id)) ? 2 : 0;
+      const parts = d.uniprotId.split(';').map(id => id.trim());
+      return parts.some(id => selected.has(id)) ? 2 : 0;
     });
 
     return {
@@ -64,6 +66,7 @@ export class RankPlotComponent {
           x: x,
           y: y,
           text: text,
+          customdata: ids,
           mode: 'markers',
           type: 'scatter',
           hoverinfo: 'text',
@@ -84,8 +87,10 @@ export class RankPlotComponent {
           text: this.title(),
           font: { size: 14, color: '#374151' }
         },
+        uirevision: this.uiRevision(),
         margin: { l: 50, b: 40, t: 40, r: 20 },
         hovermode: 'closest',
+        dragmode: 'lasso',
         xaxis: {
           title: 'Rank',
           showgrid: true,
@@ -109,10 +114,16 @@ export class RankPlotComponent {
   });
 
   onPlotClick(event: any) {
-    if (event?.points?.[0]?.text) {
-      const match = event.points[0].text.match(/<([^>]+)>/);
-      if (match) {
-        this.geneSelected.emit(match[1]);
+    if (event?.points?.[0]?.customdata) {
+      this.genesSelected.emit([event.points[0].customdata]);
+    }
+  }
+
+  onPlotSelected(event: any) {
+    if (event?.points && event.points.length > 0) {
+      const selectedIds = event.points.map((p: any) => p.customdata).filter((id: any) => id);
+      if (selectedIds.length > 0) {
+        this.genesSelected.emit(selectedIds);
       }
     }
   }
