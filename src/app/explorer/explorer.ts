@@ -386,28 +386,28 @@ export class ExplorerComponent implements OnInit {
     const allProjs = this.projects();
     const flipped = this.flippedProjectIds();
     const projIndices = projects.map(p => allProjs.indexOf(p));
-    
+
     if (projIndices.length === 0) return [];
 
     return allGenes.map(g => {
       let increase = 0;
       let decrease = 0;
       let total = 0;
-      
+
       projIndices.forEach(idx => {
         let val = g.log2fcs[idx];
         if (val !== null) {
           total++;
           const projId = allProjs[idx].projectId;
           if (flipped.has(projId)) val *= -1;
-          
+
           if (val > 0) increase++;
           else if (val < 0) decrease++;
         }
       });
 
       const score = total > 0 ? (increase - decrease) / total : 0;
-      
+
       return {
         uniprotId: g.uniprotId,
         gene: g.gene,
