@@ -37,6 +37,7 @@ export class ExplorerComponent implements OnInit {
 
   isLoading = signal(true);
   searchTerm = signal('');
+  geneFilterTerm = signal('');
   highlightedIndex = signal(-1);
   hoveredGeneId = signal<string | null>(null);
   projects = signal<ProjectMetadata[]>([]);
@@ -219,10 +220,15 @@ export class ExplorerComponent implements OnInit {
     const log2fcCut = this.log2fcCutoff();
     const confCut = this.confidenceCutoff();
     const sortOrder = this.geneSortOrder();
+    const filterTerm = this.geneFilterTerm().toLowerCase().trim();
     const filteredProjIndices = new Set(this.filteredProjects().map(p => allProjs.indexOf(p)));
 
     const genes = this.allGenes()
       .filter((g: GeneData) => selected.has(g.uniprotId))
+      .filter((g: GeneData) => {
+        if (!filterTerm) return true;
+        return g.gene.toLowerCase().includes(filterTerm) || g.uniprotId.toLowerCase().includes(filterTerm);
+      })
       .map(g => {
         const log2fcs = g.log2fcs.map((val, idx) => {
           if (val === null) return null;
