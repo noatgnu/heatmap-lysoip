@@ -3,6 +3,7 @@
     <plotly-plot
       [data]="graphData().data"
       [layout]="graphData().layout"
+      [revision]="revision()"
       [useResizeHandler]="true"
       [style]="{width: '100%', height: '300px'}"
       (plotlyClick)="onPlotClick($event)"

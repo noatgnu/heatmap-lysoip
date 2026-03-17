@@ -1,4 +1,4 @@
-import { Component, input, computed, signal, output } from '@angular/core';
+import { Component, input, computed, signal, effect, untracked, output } from '@angular/core';
 import { PlotlyModule } from 'angular-plotly.js';
 import { RankItem } from '../../models';
 
@@ -15,6 +15,15 @@ export class RankPlotComponent {
   title = input<string>('Protein Rank Plot');
   
   geneSelected = output<string>();
+
+  revision = signal(0);
+
+  constructor() {
+    effect(() => {
+      this.graphData();
+      untracked(() => this.revision.update(r => r + 1));
+    });
+  }
 
   graphData = computed(() => {
     const rawData = this.data();

@@ -396,7 +396,7 @@ export class ExplorerComponent implements OnInit {
 
     if (projIndices.length === 0) return [];
 
-    const minTotal = Math.ceil(projIndices.length * 0.1);
+    const minTotal = Math.ceil(projIndices.length * (this.rankCutoff() / 100));
 
     return allGenes.map(g => {
       let increase = 0;
