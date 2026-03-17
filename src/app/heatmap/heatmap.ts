@@ -7,14 +7,14 @@ import { GeneData, ProjectMetadata } from '../models';
   standalone: true,
   imports: [PlotlyModule],
   template: `
-    <div #plotContainer class="w-full overflow-x-auto overflow-y-auto border border-gray-200 rounded bg-white">
+    <div #plotContainer class="w-full overflow-x-auto overflow-y-auto border border-gray-200 rounded bg-white text-center">
       @if (genes().length > 0 && projects().length > 0) {
         <plotly-plot
           [data]="graphData().data"
           [layout]="graphData().layout"
           [revision]="revision()"
           [useResizeHandler]="true"
-          [style]="{position: 'relative', width: graphData().layout.width + 'px', height: (graphData().layout.height || 600) + 'px'}"
+          [style]="{display: 'inline-block', width: graphData().layout.width + 'px', height: (graphData().layout.height || 600) + 'px'}"
           (hover)="onHover($event)"
           (unhover)="onUnhover()"
         ></plotly-plot>
@@ -70,6 +70,7 @@ export class HeatmapComponent {
     const genes = this.genes();
     const projs = this.projects();
     const allProjs = this.allProjects();
+    const displayMode = this.summaryDisplayMode();
 
     if (genes.length === 0 || projs.length === 0) return { data: [], layout: { height: 600, width: 800 } };
 
@@ -82,7 +83,7 @@ export class HeatmapComponent {
       genes.map((g: GeneData) => g.log2fcs[projIndices[projIdx]])
     );
 
-    const perGeneSummary = genes.map((g: GeneData, geneIdx: number) => {
+    const perGeneSummary = genes.map((g: GeneData) => {
       let increase = 0;
       let decrease = 0;
       let total = 0;
@@ -117,8 +118,8 @@ export class HeatmapComponent {
     const plotWidth = genes.length * cellSize;
     const plotHeight = projs.length * cellSize;
 
-    const width = Math.max(800, plotWidth + leftMargin + rightMargin);
-    const height = Math.max(400, plotHeight + topMargin + bottomMargin);
+    const width = plotWidth + leftMargin + rightMargin;
+    const height = plotHeight + topMargin + bottomMargin;
 
     return {
       data: [
@@ -143,8 +144,8 @@ export class HeatmapComponent {
           colorbar: {
             title: '',
             orientation: 'h',
-            lenmode: 'fraction',
-            len: 0.5,
+            lenmode: 'pixels',
+            len: 200,
             thicknessmode: 'pixels',
             thickness: 12,
             xanchor: 'center',
@@ -166,13 +167,19 @@ export class HeatmapComponent {
           side: 'top',
           fixedrange: false,
           zeroline: false,
-          showgrid: false
+          showgrid: false,
+          constrain: 'domain',
+          scaleanchor: 'y',
+          scaleratio: 1
         },
         yaxis: {
           autorange: 'reversed',
           fixedrange: false,
+          scaleanchor: 'x',
+          scaleratio: 1,
           zeroline: false,
-          showgrid: false
+          showgrid: false,
+          constrain: 'domain'
         },
         annotations: [
           {
