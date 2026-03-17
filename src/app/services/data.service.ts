@@ -149,8 +149,10 @@ export class DataService {
       const r = rows[i];
       if (r.length < 2) continue;
       const uniprotId = (r[0] || '').trim();
-      const gene = (r[1] || '').trim();
+      let gene = (r[1] || '').trim();
+      
       if (!uniprotId && !gene) continue;
+      if (!gene && uniprotId) gene = uniprotId;
 
       const log2fcs = projects.map((p: ProjectMetadata) => {
         const valStr = r[p.log2fcIndex];
