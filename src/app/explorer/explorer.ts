@@ -72,8 +72,17 @@ export class ExplorerComponent implements OnInit {
     'CDK5', 'GRN', 'FYN', 'NR4A2', 'PSAP', 'SYNJ1', 'FBXO7', 'VPS13C', 'GALC', 'SCARB2',
     'HMOX1', 'TFEB', 'ZNF746', 'PARK7', 'DNAJC6', 'KLK6', 'USP15', 'CD38', 'RAB32', 'SMPD1',
     'RILPL1', 'HLA-DRB5', 'SOD1', 'AIMP2', 'CSNK2B', 'RIT2', 'DYRK1A', 'TRAP1', 'SPTLC2', 'NPC1',
-    'GPR37', 'TMEM230', 'KANSL1', 'DNAJC13', 'EIF2AK1', 'PAM', 'MPTP', 'CD84', 'NLRP12', 'LUZP1'
+    'GPR37', 'TMEM230', 'KANSL1', 'DNAJC13', 'EIF2AK1', 'PAM', 'MPTP', 'CD84', 'NLRP12'
   ];
+
+  effectiveHighlightedIds = computed(() => {
+    const selected = this.selectedGeneIds();
+    const pending = this.pendingBulkSelection();
+    if (!pending) return selected;
+    const combined = new Set(selected);
+    pending.forEach(id => combined.add(id));
+    return combined;
+  });
 
   constructor() {
     effect(() => {
