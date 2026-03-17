@@ -57,8 +57,6 @@ export class ExplorerComponent implements OnInit {
   confidenceCutoff = signal<number | null>(null);
   rankCutoff = signal<number>(10);
   geneSortOrder = signal<'none' | 'increase' | 'decrease'>('none');
-  
-  rankCutoff = signal<number>(10);
   uiRevision = signal<number>(0);
 
   sortStack = signal<SortCriterion[]>(['organ', 'protein', 'mutation', 'knockout', 'treatment']);
