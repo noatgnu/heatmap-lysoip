@@ -227,10 +227,20 @@
           <div class="space-y-8">
             <div class="grid grid-cols-2 gap-4">
               <app-collapsible-section title="LRRK2 Dataset Rank Plot" [defaultOpen]="false">
-                <app-rank-plot [data]="lrrk2RankData()" title="LRRK2 Experiments Rank Plot" (geneSelected)="selectGeneFromPlot($event)"></app-rank-plot>
+                <app-rank-plot 
+                  [data]="lrrk2RankData()" 
+                  [selectedGeneIds]="selectedGeneIds()"
+                  title="LRRK2 Experiments Rank Plot"
+                  (geneSelected)="selectGeneFromPlot($event)"
+                ></app-rank-plot>
               </app-collapsible-section>
               <app-collapsible-section title="GBA Dataset Rank Plot" [defaultOpen]="false">
-                <app-rank-plot [data]="gbaRankData()" title="GBA Experiments Rank Plot" (geneSelected)="selectGeneFromPlot($event)"></app-rank-plot>
+                <app-rank-plot 
+                  [data]="gbaRankData()" 
+                  [selectedGeneIds]="selectedGeneIds()"
+                  title="GBA Experiments Rank Plot"
+                  (geneSelected)="selectGeneFromPlot($event)"
+                ></app-rank-plot>
               </app-collapsible-section>
             </div>
             <div class="grid grid-cols-2 gap-4">

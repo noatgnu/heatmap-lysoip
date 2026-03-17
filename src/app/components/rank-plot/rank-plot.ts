@@ -11,12 +11,14 @@ import { RankItem } from '../../models';
 })
 export class RankPlotComponent {
   data = input.required<RankItem[]>();
+  selectedGeneIds = input<Set<string>>(new Set());
   title = input<string>('Protein Rank Plot');
   
   geneSelected = output<string>();
 
   graphData = computed(() => {
     const rawData = this.data();
+    const selected = this.selectedGeneIds();
     if (rawData.length === 0) return { data: [], layout: {} };
 
     const sorted = [...rawData].sort((a, b) => b.score - a.score);
@@ -26,6 +28,26 @@ export class RankPlotComponent {
     const text = sorted.map(d => `<${d.uniprotId}><${d.gene}><br>Score: ${d.score.toFixed(2)}<br>Inc: ${d.increase}, Dec: ${d.decrease}, Total: ${d.total}`);
     
     const colors = y.map(val => val >= 0 ? 'rgb(103, 0, 31)' : 'rgb(5, 48, 97)');
+    
+    const symbols = sorted.map(d => {
+      const ids = d.uniprotId.split(';').map(id => id.trim());
+      return ids.some(id => selected.has(id)) ? 'diamond' : 'circle';
+    });
+
+    const sizes = sorted.map(d => {
+      const ids = d.uniprotId.split(';').map(id => id.trim());
+      return ids.some(id => selected.has(id)) ? 12 : 6;
+    });
+
+    const opacities = sorted.map(d => {
+      const ids = d.uniprotId.split(';').map(id => id.trim());
+      return ids.some(id => selected.has(id)) ? 1.0 : 0.5;
+    });
+
+    const lineWidths = sorted.map(d => {
+      const ids = d.uniprotId.split(';').map(id => id.trim());
+      return ids.some(id => selected.has(id)) ? 2 : 0;
+    });
 
     return {
       data: [
@@ -38,8 +60,13 @@ export class RankPlotComponent {
           hoverinfo: 'text',
           marker: {
             color: colors,
-            size: 6,
-            opacity: 0.7
+            size: sizes,
+            symbol: symbols,
+            opacity: opacities,
+            line: {
+              color: '#000',
+              width: lineWidths
+            }
           }
         }
       ],
