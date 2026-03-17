@@ -33,6 +33,7 @@ export class HeatmapComponent {
   genes = input.required<GeneData[]>();
   projects = input.required<ProjectMetadata[]>();
   allProjects = input.required<ProjectMetadata[]>();
+  summaryDisplayMode = input<'number' | 'proportion'>('proportion');
 
   geneHovered = output<string | null>();
 
@@ -84,14 +85,16 @@ export class HeatmapComponent {
     const perGeneSummary = genes.map((g: GeneData, geneIdx: number) => {
       let increase = 0;
       let decrease = 0;
+      let total = 0;
       projIndices.forEach(projIdx => {
         const val = g.log2fcs[projIdx];
         if (val !== null) {
+          total++;
           if (val > 0) increase++;
           else if (val < 0) decrease++;
         }
       });
-      return { increase, decrease };
+      return { increase, decrease, total };
     });
 
     let maxAbs = 0;
@@ -192,30 +195,38 @@ export class HeatmapComponent {
             showarrow: false,
             font: { size: 10, color: 'rgb(103, 0, 31)' }
           },
-          ...perGeneSummary.flatMap((s, i) => [
-            {
-              x: x[i],
-              y: 0,
-              yshift: -15,
-              xref: 'x',
-              yref: 'paper',
-              text: `↑${s.increase}`,
-              showarrow: false,
-              font: { size: 9, color: 'rgb(103, 0, 31)' },
-              yanchor: 'top'
-            },
-            {
-              x: x[i],
-              y: 0,
-              yshift: -30,
-              xref: 'x',
-              yref: 'paper',
-              text: `↓${s.decrease}`,
-              showarrow: false,
-              font: { size: 9, color: 'rgb(5, 48, 97)' },
-              yanchor: 'top'
+          ...perGeneSummary.flatMap((s, i) => {
+            let upText = `↑${s.increase}`;
+            let downText = `↓${s.decrease}`;
+            if (this.summaryDisplayMode() === 'proportion' && s.total > 0) {
+              upText = `↑${Math.round((s.increase / s.total) * 100)}%`;
+              downText = `↓${Math.round((s.decrease / s.total) * 100)}%`;
             }
-          ])
+            return [
+              {
+                x: x[i],
+                y: 0,
+                yshift: -15,
+                xref: 'x',
+                yref: 'paper',
+                text: upText,
+                showarrow: false,
+                font: { size: 9, color: 'rgb(103, 0, 31)' },
+                yanchor: 'top'
+              },
+              {
+                x: x[i],
+                y: 0,
+                yshift: -30,
+                xref: 'x',
+                yref: 'paper',
+                text: downText,
+                showarrow: false,
+                font: { size: 9, color: 'rgb(5, 48, 97)' },
+                yanchor: 'top'
+              }
+            ];
+          })
         ],
         plot_bgcolor: '#ccc',
         paper_bgcolor: 'white',

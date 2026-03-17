@@ -18,3 +18,12 @@ export interface GeneData {
   confidences: (number | null)[];
   searchString: string;
 }
+
+export interface RankItem {
+  uniprotId: string;
+  gene: string;
+  score: number;
+  increase: number;
+  decrease: number;
+  total: number;
+}

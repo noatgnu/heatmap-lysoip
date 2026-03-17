@@ -5,10 +5,11 @@ import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-
 import { ScrollingModule } from '@angular/cdk/scrolling';
 import { CurtainFilterComponent } from '../curtain-filter/curtain-filter';
 import { HeatmapComponent } from '../heatmap/heatmap';
+import { RankPlotComponent } from '../components/rank-plot/rank-plot';
 import { SkeletonLoaderComponent } from '../components/skeleton-loader/skeleton-loader';
 import { FilterChipsComponent, FilterChip } from '../components/filter-chips/filter-chips';
 import { CollapsibleSectionComponent } from '../components/collapsible-section/collapsible-section';
-import { GeneData, ProjectMetadata } from '../models';
+import { GeneData, ProjectMetadata, RankItem } from '../models';
 import { DataService } from '../services/data.service';
 import { ExportService } from '../services/export.service';
 import { PreferencesService, FilterPreset, SortCriterion } from '../services/preferences';
@@ -16,7 +17,7 @@ import { PreferencesService, FilterPreset, SortCriterion } from '../services/pre
 @Component({
   selector: 'app-explorer',
   standalone: true,
-  imports: [FormsModule, DragDropModule, ScrollingModule, CurtainFilterComponent, HeatmapComponent, SkeletonLoaderComponent, FilterChipsComponent, CollapsibleSectionComponent, RouterLink],
+  imports: [FormsModule, DragDropModule, ScrollingModule, CurtainFilterComponent, HeatmapComponent, RankPlotComponent, SkeletonLoaderComponent, FilterChipsComponent, CollapsibleSectionComponent, RouterLink],
   templateUrl: './explorer.html',
   styleUrl: './explorer.scss'
 })
@@ -26,6 +27,8 @@ export class ExplorerComponent implements OnInit {
   private preferencesService = inject(PreferencesService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+
+  protected readonly Math = Math;
 
   heatmapComponent = viewChild(HeatmapComponent);
 
@@ -39,7 +42,7 @@ export class ExplorerComponent implements OnInit {
   projects = signal<ProjectMetadata[]>([]);
   allGenes = signal<GeneData[]>([]);
   selectedGeneIds = signal<Set<string>>(new Set());
-  
+
   selectedOrgans = signal<Set<string>>(new Set());
   selectedProteins = signal<Set<string>>(new Set());
   selectedMutations = signal<Set<string>>(new Set());
@@ -47,6 +50,7 @@ export class ExplorerComponent implements OnInit {
   selectedTreatments = signal<Set<string>>(new Set());
   selectedFractions = signal<Set<string>>(new Set());
   flippedProjectIds = signal<Set<string>>(new Set());
+  summaryDisplayMode = signal<'number' | 'proportion'>('proportion');
   log2fcCutoff = signal<number | null>(null);
   confidenceCutoff = signal<number | null>(null);
   geneSortOrder = signal<'none' | 'increase' | 'decrease'>('none');
@@ -64,7 +68,7 @@ export class ExplorerComponent implements OnInit {
     'CDK5', 'GRN', 'FYN', 'NR4A2', 'PSAP', 'SYNJ1', 'FBXO7', 'VPS13C', 'GALC', 'SCARB2',
     'HMOX1', 'TFEB', 'ZNF746', 'PARK7', 'DNAJC6', 'KLK6', 'USP15', 'CD38', 'RAB32', 'SMPD1',
     'RILPL1', 'HLA-DRB5', 'SOD1', 'AIMP2', 'CSNK2B', 'RIT2', 'DYRK1A', 'TRAP1', 'SPTLC2', 'NPC1',
-    'GPR37', 'TMEM230', 'KANSL1', 'DNAJC13', 'EIF2AK1', 'PAM', 'MPTP', 'CD84', 'NLRP12'
+    'GPR37', 'TMEM230', 'KANSL1', 'DNAJC13', 'EIF2AK1', 'PAM', 'MPTP', 'CD84', 'NLRP12', 'LUZP1'
   ];
 
   constructor() {
@@ -95,6 +99,7 @@ export class ExplorerComponent implements OnInit {
         treatments: Array.from(this.selectedTreatments()).join(',') || null,
         fractions: Array.from(this.selectedFractions()).join(',') || null,
         flipped: Array.from(this.flippedProjectIds()).join(',') || null,
+        mode: this.summaryDisplayMode() === 'proportion' ? null : 'number',
         sort: this.sortStack().join(','),
         cutoff: log2fcCut !== null && log2fcCut > 0 ? log2fcCut.toString() : null,
         conf: confCut !== null && confCut > 0 ? confCut.toString() : null
@@ -159,14 +164,14 @@ export class ExplorerComponent implements OnInit {
   applyCurtainFilter(data: string) {
     const geneTerms = data.split(/[\n,]/).map((s: string) => s.trim().toLowerCase()).filter((s: string) => s);
     const matchedIds = new Set<string>();
-    
+
     this.allGenes().forEach((gene: GeneData) => {
       const gParts = gene.gene.toLowerCase().split(';').map(p => p.trim());
       const uParts = gene.uniprotId.toLowerCase().split(';').map(p => p.trim());
-      
-      const match = gParts.some(p => geneTerms.includes(p)) || 
+
+      const match = gParts.some(p => geneTerms.includes(p)) ||
                     uParts.some(p => geneTerms.includes(p));
-                    
+
       if (match) {
         matchedIds.add(gene.uniprotId);
       }
@@ -321,7 +326,7 @@ export class ExplorerComponent implements OnInit {
         'mito': 2,
         'wcl': 3
       };
-      
+
       for (const criterion of stack) {
         let cmp = 0;
         if (criterion === 'organ') {
@@ -355,7 +360,7 @@ export class ExplorerComponent implements OnInit {
           cmp = pA - pB;
           if (cmp === 0) cmp = a.fraction.localeCompare(b.fraction);
         }
-        
+
         if (cmp !== 0) return cmp;
       }
       return a.date.localeCompare(b.date);
@@ -372,6 +377,55 @@ export class ExplorerComponent implements OnInit {
 
   lrrk2Summary = computed(() => this.calculateHeatmapSummary(this.nonGbaProjects()));
   gbaSummary = computed(() => this.calculateHeatmapSummary(this.gbaProjects()));
+
+  lrrk2RankData = computed(() => this.calculateRankData(this.nonGbaProjects()));
+  gbaRankData = computed(() => this.calculateRankData(this.gbaProjects()));
+
+  private calculateRankData(projects: ProjectMetadata[]): RankItem[] {
+    const allGenes = this.allGenes();
+    const allProjs = this.projects();
+    const flipped = this.flippedProjectIds();
+    const projIndices = projects.map(p => allProjs.indexOf(p));
+    
+    if (projIndices.length === 0) return [];
+
+    return allGenes.map(g => {
+      let increase = 0;
+      let decrease = 0;
+      let total = 0;
+      
+      projIndices.forEach(idx => {
+        let val = g.log2fcs[idx];
+        if (val !== null) {
+          total++;
+          const projId = allProjs[idx].projectId;
+          if (flipped.has(projId)) val *= -1;
+          
+          if (val > 0) increase++;
+          else if (val < 0) decrease++;
+        }
+      });
+
+      const score = total > 0 ? (increase - decrease) / total : 0;
+      
+      return {
+        uniprotId: g.uniprotId,
+        gene: g.gene,
+        score,
+        increase,
+        decrease,
+        total
+      };
+    }).filter(item => item.total > 0);
+  }
+
+  selectGeneFromPlot(uniprotId: string) {
+    this.selectedGeneIds.update(set => {
+      const newSet = new Set(set);
+      newSet.add(uniprotId);
+      return newSet;
+    });
+  }
 
   private calculateHeatmapSummary(projects: ProjectMetadata[]): { increase: number; decrease: number; total: number } {
     const genes = this.displayedGenes();
@@ -510,7 +564,7 @@ export class ExplorerComponent implements OnInit {
     } else {
       this.applyDefaultGenes();
     }
-    
+
     if (params['organs']) {
       this.selectedOrgans.set(new Set(params['organs'].split(',')));
     }
@@ -518,7 +572,7 @@ export class ExplorerComponent implements OnInit {
     if (params['proteins']) {
       this.selectedProteins.set(new Set(params['proteins'].split(',')));
     }
-    
+
     if (params['mutations']) {
       this.selectedMutations.set(new Set(params['mutations'].split(',')));
     }
@@ -538,7 +592,7 @@ export class ExplorerComponent implements OnInit {
     if (params['flipped']) {
       this.flippedProjectIds.set(new Set(params['flipped'].split(',')));
     }
-    
+
     if (params['sort']) {
       this.sortStack.set(params['sort'].split(',') as any);
     }
