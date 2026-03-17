@@ -40,25 +40,10 @@ export class RankPlotComponent {
     
     const colors = y.map(val => val >= 0 ? 'rgb(103, 0, 31)' : 'rgb(5, 48, 97)');
     
-    const symbols = sorted.map(d => {
-      const parts = d.uniprotId.split(';').map(id => id.trim());
-      return parts.some(id => selected.has(id)) ? 'diamond' : 'circle';
-    });
-
-    const sizes = sorted.map(d => {
-      const parts = d.uniprotId.split(';').map(id => id.trim());
-      return parts.some(id => selected.has(id)) ? 12 : 6;
-    });
-
-    const opacities = sorted.map(d => {
-      const parts = d.uniprotId.split(';').map(id => id.trim());
-      return parts.some(id => selected.has(id)) ? 1.0 : 0.5;
-    });
-
-    const lineWidths = sorted.map(d => {
-      const parts = d.uniprotId.split(';').map(id => id.trim());
-      return parts.some(id => selected.has(id)) ? 2 : 0;
-    });
+    const symbols = sorted.map(d => selected.has(d.uniprotId) ? 'diamond' : 'circle');
+    const sizes = sorted.map(d => selected.has(d.uniprotId) ? 12 : 6);
+    const opacities = sorted.map(d => selected.has(d.uniprotId) ? 1.0 : 0.5);
+    const lineWidths = sorted.map(d => selected.has(d.uniprotId) ? 2 : 0);
 
     return {
       data: [
@@ -114,14 +99,18 @@ export class RankPlotComponent {
   });
 
   onPlotClick(event: any) {
-    if (event?.points?.[0]?.customdata) {
-      this.genesSelected.emit([event.points[0].customdata]);
+    const point = event?.points?.[0];
+    if (point?.customdata) {
+      this.genesSelected.emit([point.customdata]);
     }
   }
 
   onPlotSelected(event: any) {
     if (event?.points && event.points.length > 0) {
-      const selectedIds = event.points.map((p: any) => p.customdata).filter((id: any) => id);
+      const selectedIds = event.points
+        .map((p: any) => p.customdata)
+        .filter((id: any) => id);
+      
       if (selectedIds.length > 0) {
         this.genesSelected.emit(selectedIds);
       }

@@ -21,7 +21,7 @@ import { GeneData, ProjectMetadata } from '../models';
       } @else {
         <div class="flex flex-col justify-center items-center h-[400px] text-gray-400">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2-0 00-2-2H5a2 2-0 00-2 2v6a2 2(0 002 2h2a2 2-0 002-2m0 0V5a2 2-0 012-2h2a2 2-0 012 2v14a2 2-0 01-2 2h-2a2 2-0 01-2-2z" />
           </svg>
           <span>No data available for the current selection.</span>
         </div>
@@ -46,11 +46,11 @@ export class HeatmapComponent {
   }
 
   onHover(event: any) {
-    if (event?.points?.[0]?.x) {
-      const xLabel = event.points[0].x as string;
-      const match = xLabel.match(/<([^>]+)>/);
-      if (match) {
-        this.geneHovered.emit(match[1]);
+    if (event?.points?.[0]?.x !== undefined) {
+      const idx = event.points[0].x as number;
+      const genes = this.genes();
+      if (genes[idx]) {
+        this.geneHovered.emit(genes[idx].uniprotId);
       }
     }
   }
@@ -76,7 +76,8 @@ export class HeatmapComponent {
 
     const projIndices = projs.map((p: ProjectMetadata) => allProjs.indexOf(p));
 
-    const x = genes.map((g: GeneData) => `<${g.uniprotId}><${g.gene}>`);
+    const xCoords = genes.map((_, i) => i);
+    const xLabels = genes.map((g: GeneData) => `<${g.uniprotId}><${g.gene}>`);
     const y = projs.map((p: ProjectMetadata) => p.projectName);
 
     const z = projs.map((_p: ProjectMetadata, projIdx: number) =>
@@ -125,7 +126,7 @@ export class HeatmapComponent {
       data: [
         {
           z: z,
-          x: x,
+          x: xCoords,
           y: y,
           type: 'heatmap',
           hoverongaps: false,
@@ -170,7 +171,10 @@ export class HeatmapComponent {
           showgrid: false,
           constrain: 'domain',
           scaleanchor: 'y',
-          scaleratio: 1
+          scaleratio: 1,
+          tickvals: xCoords,
+          ticktext: xLabels,
+          dtick: 1
         },
         yaxis: {
           autorange: 'reversed',
@@ -179,7 +183,9 @@ export class HeatmapComponent {
           scaleratio: 1,
           zeroline: false,
           showgrid: false,
-          constrain: 'domain'
+          constrain: 'domain',
+          type: 'category',
+          dtick: 1
         },
         annotations: [
           {
@@ -211,7 +217,7 @@ export class HeatmapComponent {
             }
             return [
               {
-                x: x[i],
+                x: xCoords[i],
                 y: 0,
                 yshift: -15,
                 xref: 'x',
@@ -222,7 +228,7 @@ export class HeatmapComponent {
                 yanchor: 'top'
               },
               {
-                x: x[i],
+                x: xCoords[i],
                 y: 0,
                 yshift: -30,
                 xref: 'x',
