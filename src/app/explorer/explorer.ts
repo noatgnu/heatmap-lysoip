@@ -395,6 +395,8 @@ export class ExplorerComponent implements OnInit {
 
     if (projIndices.length === 0) return [];
 
+    const minTotal = Math.ceil(projIndices.length * 0.1);
+
     return allGenes.map(g => {
       let increase = 0;
       let decrease = 0;
@@ -422,7 +424,7 @@ export class ExplorerComponent implements OnInit {
         decrease,
         total
       };
-    }).filter(item => item.total > 0);
+    }).filter(item => item.total >= minTotal);
   }
 
   selectGeneFromPlot(uniprotId: string) {
