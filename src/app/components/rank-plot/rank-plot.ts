@@ -1,4 +1,4 @@
-import { Component, input, computed, signal, effect, untracked, output } from '@angular/core';
+import { Component, input, computed, signal, output } from '@angular/core';
 import { PlotlyModule } from 'angular-plotly.js';
 import { RankItem } from '../../models';
 
@@ -17,14 +17,8 @@ export class RankPlotComponent {
   
   genesSelected = output<string[]>();
 
-  revision = signal(0);
-
-  constructor() {
-    effect(() => {
-      this.graphData();
-      untracked(() => this.revision.update(r => r + 1));
-    });
-  }
+  currentXRange = signal<any>(null);
+  currentYRange = signal<any>(null);
 
   graphData = computed(() => {
     const rawData = this.data();
@@ -36,7 +30,7 @@ export class RankPlotComponent {
     const x = sorted.map((_, i) => i + 1);
     const y = sorted.map(d => d.score);
     const ids = sorted.map(d => d.uniprotId);
-    const text = sorted.map(d => `<${d.uniprotId}><${d.gene}><br>Score: ${d.score.toFixed(2)}<br>Inc: ${d.increase}, Dec: ${d.decrease}, Total: ${d.total}`);
+    const text = sorted.map(d => `${d.uniprotId} | ${d.gene}<br>Score: ${d.score.toFixed(2)}<br>Inc: ${d.increase}, Dec: ${d.decrease}, Total: ${d.total}`);
     
     const colors = y.map(val => val >= 0 ? 'rgb(103, 0, 31)' : 'rgb(5, 48, 97)');
     
@@ -44,6 +38,9 @@ export class RankPlotComponent {
     const sizes = sorted.map(d => selected.has(d.uniprotId) ? 12 : 6);
     const opacities = sorted.map(d => selected.has(d.uniprotId) ? 1.0 : 0.5);
     const lineWidths = sorted.map(d => selected.has(d.uniprotId) ? 2 : 0);
+
+    const xRange = this.currentXRange();
+    const yRange = this.currentYRange();
 
     return {
       data: [
@@ -79,7 +76,9 @@ export class RankPlotComponent {
         xaxis: {
           title: 'Rank',
           showgrid: true,
-          gridcolor: '#f3f4f6'
+          gridcolor: '#f3f4f6',
+          range: xRange || undefined,
+          autorange: xRange ? false : true
         },
         yaxis: {
           title: 'Proportion (Inc - Dec) / Total',
@@ -88,7 +87,8 @@ export class RankPlotComponent {
           zerolinewidth: 1,
           showgrid: true,
           gridcolor: '#f3f4f6',
-          range: [-1.1, 1.1]
+          range: yRange || undefined,
+          autorange: yRange ? false : true
         },
         plot_bgcolor: 'white',
         paper_bgcolor: 'white',
@@ -97,6 +97,22 @@ export class RankPlotComponent {
       }
     };
   });
+
+  onRelayout(event: any) {
+    if (event['xaxis.range[0]'] !== undefined && event['xaxis.range[1]'] !== undefined) {
+      this.currentXRange.set([event['xaxis.range[0]'], event['xaxis.range[1]']]);
+    }
+    if (event['yaxis.range[0]'] !== undefined && event['yaxis.range[1]'] !== undefined) {
+      this.currentYRange.set([event['yaxis.range[0]'], event['yaxis.range[1]']]);
+    }
+
+    if (event['xaxis.autorange'] === true) {
+      this.currentXRange.set(null);
+    }
+    if (event['yaxis.autorange'] === true) {
+      this.currentYRange.set(null);
+    }
+  }
 
   onPlotClick(event: any) {
     const point = event?.points?.[0];

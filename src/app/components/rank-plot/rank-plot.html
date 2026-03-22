@@ -3,11 +3,11 @@
     <plotly-plot
       [data]="graphData().data"
       [layout]="graphData().layout"
-      [revision]="revision()"
       [useResizeHandler]="true"
       [style]="{width: '100%', height: '300px'}"
       (plotlyClick)="onPlotClick($event)"
       (selected)="onPlotSelected($event)"
+      (relayout)="onRelayout($event)"
     ></plotly-plot>
   } @else {
     <div class="flex items-center justify-center h-[300px] text-gray-400 text-sm italic">
