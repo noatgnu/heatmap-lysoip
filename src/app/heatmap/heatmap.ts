@@ -122,6 +122,9 @@ export class HeatmapComponent {
     const width = plotWidth + leftMargin + rightMargin;
     const height = plotHeight + topMargin + bottomMargin;
 
+    const colorbarXStart = 0.5 - (100 / width);
+    const colorbarXEnd = 0.5 + (100 / width);
+
     return {
       data: [
         {
@@ -189,21 +192,23 @@ export class HeatmapComponent {
         },
         annotations: [
           {
-            x: 0.25,
+            x: colorbarXStart,
             y: 0,
-            yshift: -115,
+            yshift: -105,
             xref: 'paper',
             yref: 'paper',
+            xanchor: 'right',
             text: 'Decrease activity',
             showarrow: false,
             font: { size: 10, color: 'rgb(5, 48, 97)' }
           },
           {
-            x: 0.75,
+            x: colorbarXEnd,
             y: 0,
-            yshift: -115,
+            yshift: -105,
             xref: 'paper',
             yref: 'paper',
+            xanchor: 'left',
             text: 'Increase activity',
             showarrow: false,
             font: { size: 10, color: 'rgb(103, 0, 31)' }
