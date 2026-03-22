@@ -159,7 +159,7 @@ export class HeatmapComponent {
       leftMargin = Math.max(250, maxGeneNameLen * 8 + 20);
       topMargin = Math.max(200, maxProjNameLen * 8 + 20);
       bottomMargin = 100;
-      rightMargin = 50;
+      rightMargin = 120;
     } else {
       leftMargin = Math.max(400, maxProjNameLen * 9 + 80);
       topMargin = 200;
@@ -200,14 +200,38 @@ export class HeatmapComponent {
       }
     ];
 
-    if (swapped) {
-      perGeneSummary.forEach((s, i) => {
-        let upText = `↑${s.increase}`;
-        let downText = `↓${s.decrease}`;
-        if (this.summaryDisplayMode() === 'proportion' && s.total > 0) {
-          upText = `↑${Math.round((s.increase / s.total) * 100)}%`;
-          downText = `↓${Math.round((s.decrease / s.total) * 100)}%`;
-        }
+    perGeneSummary.forEach((s, i) => {
+      let upText = `↑${s.increase}`;
+      let downText = `↓${s.decrease}`;
+      if (this.summaryDisplayMode() === 'proportion' && s.total > 0) {
+        upText = `↑${Math.round((s.increase / s.total) * 100)}%`;
+        downText = `↓${Math.round((s.decrease / s.total) * 100)}%`;
+      }
+
+      if (!swapped) {
+        annotations.push({
+          x: 1,
+          y: yCoords[i],
+          xshift: 10,
+          xref: 'paper',
+          yref: 'y',
+          text: upText,
+          showarrow: false,
+          font: { size: 9, color: 'rgb(103, 0, 31)' },
+          xanchor: 'left'
+        });
+        annotations.push({
+          x: 1,
+          y: yCoords[i],
+          xshift: 45,
+          xref: 'paper',
+          yref: 'y',
+          text: downText,
+          showarrow: false,
+          font: { size: 9, color: 'rgb(5, 48, 97)' },
+          xanchor: 'left'
+        });
+      } else {
         annotations.push({
           x: xCoords[i],
           y: 0,
@@ -230,8 +254,8 @@ export class HeatmapComponent {
           font: { size: 9, color: 'rgb(5, 48, 97)' },
           yanchor: 'top'
         });
-      });
-    }
+      }
+    });
 
     return {
       data: [
