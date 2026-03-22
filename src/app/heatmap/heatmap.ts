@@ -12,6 +12,7 @@ import { GeneData, ProjectMetadata } from '../models';
         <plotly-plot
           [data]="graphData().data"
           [layout]="graphData().layout"
+          [config]="graphConfig()"
           [revision]="revision()"
           [useResizeHandler]="true"
           [style]="{display: 'inline-block', width: graphData().layout.width + 'px', height: (graphData().layout.height || 600) + 'px'}"
@@ -34,6 +35,7 @@ export class HeatmapComponent {
   projects = input.required<ProjectMetadata[]>();
   allProjects = input.required<ProjectMetadata[]>();
   summaryDisplayMode = input<'number' | 'proportion'>('proportion');
+  isSwapped = input<boolean>(false);
 
   geneHovered = output<string | null>();
 
@@ -45,12 +47,33 @@ export class HeatmapComponent {
     return this.plotContainer()?.nativeElement ?? null;
   }
 
+  graphConfig = computed(() => ({
+    displaylogo: false,
+    responsive: true,
+    toImageButtonOptions: {
+      format: 'svg',
+      filename: 'heatmap_export',
+      height: this.graphData().layout.height,
+      width: this.graphData().layout.width,
+      scale: 1
+    }
+  }));
+
   onHover(event: any) {
-    if (event?.points?.[0]?.x !== undefined) {
-      const idx = event.points[0].x as number;
+    if (event?.points?.[0]) {
+      const p = event.points[0];
       const genes = this.genes();
-      if (genes[idx]) {
-        this.geneHovered.emit(genes[idx].uniprotId);
+      const swapped = this.isSwapped();
+      
+      let geneIdx = -1;
+      if (swapped) {
+        geneIdx = p.x !== undefined ? (p.x as number) : -1;
+      } else {
+        geneIdx = p.y !== undefined ? (p.y as number) : -1;
+      }
+
+      if (genes[geneIdx]) {
+        this.geneHovered.emit(genes[geneIdx].uniprotId);
       }
     }
   }
@@ -70,19 +93,36 @@ export class HeatmapComponent {
     const genes = this.genes();
     const projs = this.projects();
     const allProjs = this.allProjects();
-    const displayMode = this.summaryDisplayMode();
+    const swapped = this.isSwapped();
 
     if (genes.length === 0 || projs.length === 0) return { data: [], layout: { height: 600, width: 800 } };
 
     const projIndices = projs.map((p: ProjectMetadata) => allProjs.indexOf(p));
 
-    const xCoords = genes.map((_, i) => i);
-    const xLabels = genes.map((g: GeneData) => `<${g.uniprotId}><${g.gene}>`);
-    const y = projs.map((p: ProjectMetadata) => p.projectName);
+    const geneCoords = genes.map((_, i) => i);
+    const geneLabels = genes.map((g: GeneData) => `<${g.uniprotId}><${g.gene}>`);
+    const projCoords = projs.map((_, i) => i);
+    const projLabels = projs.map((p: ProjectMetadata) => p.projectName);
 
-    const z = projs.map((_p: ProjectMetadata, projIdx: number) =>
-      genes.map((g: GeneData) => g.log2fcs[projIndices[projIdx]])
-    );
+    let xCoords, yCoords, xLabels, yLabels, z;
+
+    if (!swapped) {
+      xLabels = projLabels;
+      yLabels = geneLabels;
+      xCoords = projCoords;
+      yCoords = geneCoords;
+      z = genes.map((g: GeneData) => 
+        projs.map((_, projIdx: number) => g.log2fcs[projIndices[projIdx]])
+      );
+    } else {
+      xLabels = geneLabels;
+      yLabels = projLabels;
+      xCoords = geneCoords;
+      yCoords = projCoords;
+      z = projs.map((_, projIdx: number) =>
+        genes.map((g: GeneData) => g.log2fcs[projIndices[projIdx]])
+      );
+    }
 
     const perGeneSummary = genes.map((g: GeneData) => {
       let increase = 0;
@@ -109,28 +149,96 @@ export class HeatmapComponent {
 
     if (maxAbs === 0) maxAbs = 1;
 
-    const maxProjectNameLength = Math.max(...y.map(name => name.length));
-    const leftMargin = Math.max(400, maxProjectNameLength * 9 + 80);
-    const topMargin = 200;
-    const bottomMargin = 140;
-    const rightMargin = 50;
-
     const cellSize = 25;
-    const plotWidth = genes.length * cellSize;
-    const plotHeight = projs.length * cellSize;
+    const maxProjNameLen = Math.max(...projLabels.map(n => n.length));
+    const maxGeneNameLen = Math.max(...geneLabels.map(n => n.length));
 
+    let leftMargin, topMargin, bottomMargin, rightMargin;
+    
+    if (!swapped) {
+      leftMargin = Math.max(250, maxGeneNameLen * 8 + 20);
+      topMargin = Math.max(200, maxProjNameLen * 8 + 20);
+      bottomMargin = 100;
+      rightMargin = 50;
+    } else {
+      leftMargin = Math.max(400, maxProjNameLen * 9 + 80);
+      topMargin = 200;
+      bottomMargin = 140;
+      rightMargin = 50;
+    }
+
+    const plotWidth = xCoords.length * cellSize;
+    const plotHeight = yCoords.length * cellSize;
     const width = plotWidth + leftMargin + rightMargin;
     const height = plotHeight + topMargin + bottomMargin;
 
     const colorbarXStart = 0.5 - (100 / width);
     const colorbarXEnd = 0.5 + (100 / width);
 
+    const annotations: any[] = [
+      {
+        x: colorbarXStart,
+        y: 0,
+        yshift: !swapped ? -60 : -105,
+        xref: 'paper',
+        yref: 'paper',
+        xanchor: 'right',
+        text: 'Decrease activity',
+        showarrow: false,
+        font: { size: 10, color: 'rgb(5, 48, 97)' }
+      },
+      {
+        x: colorbarXEnd,
+        y: 0,
+        yshift: !swapped ? -60 : -105,
+        xref: 'paper',
+        yref: 'paper',
+        xanchor: 'left',
+        text: 'Increase activity',
+        showarrow: false,
+        font: { size: 10, color: 'rgb(103, 0, 31)' }
+      }
+    ];
+
+    if (swapped) {
+      perGeneSummary.forEach((s, i) => {
+        let upText = `↑${s.increase}`;
+        let downText = `↓${s.decrease}`;
+        if (this.summaryDisplayMode() === 'proportion' && s.total > 0) {
+          upText = `↑${Math.round((s.increase / s.total) * 100)}%`;
+          downText = `↓${Math.round((s.decrease / s.total) * 100)}%`;
+        }
+        annotations.push({
+          x: xCoords[i],
+          y: 0,
+          yshift: -15,
+          xref: 'x',
+          yref: 'paper',
+          text: upText,
+          showarrow: false,
+          font: { size: 9, color: 'rgb(103, 0, 31)' },
+          yanchor: 'top'
+        });
+        annotations.push({
+          x: xCoords[i],
+          y: 0,
+          yshift: -30,
+          xref: 'x',
+          yref: 'paper',
+          text: downText,
+          showarrow: false,
+          font: { size: 9, color: 'rgb(5, 48, 97)' },
+          yanchor: 'top'
+        });
+      });
+    }
+
     return {
       data: [
         {
           z: z,
           x: xCoords,
-          y: y,
+          y: yCoords,
           type: 'heatmap',
           hoverongaps: false,
           colorscale: [
@@ -156,7 +264,7 @@ export class HeatmapComponent {
             x: 0.5,
             yanchor: 'top',
             y: 0,
-            ypad: 55,
+            ypad: !swapped ? 20 : 55,
             tickvals: [-maxAbs, 0, maxAbs],
             ticktext: [(-maxAbs).toFixed(1), '0', maxAbs.toFixed(1)],
             tickfont: { size: 9 }
@@ -180,72 +288,18 @@ export class HeatmapComponent {
           dtick: 1
         },
         yaxis: {
-          autorange: 'reversed',
+          autorange: !swapped ? true : 'reversed',
           fixedrange: false,
           scaleanchor: 'x',
           scaleratio: 1,
           zeroline: false,
           showgrid: false,
           constrain: 'domain',
-          type: 'category',
+          tickvals: yCoords,
+          ticktext: yLabels,
           dtick: 1
         },
-        annotations: [
-          {
-            x: colorbarXStart,
-            y: 0,
-            yshift: -105,
-            xref: 'paper',
-            yref: 'paper',
-            xanchor: 'right',
-            text: 'Decrease activity',
-            showarrow: false,
-            font: { size: 10, color: 'rgb(5, 48, 97)' }
-          },
-          {
-            x: colorbarXEnd,
-            y: 0,
-            yshift: -105,
-            xref: 'paper',
-            yref: 'paper',
-            xanchor: 'left',
-            text: 'Increase activity',
-            showarrow: false,
-            font: { size: 10, color: 'rgb(103, 0, 31)' }
-          },
-          ...perGeneSummary.flatMap((s, i) => {
-            let upText = `↑${s.increase}`;
-            let downText = `↓${s.decrease}`;
-            if (this.summaryDisplayMode() === 'proportion' && s.total > 0) {
-              upText = `↑${Math.round((s.increase / s.total) * 100)}%`;
-              downText = `↓${Math.round((s.decrease / s.total) * 100)}%`;
-            }
-            return [
-              {
-                x: xCoords[i],
-                y: 0,
-                yshift: -15,
-                xref: 'x',
-                yref: 'paper',
-                text: upText,
-                showarrow: false,
-                font: { size: 9, color: 'rgb(103, 0, 31)' },
-                yanchor: 'top'
-              },
-              {
-                x: xCoords[i],
-                y: 0,
-                yshift: -30,
-                xref: 'x',
-                yref: 'paper',
-                text: downText,
-                showarrow: false,
-                font: { size: 9, color: 'rgb(5, 48, 97)' },
-                yanchor: 'top'
-              }
-            ];
-          })
-        ],
+        annotations: annotations,
         plot_bgcolor: '#ccc',
         paper_bgcolor: 'white',
         width: width,

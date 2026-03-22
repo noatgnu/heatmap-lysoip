@@ -20,6 +20,18 @@ export class RankPlotComponent {
   currentXRange = signal<any>(null);
   currentYRange = signal<any>(null);
 
+  graphConfig = {
+    displaylogo: false,
+    responsive: true,
+    toImageButtonOptions: {
+      format: 'svg',
+      filename: 'rank_plot',
+      height: 600,
+      width: 800,
+      scale: 1
+    }
+  };
+
   graphData = computed(() => {
     const rawData = this.data();
     const selected = this.selectedGeneIds();
@@ -33,7 +45,6 @@ export class RankPlotComponent {
     const text = sorted.map(d => `${d.uniprotId} | ${d.gene}<br>Score: ${d.score.toFixed(2)}<br>Inc: ${d.increase}, Dec: ${d.decrease}, Total: ${d.total}`);
     
     const colors = y.map(val => val >= 0 ? 'rgb(103, 0, 31)' : 'rgb(5, 48, 97)');
-    
     const symbols = sorted.map(d => selected.has(d.uniprotId) ? 'diamond' : 'circle');
     const sizes = sorted.map(d => selected.has(d.uniprotId) ? 12 : 6);
     const opacities = sorted.map(d => selected.has(d.uniprotId) ? 1.0 : 0.5);
@@ -67,14 +78,16 @@ export class RankPlotComponent {
       layout: {
         title: {
           text: this.title(),
-          font: { size: 14, color: '#374151' }
+          font: { size: 12, color: '#374151' },
+          x: 0.5,
+          xanchor: 'center',
+          y: 0.9
         },
         uirevision: this.uiRevision(),
-        margin: { l: 50, b: 40, t: 40, r: 20 },
+        margin: { l: 50, b: 40, t: 80, r: 20 },
         hovermode: 'closest',
-        dragmode: 'lasso',
-        xaxis: {
-          title: 'Rank',
+        dragmode: 'zoom',
+        xaxis: {          title: 'Rank',
           showgrid: true,
           gridcolor: '#f3f4f6',
           range: xRange || undefined,

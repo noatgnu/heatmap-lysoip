@@ -54,6 +54,7 @@ export class ExplorerComponent implements OnInit {
   selectedFractions = signal<Set<string>>(new Set());
   flippedProjectIds = signal<Set<string>>(new Set());
   summaryDisplayMode = signal<'number' | 'proportion'>('proportion');
+  isHeatmapSwapped = signal<boolean>(false);
   log2fcCutoff = signal<number | null>(null);
   confidenceCutoff = signal<number | null>(null);
   rankCutoff = signal<number>(10);
@@ -119,6 +120,7 @@ export class ExplorerComponent implements OnInit {
         fractions: Array.from(this.selectedFractions()).join(',') || null,
         flipped: Array.from(this.flippedProjectIds()).join(',') || null,
         mode: this.summaryDisplayMode() === 'proportion' ? null : 'number',
+        swapped: this.isHeatmapSwapped() ? 'true' : null,
         sort: this.sortStack().join(','),
         cutoff: log2fcCut !== null && log2fcCut > 0 ? log2fcCut.toString() : null,
         conf: confCut !== null && confCut > 0 ? confCut.toString() : null
@@ -575,6 +577,16 @@ export class ExplorerComponent implements OnInit {
   exportAsCsv() {
     const filename = `heatmap_${this.currentDataset()}_${new Date().toISOString().slice(0, 10)}.csv`;
     this.exportService.exportAsCsv(this.displayedGenes(), this.filteredProjects(), filename);
+  }
+
+  exportProteinListCsv() {
+    const filename = `protein_list_${this.currentDataset()}_${new Date().toISOString().slice(0, 10)}`;
+    this.exportService.exportProteinList(this.displayedGenes(), 'csv', filename);
+  }
+
+  exportProteinListTsv() {
+    const filename = `protein_list_${this.currentDataset()}_${new Date().toISOString().slice(0, 10)}`;
+    this.exportService.exportProteinList(this.displayedGenes(), 'tsv', filename);
   }
 
   async copyGeneList() {

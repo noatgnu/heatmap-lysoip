@@ -186,6 +186,9 @@
           <p class="mt-1 max-w-2xl text-sm text-gray-500 italic">Multi-level grouping and filtering enabled.</p>
         </div>
         <div class="flex gap-2 flex-wrap">
+          <button (click)="isHeatmapSwapped.set(!isHeatmapSwapped())" [class.bg-indigo-50]="isHeatmapSwapped()" [class.text-indigo-700]="isHeatmapSwapped()" class="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded-md shadow-sm bg-white hover:bg-gray-50 transition-all active:scale-95">
+            <svg class="mr-1.5 h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/></svg> Swap Axis
+          </button>
           <div class="flex items-center bg-white border border-gray-300 rounded-md px-2 mr-2">
             <span class="text-[10px] font-bold text-gray-500 uppercase mr-2">Summary:</span>
             <button (click)="summaryDisplayMode.set('number')" [class.text-indigo-600]="summaryDisplayMode() === 'number'" [class.font-bold]="summaryDisplayMode() === 'number'" class="text-[10px] px-1 hover:text-indigo-500 transition-colors">#</button>
@@ -222,7 +225,13 @@
         <div class="flex flex-col gap-3">
           <div class="flex justify-between items-center">
             <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Selected Proteins ({{ displayedGenes().length }})</span>
-            @if (displayedGenes().length > 0) { <button (click)="clearAllProteins()" class="text-xs font-medium text-red-600 hover:text-red-800 transition-colors">Clear All</button> }
+            <div class="flex gap-2">
+              @if (displayedGenes().length > 0) {
+                <button (click)="exportProteinListCsv()" class="text-[10px] font-medium text-indigo-600 hover:text-indigo-800 transition-colors uppercase border border-indigo-200 px-1.5 py-0.5 rounded bg-white shadow-sm">CSV</button>
+                <button (click)="exportProteinListTsv()" class="text-[10px] font-medium text-emerald-600 hover:text-emerald-800 transition-colors uppercase border border-emerald-200 px-1.5 py-0.5 rounded bg-white shadow-sm">TSV</button>
+                <button (click)="clearAllProteins()" class="text-[10px] font-medium text-red-600 hover:text-red-800 transition-colors uppercase border border-red-200 px-1.5 py-0.5 rounded bg-white shadow-sm">Clear All</button>
+              }
+            </div>
           </div>
           @if (displayedGenes().length === 0) {
             <div class="min-h-[32px] flex items-center">
@@ -275,7 +284,7 @@
                   [data]="lrrk2RankData()" 
                   [selectedGeneIds]="effectiveHighlightedIds()"
                   [uiRevision]="uiRevision()"
-                  title="LRRK2 Experiments Rank Plot"
+                  title="Proportion of Proteomic Datasets Showing Protein Abundance Changes Linked to LRRK2 Activation"
                   (genesSelected)="selectGenesFromPlot($event)"
                 ></app-rank-plot>
               </app-collapsible-section>
@@ -294,7 +303,7 @@
                   [data]="gbaRankData()" 
                   [selectedGeneIds]="effectiveHighlightedIds()"
                   [uiRevision]="uiRevision()"
-                  title="GBA Experiments Rank Plot"
+                  title="Proportion of Proteomic Datasets Showing Protein Abundance Changes Linked to GBA Activation"
                   (genesSelected)="selectGenesFromPlot($event)"
                 ></app-rank-plot>
               </app-collapsible-section>
@@ -303,7 +312,7 @@
               @if (nonGbaProjects().length > 0) {
                 <div class="border border-gray-200 rounded-lg p-4 bg-gray-50 overflow-x-auto">
                   <h3 class="text-md font-bold text-indigo-700 mb-3">LRRK2 Experiments ({{ nonGbaProjects().length }})</h3>
-                  <app-heatmap [genes]="displayedGenes()" [projects]="nonGbaProjects()" [allProjects]="projects()" [summaryDisplayMode]="summaryDisplayMode()" (geneHovered)="onGeneHovered($event)"></app-heatmap>
+                  <app-heatmap [genes]="displayedGenes()" [projects]="nonGbaProjects()" [allProjects]="projects()" [summaryDisplayMode]="summaryDisplayMode()" [isSwapped]="isHeatmapSwapped()" (geneHovered)="onGeneHovered($event)"></app-heatmap>
                   <div class="mt-3 flex flex-col gap-3">
                     <div class="flex items-center gap-2">
                       <label class="text-[10px] font-bold text-gray-500 uppercase">Quick Filter:</label>

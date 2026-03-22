@@ -102,6 +102,30 @@ export class ExportService {
     this.downloadFile(tsvContent, filename, 'text/tab-separated-values');
   }
 
+  /**
+   * Exports only the list of proteins (Uniprot ID and Gene Name) as CSV or TSV.
+   */
+  exportProteinList(genes: GeneData[], format: 'csv' | 'tsv', filename = 'protein_list'): void {
+    const headers = ['Uniprot ID', 'Gene'];
+    const separator = format === 'csv' ? ',' : '\t';
+    const mimeType = format === 'csv' ? 'text/csv' : 'text/tab-separated-values';
+    const ext = format === 'csv' ? '.csv' : '.tsv';
+
+    const rows = genes.map(gene => {
+      const values = [gene.uniprotId, gene.gene];
+      return format === 'csv' 
+        ? values.map(v => this.escapeCsvValue(v)).join(separator)
+        : values.join(separator);
+    });
+
+    const headerLine = format === 'csv' 
+      ? headers.map(h => this.escapeCsvValue(h)).join(separator)
+      : headers.join(separator);
+
+    const content = [headerLine, ...rows].join('\n');
+    this.downloadFile(content, filename + ext, mimeType);
+  }
+
   private escapeCsvValue(value: string): string {
     if (value.includes(',') || value.includes('"') || value.includes('\n')) {
       return `"${value.replace(/"/g, '""')}"`;
