@@ -1,4 +1,4 @@
-import { Component, input, computed, signal, effect, untracked, ElementRef, viewChild, output } from '@angular/core';
+import { Component, input, computed, signal, effect, untracked, ElementRef, viewChild, output, HostListener, inject } from '@angular/core';
 import { PlotlyModule } from 'angular-plotly.js';
 import { GeneData, ProjectMetadata } from '../models';
 
@@ -7,11 +7,16 @@ import { GeneData, ProjectMetadata } from '../models';
   standalone: true,
   imports: [PlotlyModule],
   template: `
-    <div class="w-full bg-white">
+    <div class="w-full bg-white relative">
       <div 
         #topScrollContainer
-        class="sticky top-0 z-50 w-full overflow-x-auto overflow-y-hidden bg-gray-100 border-b border-gray-200 top-scrollbar"
-        style="height: 12px;"
+        [style.position]="isSticky() ? 'fixed' : 'relative'"
+        [style.top]="isSticky() ? '0' : '0'"
+        [style.width.px]="isSticky() ? stickyWidth() : null"
+        [style.z-index]="isSticky() ? 100 : 10"
+        [style.left.px]="isSticky() ? stickyLeft() : null"
+        class="overflow-x-auto overflow-y-hidden bg-gray-100 border-b border-gray-200 top-scrollbar"
+        style="height: 14px;"
         (scroll)="onTopScroll()"
       >
         <div [style.width.px]="graphData().layout.width" style="height: 1px;"></div>
@@ -37,7 +42,7 @@ import { GeneData, ProjectMetadata } from '../models';
           } @else {
             <div class="flex flex-col justify-center items-center h-[400px] text-gray-400">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2-0 00-2-2H5a2 2-0 00-2 2v6a2 2(0 002 2h2a2 2-0 002-2m0 0V5a2 2-0 012-2h2a2 2-0 012 2v10m-6 0a2 2-0 002 2h2a2 2-0 002-2m0 0V5a2 2-0 012-2h2a2 2-0 012 2v14a2 2-0 01-2 2h-2a2 2-0 01-2-2z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2-0 00-2-2H5a2 2-0 00-2 2v6a2 2(0 002 2h2a2 2-0 002-2m0 0V5a2 2-0 012-2h2a2 2 0 012 2v10m-6 0a2 2-0 002 2h2a2 2-0 002-2m0 0V5a2 2-0 012-2h2a2 2 0 012 2v14a2 2-0 01-2 2h-2a2 2-0 01-2-2z" />
               </svg>
               <span>No data available for the current selection.</span>
             </div>
@@ -49,21 +54,23 @@ import { GeneData, ProjectMetadata } from '../models';
   styles: [`
     :host { display: block; }
     .top-scrollbar::-webkit-scrollbar {
-      height: 8px;
+      height: 10px;
     }
     .top-scrollbar::-webkit-scrollbar-track {
       background: #f1f1f1;
     }
     .top-scrollbar::-webkit-scrollbar-thumb {
-      background: #ccc;
-      border-radius: 4px;
+      background: #bbb;
+      border-radius: 5px;
     }
     .top-scrollbar::-webkit-scrollbar-thumb:hover {
-      background: #aaa;
+      background: #999;
     }
   `]
 })
 export class HeatmapComponent {
+  private el = inject(ElementRef);
+  
   genes = input.required<GeneData[]>();
   projects = input.required<ProjectMetadata[]>();
   allProjects = input.required<ProjectMetadata[]>();
@@ -76,6 +83,29 @@ export class HeatmapComponent {
   topScrollContainer = viewChild<ElementRef<HTMLElement>>('topScrollContainer');
 
   revision = signal(0);
+  isSticky = signal(false);
+  stickyWidth = signal(0);
+  stickyLeft = signal(0);
+
+  @HostListener('window:scroll', [])
+  onWindowScroll() {
+    const rect = this.el.nativeElement.getBoundingClientRect();
+    // Sticky if the top of the component is above the viewport top AND bottom is still visible
+    const shouldBeSticky = rect.top < 0 && rect.bottom > 150;
+    
+    if (shouldBeSticky !== this.isSticky() || shouldBeSticky) {
+      this.isSticky.set(shouldBeSticky);
+      this.stickyWidth.set(this.el.nativeElement.offsetWidth);
+      this.stickyLeft.set(rect.left);
+    }
+  }
+
+  @HostListener('window:resize', [])
+  onWindowResize() {
+    const rect = this.el.nativeElement.getBoundingClientRect();
+    this.stickyWidth.set(this.el.nativeElement.offsetWidth);
+    this.stickyLeft.set(rect.left);
+  }
 
   getPlotElement(): HTMLElement | null {
     return this.plotContainer()?.nativeElement ?? null;
