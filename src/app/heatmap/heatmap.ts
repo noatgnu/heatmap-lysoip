@@ -7,22 +7,20 @@ import { GeneData, ProjectMetadata } from '../models';
   standalone: true,
   imports: [PlotlyModule],
   template: `
-    <div class="relative w-full border border-gray-200 rounded bg-white overflow-hidden">
-      <!-- Sticky Top Scrollbar -->
+    <div class="w-full bg-white">
       <div 
         #topScrollContainer
-        class="sticky top-0 z-50 w-full overflow-x-auto overflow-y-hidden bg-gray-50 border-b border-gray-200"
-        style="height: 16px;"
-        (scroll)="syncScroll(topScrollContainer, plotContainer)"
+        class="sticky top-0 z-50 w-full overflow-x-auto overflow-y-hidden bg-gray-100 border-b border-gray-200 top-scrollbar"
+        style="height: 12px;"
+        (scroll)="onTopScroll()"
       >
         <div [style.width.px]="graphData().layout.width" style="height: 1px;"></div>
       </div>
 
-      <!-- Main Plot Container -->
       <div 
         #plotContainer 
-        class="w-full overflow-x-auto overflow-y-auto text-center"
-        (scroll)="syncScroll(plotContainer, topScrollContainer)"
+        class="w-full overflow-x-auto overflow-y-auto text-center main-plot-area"
+        (scroll)="onMainScroll()"
       >
         <div class="inline-block" [style.width.px]="graphData().layout.width">
           @if (genes().length > 0 && projects().length > 0) {
@@ -39,7 +37,7 @@ import { GeneData, ProjectMetadata } from '../models';
           } @else {
             <div class="flex flex-col justify-center items-center h-[400px] text-gray-400">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2-0 00-2-2H5a2 2-0 00-2 2v6a2 2(0 002 2h2a2 2-0 002-2m0 0V5a2 2-0 012-2h2a2 2-0 012 2v14a2 2-0 01-2 2h-2a2 2-0 01-2-2z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2-0 00-2-2H5a2 2-0 00-2 2v6a2 2(0 002 2h2a2 2-0 002-2m0 0V5a2 2-0 012-2h2a2 2-0 012 2v10m-6 0a2 2-0 002 2h2a2 2-0 002-2m0 0V5a2 2-0 012-2h2a2 2-0 012 2v14a2 2-0 01-2 2h-2a2 2-0 01-2-2z" />
               </svg>
               <span>No data available for the current selection.</span>
             </div>
@@ -50,19 +48,18 @@ import { GeneData, ProjectMetadata } from '../models';
   `,
   styles: [`
     :host { display: block; }
-    /* Hide the 1px spacer in the top scrollbar but keep it scrollable */
-    #topScrollContainer::-webkit-scrollbar {
-      height: 10px;
+    .top-scrollbar::-webkit-scrollbar {
+      height: 8px;
     }
-    #topScrollContainer::-webkit-scrollbar-track {
+    .top-scrollbar::-webkit-scrollbar-track {
       background: #f1f1f1;
     }
-    #topScrollContainer::-webkit-scrollbar-thumb {
-      background: #888;
-      border-radius: 5px;
+    .top-scrollbar::-webkit-scrollbar-thumb {
+      background: #ccc;
+      border-radius: 4px;
     }
-    #topScrollContainer::-webkit-scrollbar-thumb:hover {
-      background: #555;
+    .top-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #aaa;
     }
   `]
 })
@@ -97,13 +94,27 @@ export class HeatmapComponent {
   }));
 
   private isSyncing = false;
-  syncScroll(source: HTMLElement, target: HTMLElement) {
-    if (this.isSyncing) {
-      this.isSyncing = false;
-      return;
+
+  onTopScroll() {
+    if (this.isSyncing) return;
+    const top = this.topScrollContainer()?.nativeElement;
+    const main = this.plotContainer()?.nativeElement;
+    if (top && main) {
+      this.isSyncing = true;
+      main.scrollLeft = top.scrollLeft;
+      requestAnimationFrame(() => this.isSyncing = false);
     }
-    this.isSyncing = true;
-    target.scrollLeft = source.scrollLeft;
+  }
+
+  onMainScroll() {
+    if (this.isSyncing) return;
+    const top = this.topScrollContainer()?.nativeElement;
+    const main = this.plotContainer()?.nativeElement;
+    if (top && main) {
+      this.isSyncing = true;
+      top.scrollLeft = main.scrollLeft;
+      requestAnimationFrame(() => this.isSyncing = false);
+    }
   }
 
   onHover(event: any) {
@@ -351,7 +362,7 @@ export class HeatmapComponent {
           fixedrange: false,
           zeroline: false,
           showgrid: false,
-          constrange: 'domain',
+          constrain: 'domain',
           scaleanchor: 'y',
           scaleratio: 1,
           tickvals: xCoords,
