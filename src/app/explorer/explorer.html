@@ -306,11 +306,18 @@
               </app-collapsible-section>
             </div>
 
-            <div class="flex justify-end px-1">
-              <button (click)="isHeatmapSwapped.set(!isHeatmapSwapped())" [class.bg-indigo-600]="isHeatmapSwapped()" [class.text-white]="isHeatmapSwapped()" [class.border-indigo-600]="isHeatmapSwapped()" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-bold rounded-lg shadow-sm bg-white hover:bg-gray-50 transition-all active:scale-95 gap-2">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/></svg> 
-                Swap Axes
-              </button>
+            <div class="flex justify-end px-1 items-center gap-4">
+              <span class="text-xs font-bold text-gray-500 uppercase">Heatmap Orientation:</span>
+              <div class="flex bg-gray-100 p-1 rounded-lg border border-gray-200">
+                <label class="flex items-center gap-1.5 px-3 py-1 rounded-md cursor-pointer transition-all" [class.bg-white]="!isHeatmapSwapped()" [class.shadow-sm]="!isHeatmapSwapped()" [class.text-indigo-600]="!isHeatmapSwapped()">
+                  <input type="radio" class="hidden" [checked]="!isHeatmapSwapped()" (change)="isHeatmapSwapped.set(false)">
+                  <span class="text-[11px] font-bold uppercase">Exp on Top</span>
+                </label>
+                <label class="flex items-center gap-1.5 px-3 py-1 rounded-md cursor-pointer transition-all" [class.bg-white]="isHeatmapSwapped()" [class.shadow-sm]="isHeatmapSwapped()" [class.text-indigo-600]="isHeatmapSwapped()">
+                  <input type="radio" class="hidden" [checked]="isHeatmapSwapped()" (change)="isHeatmapSwapped.set(true)">
+                  <span class="text-[11px] font-bold uppercase">Prot on Top</span>
+                </label>
+              </div>
             </div>
 
             <div class="grid grid-cols-2 gap-4">
