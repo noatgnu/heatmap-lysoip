@@ -661,6 +661,10 @@ export class ExplorerComponent implements OnInit {
       this.flippedProjectIds.set(new Set(params['flipped'].split(',')));
     }
 
+    if (params['swapped'] === 'true') {
+      this.isHeatmapSwapped.set(true);
+    }
+
     if (params['sort']) {
       this.sortStack.set(params['sort'].split(',') as any);
     }
