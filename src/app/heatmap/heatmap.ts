@@ -7,28 +7,64 @@ import { GeneData, ProjectMetadata } from '../models';
   standalone: true,
   imports: [PlotlyModule],
   template: `
-    <div #plotContainer class="w-full overflow-x-auto overflow-y-auto border border-gray-200 rounded bg-white text-center">
-      @if (genes().length > 0 && projects().length > 0) {
-        <plotly-plot
-          [data]="graphData().data"
-          [layout]="graphData().layout"
-          [config]="graphConfig()"
-          [revision]="revision()"
-          [useResizeHandler]="true"
-          [style]="{display: 'inline-block', width: graphData().layout.width + 'px', height: (graphData().layout.height || 600) + 'px'}"
-          (hover)="onHover($event)"
-          (unhover)="onUnhover()"
-        ></plotly-plot>
-      } @else {
-        <div class="flex flex-col justify-center items-center h-[400px] text-gray-400">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2-0 00-2-2H5a2 2-0 00-2 2v6a2 2(0 002 2h2a2 2-0 002-2m0 0V5a2 2-0 012-2h2a2 2-0 012 2v14a2 2-0 01-2 2h-2a2 2-0 01-2-2z" />
-          </svg>
-          <span>No data available for the current selection.</span>
+    <div class="relative w-full border border-gray-200 rounded bg-white overflow-hidden">
+      <!-- Sticky Top Scrollbar -->
+      <div 
+        #topScrollContainer
+        class="sticky top-0 z-50 w-full overflow-x-auto overflow-y-hidden bg-gray-50 border-b border-gray-200"
+        style="height: 16px;"
+        (scroll)="syncScroll(topScrollContainer, plotContainer)"
+      >
+        <div [style.width.px]="graphData().layout.width" style="height: 1px;"></div>
+      </div>
+
+      <!-- Main Plot Container -->
+      <div 
+        #plotContainer 
+        class="w-full overflow-x-auto overflow-y-auto text-center"
+        (scroll)="syncScroll(plotContainer, topScrollContainer)"
+      >
+        <div class="inline-block" [style.width.px]="graphData().layout.width">
+          @if (genes().length > 0 && projects().length > 0) {
+            <plotly-plot
+              [data]="graphData().data"
+              [layout]="graphData().layout"
+              [config]="graphConfig()"
+              [revision]="revision()"
+              [useResizeHandler]="true"
+              [style]="{display: 'inline-block', width: graphData().layout.width + 'px', height: (graphData().layout.height || 600) + 'px'}"
+              (hover)="onHover($event)"
+              (unhover)="onUnhover()"
+            ></plotly-plot>
+          } @else {
+            <div class="flex flex-col justify-center items-center h-[400px] text-gray-400">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2-0 00-2-2H5a2 2-0 00-2 2v6a2 2(0 002 2h2a2 2-0 002-2m0 0V5a2 2-0 012-2h2a2 2-0 012 2v14a2 2-0 01-2 2h-2a2 2-0 01-2-2z" />
+              </svg>
+              <span>No data available for the current selection.</span>
+            </div>
+          }
         </div>
-      }
+      </div>
     </div>
-  `
+  `,
+  styles: [`
+    :host { display: block; }
+    /* Hide the 1px spacer in the top scrollbar but keep it scrollable */
+    #topScrollContainer::-webkit-scrollbar {
+      height: 10px;
+    }
+    #topScrollContainer::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+    #topScrollContainer::-webkit-scrollbar-thumb {
+      background: #888;
+      border-radius: 5px;
+    }
+    #topScrollContainer::-webkit-scrollbar-thumb:hover {
+      background: #555;
+    }
+  `]
 })
 export class HeatmapComponent {
   genes = input.required<GeneData[]>();
@@ -40,6 +76,7 @@ export class HeatmapComponent {
   geneHovered = output<string | null>();
 
   plotContainer = viewChild<ElementRef<HTMLElement>>('plotContainer');
+  topScrollContainer = viewChild<ElementRef<HTMLElement>>('topScrollContainer');
 
   revision = signal(0);
 
@@ -58,6 +95,16 @@ export class HeatmapComponent {
       scale: 1
     }
   }));
+
+  private isSyncing = false;
+  syncScroll(source: HTMLElement, target: HTMLElement) {
+    if (this.isSyncing) {
+      this.isSyncing = false;
+      return;
+    }
+    this.isSyncing = true;
+    target.scrollLeft = source.scrollLeft;
+  }
 
   onHover(event: any) {
     if (event?.points?.[0]) {
@@ -304,7 +351,7 @@ export class HeatmapComponent {
           fixedrange: false,
           zeroline: false,
           showgrid: false,
-          constrain: 'domain',
+          constrange: 'domain',
           scaleanchor: 'y',
           scaleratio: 1,
           tickvals: xCoords,
