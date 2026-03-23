@@ -1,4 +1,30 @@
 <div class="min-h-screen bg-gray-100 flex py-10 px-4 sm:px-6 lg:px-8 gap-8">
+  <!-- Floating Sticky Quick Filter -->
+  <div class="fixed bottom-8 right-8 z-[90]">
+    <div class="bg-white rounded-lg shadow-xl border border-indigo-100 p-3 flex flex-col gap-2 w-64">
+      <div class="flex items-center justify-between">
+        <label for="floating-filter" class="text-[10px] font-bold text-indigo-600 uppercase tracking-wider">Heatmap Quick Filter</label>
+        @if (geneFilterTerm()) {
+          <button (click)="geneFilterTerm.set('')" class="text-[10px] text-gray-400 hover:text-red-500 uppercase font-bold transition-colors">Clear</button>
+        }
+      </div>
+      <div class="relative">
+        <input 
+          type="text" 
+          id="floating-filter"
+          [ngModel]="geneFilterTerm()" 
+          (ngModelChange)="geneFilterTerm.set($event)"
+          placeholder="Filter heatmap proteins..."
+          class="w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all shadow-inner"
+        />
+        <div class="absolute right-3 top-2.5 text-gray-400">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        </div>
+      </div>
+      <p class="text-[9px] text-gray-400 italic">Filters visible proteins in both heatmaps.</p>
+    </div>
+  </div>
+
   @if (pendingBulkSelection()) {
     <div class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
       <div class="bg-white rounded-xl shadow-2xl border border-gray-200 max-w-md w-full overflow-hidden">
@@ -72,12 +98,12 @@
 
     <app-collapsible-section title="Grouping Presets">
       <div class="flex flex-col gap-2 p-1">
-        <button (click)="setPreset('organ')" class="text-left text-[11px] font-medium px-3 py-2 bg-white hover:bg-gray-50 rounded border border-gray-200 transition-colors shadow-sm">Organ > Protein > Mutation > Knockout > Treatment > Fraction</button>
-        <button (click)="setPreset('protein')" class="text-left text-[11px] font-medium px-3 py-2 bg-white hover:bg-gray-50 rounded border border-gray-200 transition-colors shadow-sm">Protein > Mutation > Knockout > Treatment > Fraction > Organ</button>
-        <button (click)="setPreset('mutation')" class="text-left text-[11px] font-medium px-3 py-2 bg-white hover:bg-gray-50 rounded border border-gray-200 transition-colors shadow-sm">Mutation > Knockout > Treatment > Fraction > Organ > Protein</button>
-        <button (click)="setPreset('knockout')" class="text-left text-[11px] font-medium px-3 py-2 bg-white hover:bg-gray-50 rounded border border-gray-200 transition-colors shadow-sm">Knockout > Mutation > Treatment > Fraction > Organ > Protein</button>
-        <button (click)="setPreset('treatment')" class="text-left text-[11px] font-medium px-3 py-2 bg-white hover:bg-gray-50 rounded border border-gray-200 transition-colors shadow-sm">Treatment > Mutation > Fraction > Organ > Protein > Knockout</button>
-        <button (click)="setPreset('fraction')" class="text-left text-[11px] font-medium px-3 py-2 bg-white hover:bg-gray-50 rounded border border-gray-200 transition-colors shadow-sm">Fraction > Organ > Protein > Mutation > Treatment > Knockout</button>
+        <button (click)="setPreset('organ')" class="text-left text-[11px] font-medium px-3 py-2 bg-white hover:bg-gray-50 rounded border border-gray-200 transition-colors shadow-sm">Organ > Protein > Mutation > Knockout > Treatment</button>
+        <button (click)="setPreset('protein')" class="text-left text-[11px] font-medium px-3 py-2 bg-white hover:bg-gray-50 rounded border border-gray-200 transition-colors shadow-sm">Protein > Mutation > Knockout > Treatment > Organ</button>
+        <button (click)="setPreset('mutation')" class="text-left text-[11px] font-medium px-3 py-2 bg-white hover:bg-gray-50 rounded border border-gray-200 transition-colors shadow-sm">Mutation > Knockout > Treatment > Organ > Protein</button>
+        <button (click)="setPreset('knockout')" class="text-left text-[11px] font-medium px-3 py-2 bg-white hover:bg-gray-50 rounded border border-gray-200 transition-colors shadow-sm">Knockout > Mutation > Treatment > Organ > Protein</button>
+        <button (click)="setPreset('treatment')" class="text-left text-[11px] font-medium px-3 py-2 bg-white hover:bg-gray-50 rounded border border-gray-200 transition-colors shadow-sm">Treatment > Mutation > Organ > Protein > Knockout</button>
+        <!-- <button (click)="setPreset('fraction')" class="text-left text-[11px] font-medium px-3 py-2 bg-white hover:bg-gray-50 rounded border border-gray-200 transition-colors shadow-sm">Fraction > Organ > Protein > Mutation > Treatment > Knockout</button> -->
       </div>
     </app-collapsible-section>
 
@@ -164,7 +190,7 @@
       </div>
     </app-collapsible-section>
 
-    <app-collapsible-section title="Filter by Fraction" [defaultOpen]="false">
+    <!-- <app-collapsible-section title="Filter by Fraction" [defaultOpen]="false">
       <div class="space-y-1 max-h-48 overflow-y-auto border rounded p-2 bg-gray-50">
         @for (f of fractions(); track f) {
           <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-1 rounded">
@@ -173,7 +199,7 @@
           </label>
         }
       </div>
-    </app-collapsible-section>
+    </app-collapsible-section> -->
   </div>
 
   <div class="flex-1 flex flex-col gap-6 min-w-0">
@@ -326,7 +352,7 @@
                   <h3 class="text-md font-bold text-indigo-700 mb-3">LRRK2 Experiments ({{ nonGbaProjects().length }})</h3>
                   <app-heatmap [genes]="displayedGenes()" [projects]="nonGbaProjects()" [allProjects]="projects()" [summaryDisplayMode]="summaryDisplayMode()" [isSwapped]="isHeatmapSwapped()" (geneHovered)="onGeneHovered($event)"></app-heatmap>
                   <div class="mt-3 flex flex-col gap-3">
-                    <div class="flex items-center gap-2">
+                    <!-- <div class="flex items-center gap-2">
                       <label class="text-[10px] font-bold text-gray-500 uppercase">Quick Filter:</label>
                       <input 
                         type="text" 
@@ -335,7 +361,7 @@
                         placeholder="Search selected..."
                         class="px-2 py-1 text-xs border border-gray-300 rounded focus:ring-indigo-500 focus:border-indigo-500 w-32"
                       />
-                    </div>
+                    </div> -->
                     <div class="flex gap-4 text-xs">
                       <span class="px-2 py-1 rounded bg-red-100 text-red-800">
                         ↑ Increase: @if (summaryDisplayMode() === 'number') { {{ lrrk2Summary().increase }} } @else { {{ lrrk2Summary().total > 0 ? Math.round((lrrk2Summary().increase / lrrk2Summary().total) * 100) : 0 }}% }
@@ -353,7 +379,7 @@
                   <h3 class="text-md font-bold text-emerald-700 mb-3">GBA Experiments ({{ gbaProjects().length }})</h3>
                   <app-heatmap [genes]="displayedGenes()" [projects]="gbaProjects()" [allProjects]="projects()" [summaryDisplayMode]="summaryDisplayMode()" [isSwapped]="isHeatmapSwapped()" (geneHovered)="onGeneHovered($event)"></app-heatmap>
                   <div class="mt-3 flex flex-col gap-3">
-                    <div class="flex items-center gap-2">
+                    <!-- <div class="flex items-center gap-2">
                       <label class="text-[10px] font-bold text-gray-500 uppercase">Quick Filter:</label>
                       <input 
                         type="text" 
@@ -362,7 +388,7 @@
                         placeholder="Search selected..."
                         class="px-2 py-1 text-xs border border-gray-300 rounded focus:ring-indigo-500 focus:border-indigo-500 w-32"
                       />
-                    </div>
+                    </div> -->
                     <div class="flex gap-4 text-xs">
                       <span class="px-2 py-1 rounded bg-red-100 text-red-800">
                         ↑ Increase: @if (summaryDisplayMode() === 'number') { {{ gbaSummary().increase }} } @else { {{ gbaSummary().total > 0 ? Math.round((gbaSummary().increase / gbaSummary().total) * 100) : 0 }}% }
