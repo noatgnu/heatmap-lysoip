@@ -237,7 +237,7 @@ export class HeatmapComponent {
 
     if (maxAbs === 0) maxAbs = 1;
 
-    const cellSize = 25;
+    const cellSize = swapped ? 30 : 25;
     const maxProjNameLen = Math.max(...projLabels.map(n => n.length));
     const maxGeneNameLen = Math.max(...geneLabels.map(n => n.length));
 
@@ -251,7 +251,7 @@ export class HeatmapComponent {
     } else {
       leftMargin = Math.max(400, maxProjNameLen * 9 + 80);
       topMargin = 200;
-      bottomMargin = 140;
+      bottomMargin = 200;
       rightMargin = 50;
     }
 
@@ -267,7 +267,7 @@ export class HeatmapComponent {
       {
         x: colorbarXStart,
         y: 0,
-        yshift: !swapped ? -60 : -105,
+        yshift: !swapped ? -60 : -150,
         xref: 'paper',
         yref: 'paper',
         xanchor: 'right',
@@ -278,7 +278,7 @@ export class HeatmapComponent {
       {
         x: colorbarXEnd,
         y: 0,
-        yshift: !swapped ? -60 : -105,
+        yshift: !swapped ? -60 : -150,
         xref: 'paper',
         yref: 'paper',
         xanchor: 'left',
@@ -320,26 +320,29 @@ export class HeatmapComponent {
           xanchor: 'left'
         });
       } else {
+        const isStaggered = i % 2 !== 0;
+        const staggerOffset = isStaggered ? -40 : 0;
+        
         annotations.push({
           x: xCoords[i],
           y: 0,
-          yshift: -15,
+          yshift: -12 + staggerOffset,
           xref: 'x',
           yref: 'paper',
           text: upText,
           showarrow: false,
-          font: { size: 9, color: 'rgb(103, 0, 31)' },
+          font: { size: 8, color: 'rgb(103, 0, 31)' },
           yanchor: 'top'
         });
         annotations.push({
           x: xCoords[i],
           y: 0,
-          yshift: -30,
+          yshift: -24 + staggerOffset,
           xref: 'x',
           yref: 'paper',
           text: downText,
           showarrow: false,
-          font: { size: 9, color: 'rgb(5, 48, 97)' },
+          font: { size: 8, color: 'rgb(5, 48, 97)' },
           yanchor: 'top'
         });
       }
@@ -376,7 +379,7 @@ export class HeatmapComponent {
             x: 0.5,
             yanchor: 'top',
             y: 0,
-            ypad: !swapped ? 20 : 55,
+            ypad: !swapped ? 20 : 100,
             tickvals: [-maxAbs, 0, maxAbs],
             ticktext: [(-maxAbs).toFixed(1), '0', maxAbs.toFixed(1)],
             tickfont: { size: 9 }
