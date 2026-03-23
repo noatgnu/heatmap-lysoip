@@ -8,7 +8,7 @@ import { GeneData, ProjectMetadata } from '../models';
   imports: [PlotlyModule],
   template: `
     <div class="w-full bg-white relative">
-      <div 
+      <div
         #topScrollContainer
         [style.position]="isSticky() ? 'fixed' : 'relative'"
         [style.top]="isSticky() ? '0' : '0'"
@@ -22,8 +22,8 @@ import { GeneData, ProjectMetadata } from '../models';
         <div [style.width.px]="graphData().layout.width" style="height: 1px;"></div>
       </div>
 
-      <div 
-        #plotContainer 
+      <div
+        #plotContainer
         class="w-full overflow-x-auto overflow-y-auto text-center main-plot-area"
         (scroll)="onMainScroll()"
       >
@@ -70,7 +70,7 @@ import { GeneData, ProjectMetadata } from '../models';
 })
 export class HeatmapComponent {
   private el = inject(ElementRef);
-  
+
   genes = input.required<GeneData[]>();
   projects = input.required<ProjectMetadata[]>();
   allProjects = input.required<ProjectMetadata[]>();
@@ -92,7 +92,7 @@ export class HeatmapComponent {
     const rect = this.el.nativeElement.getBoundingClientRect();
     // Sticky if the top of the component is above the viewport top AND bottom is still visible
     const shouldBeSticky = rect.top < 0 && rect.bottom > 150;
-    
+
     if (shouldBeSticky !== this.isSticky() || shouldBeSticky) {
       this.isSticky.set(shouldBeSticky);
       this.stickyWidth.set(this.el.nativeElement.offsetWidth);
@@ -152,7 +152,7 @@ export class HeatmapComponent {
       const p = event.points[0];
       const genes = this.genes();
       const swapped = this.isSwapped();
-      
+
       let geneIdx = -1;
       if (swapped) {
         geneIdx = p.x !== undefined ? (p.x as number) : -1;
@@ -192,23 +192,39 @@ export class HeatmapComponent {
     const projCoords = projs.map((_, i) => i);
     const projLabels = projs.map((p: ProjectMetadata) => p.projectName);
 
-    let xCoords, yCoords, xLabels, yLabels, z;
+    let xCoords, yCoords, xLabels, yLabels, z, customdata;
 
     if (!swapped) {
       xLabels = projLabels;
       yLabels = geneLabels;
       xCoords = projCoords;
       yCoords = geneCoords;
-      z = genes.map((g: GeneData) => 
+      z = genes.map((g: GeneData) =>
         projs.map((_, projIdx: number) => g.log2fcs[projIndices[projIdx]])
       );
+      customdata = genes.map((g: GeneData) =>
+        projs.map((_, projIdx: number) => ({
+          conf: g.confidences[projIndices[projIdx]],
+          gene: g.gene,
+          proj: projs[projIdx].projectName
+        }))
+      );
     } else {
+      xLabels = geneLabels;
+      yLabels = geneLabels;
       xLabels = geneLabels;
       yLabels = projLabels;
       xCoords = geneCoords;
       yCoords = projCoords;
       z = projs.map((_, projIdx: number) =>
         genes.map((g: GeneData) => g.log2fcs[projIndices[projIdx]])
+      );
+      customdata = projs.map((_, projIdx: number) =>
+        genes.map((g: GeneData) => ({
+          conf: g.confidences[projIndices[projIdx]],
+          gene: g.gene,
+          proj: projs[projIdx].projectName
+        }))
       );
     }
 
@@ -242,7 +258,7 @@ export class HeatmapComponent {
     const maxGeneNameLen = Math.max(...geneLabels.map(n => n.length));
 
     let leftMargin, topMargin, bottomMargin, rightMargin;
-    
+
     if (!swapped) {
       leftMargin = Math.max(250, maxGeneNameLen * 8 + 20);
       topMargin = Math.max(200, maxProjNameLen * 8 + 20);
@@ -322,7 +338,7 @@ export class HeatmapComponent {
       } else {
         const isStaggered = i % 2 !== 0;
         const staggerOffset = isStaggered ? -40 : 0;
-        
+
         annotations.push({
           x: xCoords[i],
           y: 0,
@@ -354,6 +370,12 @@ export class HeatmapComponent {
           z: z,
           x: xCoords,
           y: yCoords,
+          customdata: customdata,
+          hovertemplate:
+            '<b>Protein:</b> %{customdata.gene}<br>' +
+            '<b>Experiment:</b> %{customdata.proj}<br>' +
+            '<b>Log2FC:</b> %{z:.3f}<br>' +
+            '<b>Confidence:</b> %{customdata.conf:.3f}<extra></extra>',
           type: 'heatmap',
           hoverongaps: false,
           colorscale: [

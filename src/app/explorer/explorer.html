@@ -96,6 +96,50 @@
 
     <app-curtain-filter (filterSelected)="applyCurtainFilter($event)"></app-curtain-filter>
 
+    <app-collapsible-section title="Significance Filters" [defaultOpen]="true">
+      <div class="flex flex-col gap-4 p-1">
+        <div class="space-y-1">
+          <div class="flex justify-between items-center">
+            <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Log2FC Cutoff</label>
+            @if (log2fcCutoff()) {
+              <button (click)="clearLog2fcCutoff()" class="text-[9px] text-indigo-600 hover:text-indigo-800 font-bold">CLEAR</button>
+            }
+          </div>
+          <div class="relative">
+            <input 
+              type="number" 
+              [ngModel]="log2fcCutoff()" 
+              (ngModelChange)="setLog2fcCutoff($event)"
+              step="0.1" min="0"
+              placeholder="e.g. 0.5"
+              class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-indigo-500 outline-none transition-all shadow-sm"
+            />
+          </div>
+          <p class="text-[9px] text-gray-400 italic">Hides genes with |Log2FC| < threshold.</p>
+        </div>
+
+        <div class="space-y-1">
+          <div class="flex justify-between items-center">
+            <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Confidence Cutoff</label>
+            @if (confidenceCutoff()) {
+              <button (click)="clearConfidenceCutoff()" class="text-[9px] text-indigo-600 hover:text-indigo-800 font-bold">CLEAR</button>
+            }
+          </div>
+          <div class="relative">
+            <input 
+              type="number" 
+              [ngModel]="confidenceCutoff()" 
+              (ngModelChange)="setConfidenceCutoff($event)"
+              step="0.1" min="0"
+              placeholder="e.g. 1.3"
+              class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-indigo-500 outline-none transition-all shadow-sm"
+            />
+          </div>
+          <p class="text-[9px] text-gray-400 italic">Hides genes with Confidence < threshold.</p>
+        </div>
+      </div>
+    </app-collapsible-section>
+
     <app-collapsible-section title="Grouping Presets">
       <div class="flex flex-col gap-2 p-1">
         <button (click)="setPreset('organ')" class="text-left text-[11px] font-medium px-3 py-2 bg-white hover:bg-gray-50 rounded border border-gray-200 transition-colors shadow-sm">Organ > Protein > Mutation > Knockout > Treatment</button>
