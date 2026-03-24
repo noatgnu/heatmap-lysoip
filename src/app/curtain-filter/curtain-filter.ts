@@ -1,6 +1,7 @@
-import { Component, OnInit, inject, signal, output, computed } from '@angular/core';
+import { Component, OnInit, inject, signal, output, computed, OnDestroy, HostListener, ElementRef } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
+import { Subject, debounceTime, distinctUntilChanged, switchMap, of } from 'rxjs';
 
 export interface DataFilterList {
   id: number;
@@ -16,8 +17,9 @@ export interface DataFilterList {
   templateUrl: './curtain-filter.html',
   styleUrl: './curtain-filter.scss'
 })
-export class CurtainFilterComponent implements OnInit {
+export class CurtainFilterComponent implements OnInit, OnDestroy {
   private http = inject(HttpClient);
+  private el = inject(ElementRef);
   private baseUrl = 'https://curtain-backend.omics.quest';
 
   categories = signal<string[]>([]);
@@ -26,8 +28,21 @@ export class CurtainFilterComponent implements OnInit {
   filterSearchTerm = signal<string>('');
   isLoadingFilters = signal(false);
 
+  // Global search
+  globalSearchTerm = signal<string>('');
+  globalSearchResults = signal<DataFilterList[]>([]);
+  isGlobalSearching = signal(false);
+  private searchSubject = new Subject<string>();
+
   pageSize = 10;
   currentPage = signal(0);
+
+  @HostListener('document:click', ['$event'])
+  onClick(event: MouseEvent) {
+    if (!this.el.nativeElement.contains(event.target)) {
+      this.globalSearchResults.set([]);
+    }
+  }
 
   filteredFilters = computed(() => {
     const term = this.filterSearchTerm().toLowerCase().trim();
@@ -53,12 +68,43 @@ export class CurtainFilterComponent implements OnInit {
   ngOnInit() {
     this.http.get<string[]>(`${this.baseUrl}/data_filter_list/get_all_category/`)
       .subscribe(cats => this.categories.set(cats.sort()));
+
+    // Setup global search typeahead
+    this.searchSubject.pipe(
+      debounceTime(300),
+      distinctUntilChanged(),
+      switchMap(term => {
+        if (term.length < 2) return of({results: []});
+        this.isGlobalSearching.set(true);
+        return this.http.get<{results: DataFilterList[]}>(`${this.baseUrl}/data_filter_list/?name=${encodeURIComponent(term)}`);
+      })
+    ).subscribe({
+      next: (data) => {
+        this.globalSearchResults.set(Array.isArray(data.results) ? data.results : []);
+        this.isGlobalSearching.set(false);
+      },
+      error: () => {
+        this.globalSearchResults.set([]);
+        this.isGlobalSearching.set(false);
+      }
+    });
+  }
+
+  ngOnDestroy() {
+    this.searchSubject.complete();
+  }
+
+  onGlobalSearchChange(term: string) {
+    this.globalSearchTerm.set(term);
+    this.searchSubject.next(term);
   }
 
   onCategoryChange(category: string) {
     this.selectedCategory.set(category);
     this.currentPage.set(0);
     this.filters.set([]);
+    this.globalSearchTerm.set('');
+    this.globalSearchResults.set([]);
     if (category) {
       this.isLoadingFilters.set(true);
       this.http.get<{results: DataFilterList[]}>(`${this.baseUrl}/data_filter_list/?category=${encodeURIComponent(category)}`)
@@ -94,5 +140,7 @@ export class CurtainFilterComponent implements OnInit {
 
   selectFilter(filter: DataFilterList) {
     this.filterSelected.emit(filter.data);
+    this.globalSearchTerm.set('');
+    this.globalSearchResults.set([]);
   }
 }

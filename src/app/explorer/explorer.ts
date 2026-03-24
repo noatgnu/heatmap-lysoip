@@ -198,12 +198,14 @@ export class ExplorerComponent implements OnInit {
       }
     });
 
-    if (matchedIds.size > 0) {
+    if (matchedIds.size === 1) {
       this.selectedGeneIds.update((set: Set<string>) => {
         const newSet = new Set(set);
-        matchedIds.forEach((id: string) => newSet.add(id));
+        newSet.add(Array.from(matchedIds)[0]);
         return newSet;
       });
+    } else if (matchedIds.size > 1) {
+      this.pendingBulkSelection.set(Array.from(matchedIds));
     }
   }
 
