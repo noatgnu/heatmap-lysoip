@@ -22,8 +22,8 @@ export class DataService {
   isLoading = signal(false);
 
   private readonly fileNames: Record<DatasetType, string> = {
-    lysoip: 'zzz-FinalDestination_LysoIP_summary_FORMATTED_ForFiltering_20240708_renamed.txt',
-    wcl: 'zzz-FinalDestination_WCL_summary_FORMATTED_Forfiltering_20240708_renamed.txt'
+    lysoip: 'zzz-FinalDestination_LysoIP_summary_WTvsMutant_20240708.txt',
+    wcl: 'zzz-FinalDestination_WCL_summary_WTvsMutant_20240708.txt'
   };
 
   /**
