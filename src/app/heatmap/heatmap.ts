@@ -75,6 +75,7 @@ export class HeatmapComponent {
   genes = input.required<GeneData[]>();
   projects = input.required<ProjectMetadata[]>();
   allProjects = input.required<ProjectMetadata[]>();
+  selectedGeneIds = input<Set<string>>(new Set());
   summaryDisplayMode = input<'number' | 'proportion'>('proportion');
   isSwapped = input<boolean>(false);
 
@@ -385,6 +386,40 @@ export class HeatmapComponent {
       }
     });
 
+    const shapes: any[] = [];
+    const selected = this.selectedGeneIds();
+    genes.forEach((g, i) => {
+      if (selected.has(g.uniprotId)) {
+        if (!swapped) {
+          // Highlight row on the left axis
+          shapes.push({
+            type: 'rect',
+            xref: 'paper',
+            yref: 'y',
+            x0: -0.02,
+            x1: 0,
+            y0: yCoords[i] - 0.5,
+            y1: yCoords[i] + 0.5,
+            fillcolor: 'rgba(79, 70, 229, 0.6)',
+            line: { width: 0 }
+          });
+        } else {
+          // Highlight column on the top axis
+          shapes.push({
+            type: 'rect',
+            xref: 'x',
+            yref: 'paper',
+            x0: xCoords[i] - 0.5,
+            x1: xCoords[i] + 0.5,
+            y0: 1,
+            y1: 1.02,
+            fillcolor: 'rgba(79, 70, 229, 0.6)',
+            line: { width: 0 }
+          });
+        }
+      }
+    });
+
     return {
       data: [
         {
@@ -457,6 +492,7 @@ export class HeatmapComponent {
           ticktext: yLabels,
           dtick: 1
         },
+        shapes: shapes,
         annotations: annotations,
         plot_bgcolor: '#ccc',
         paper_bgcolor: 'white',
