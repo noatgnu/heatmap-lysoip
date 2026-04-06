@@ -26,33 +26,63 @@
   </div>
 
   <!-- Floating Selection Indicator -->
-  @if (selectedHeatmapProtein() || hoveredGeneId()) {
+  @if (selectedHeatmapProteins().size > 0 || hoveredGeneId()) {
     <div class="fixed bottom-8 left-8 z-[90] animate-in fade-in slide-in-from-bottom-4 duration-300">
-      <div class="bg-white rounded-lg shadow-xl border-2 border-indigo-500 p-4 w-72 backdrop-blur-sm bg-white/95">
+      <div class="bg-white rounded-lg shadow-xl border-2 border-indigo-500 p-4 w-80 backdrop-blur-sm bg-white/95">
         <div class="flex items-start justify-between mb-2">
           <div class="flex flex-col min-w-0">
-            <span class="text-[10px] font-bold text-indigo-600 uppercase tracking-widest">Active Protein</span>
-            <h4 class="text-lg font-bold text-gray-900 truncate" [title]="(selectedHeatmapProtein() || {gene: hoveredGeneId()})?.gene">
-              {{ selectedHeatmapProtein()?.gene || (allGenes() | findGene:hoveredGeneId())?.gene || 'Unknown' }}
+            <span class="text-[10px] font-bold text-indigo-600 uppercase tracking-widest">
+              @if (selectedHeatmapProteins().size > 0) {
+                Selected ({{ selectedHeatmapProteins().size }})
+              } @else {
+                Hovering
+              }
+            </span>
+            <h4 class="text-lg font-bold text-gray-900 truncate" [title]="(selectedHeatmapProteins().size > 0 ? null : (allGenes() | findGene:hoveredGeneId())?.gene)">
+              @if (selectedHeatmapProteins().size === 1) {
+                {{ firstSelectedGene()?.gene }}
+              } @else if (selectedHeatmapProteins().size > 1) {
+                Multiple Proteins
+              } @else {
+                {{ (allGenes() | findGene:hoveredGeneId())?.gene || '...' }}
+              }
             </h4>
-            <code class="text-xs text-gray-500 font-mono">{{ selectedHeatmapProtein()?.uniprotId || hoveredGeneId() }}</code>
           </div>
-          <button (click)="selectedHeatmapProtein.set(null)" class="text-gray-400 hover:text-gray-600 transition-colors">
+          <button (click)="clearHeatmapSelection()" class="text-gray-400 hover:text-gray-600 transition-colors">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
           </button>
         </div>
+
+        @if (selectedHeatmapProteins().size > 0) {
+          <div class="max-h-32 overflow-y-auto mb-4 border-y border-gray-100 py-2">
+            @for (item of selectedHeatmapProteins().values(); track item.uniprotId) {
+              <div class="flex items-center justify-between py-1 px-1 hover:bg-gray-50 rounded">
+                <span class="text-xs font-medium text-gray-700 truncate">&lt;{{ item.uniprotId }}&gt; {{ item.gene }}</span>
+                <button (click)="removeHeatmapSelection(item.uniprotId)" class="text-gray-300 hover:text-red-500">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+              </div>
+            }
+          </div>
+        }
         
         <div class="flex flex-col gap-2 mt-4">
-          @if (selectedHeatmapProtein()) {
+          @if (selectedHeatmapProteins().size > 0) {
             <button 
-              (click)="openProteinInNewTab(selectedHeatmapProtein()!)"
+              (click)="isolateSelectedHeatmapProteins()"
               class="w-full flex items-center justify-center gap-2 px-3 py-2 bg-indigo-600 text-white text-xs font-bold rounded-md hover:bg-indigo-700 transition-all shadow-sm active:scale-95"
             >
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+              ISOLATE SELECTED
+            </button>
+            <button 
+              (click)="openComparisonInNewTab()"
+              class="w-full flex items-center justify-center gap-2 px-3 py-2 bg-white border border-indigo-600 text-indigo-600 text-xs font-bold rounded-md hover:bg-indigo-50 transition-all shadow-sm active:scale-95"
+            >
               OPEN IN NEW TAB
             </button>
+          } @else {
+            <p class="text-[9px] text-gray-400 text-center italic">Click cells to multi-select proteins from the heatmap.</p>
           }
-          <p class="text-[9px] text-gray-400 text-center italic">Click cell to lock selection, or use button to isolate.</p>
         </div>
       </div>
     </div>

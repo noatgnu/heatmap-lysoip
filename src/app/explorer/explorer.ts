@@ -62,21 +62,50 @@ export class ExplorerComponent implements OnInit {
   rankCutoff = signal<number>(10);
   geneSortOrder = signal<'none' | 'increase' | 'decrease'>('none');
   showOnlySelectedInRankPlot = signal<boolean>(false);
-  selectedHeatmapProtein = signal<GeneData | null>(null);
+  selectedHeatmapProteins = signal<Map<string, GeneData>>(new Map());
   uiRevision = signal<number>(0);
+
+  firstSelectedGene = computed(() => {
+    const values = this.selectedHeatmapProteins().values();
+    return values.next().value;
+  });
 
   onHeatmapGeneSelected(uniprotId: string) {
     const gene = this.allGenes().find(g => g.uniprotId === uniprotId);
     if (gene) {
-      this.selectedHeatmapProtein.set(gene);
+      this.selectedHeatmapProteins.update(map => {
+        const newMap = new Map(map);
+        if (newMap.has(uniprotId)) {
+          newMap.delete(uniprotId);
+        } else {
+          newMap.set(uniprotId, gene);
+        }
+        return newMap;
+      });
     }
   }
 
-  openProteinInNewTab(gene: GeneData) {
+  clearHeatmapSelection() {
+    this.selectedHeatmapProteins.set(new Map());
+  }
+
+  isolateSelectedHeatmapProteins() {
+    const selected = this.selectedHeatmapProteins();
+    if (selected.size > 0) {
+      this.selectedGeneIds.set(new Set(selected.keys()));
+      this.selectedHeatmapProteins.set(new Map());
+      this.geneFilterTerm.set('');
+    }
+  }
+
+  openComparisonInNewTab() {
+    const selected = this.selectedHeatmapProteins();
+    if (selected.size === 0) return;
+
     const log2fcCut = this.log2fcCutoff();
     const confCut = this.confidenceCutoff();
     const queryParams = new URLSearchParams({
-      genes: gene.uniprotId,
+      genes: Array.from(selected.keys()).join(','),
       organs: Array.from(this.selectedOrgans()).join(','),
       proteins: Array.from(this.selectedProteins()).join(','),
       mutations: Array.from(this.selectedMutations()).join(','),
@@ -92,6 +121,14 @@ export class ExplorerComponent implements OnInit {
 
     const url = `${window.location.origin}${window.location.pathname}?${queryParams.toString()}`;
     window.open(url, '_blank');
+  }
+
+  removeHeatmapSelection(uniprotId: string) {
+    this.selectedHeatmapProteins.update(map => {
+      const newMap = new Map(map);
+      newMap.delete(uniprotId);
+      return newMap;
+    });
   }
 
   sortStack = signal<SortCriterion[]>(['organ', 'protein', 'mutation', 'knockout', 'treatment']);
