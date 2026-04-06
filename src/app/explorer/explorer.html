@@ -25,6 +25,39 @@
     </div>
   </div>
 
+  <!-- Floating Selection Indicator -->
+  @if (selectedHeatmapProtein() || hoveredGeneId()) {
+    <div class="fixed bottom-8 left-8 z-[90] animate-in fade-in slide-in-from-bottom-4 duration-300">
+      <div class="bg-white rounded-lg shadow-xl border-2 border-indigo-500 p-4 w-72 backdrop-blur-sm bg-white/95">
+        <div class="flex items-start justify-between mb-2">
+          <div class="flex flex-col min-w-0">
+            <span class="text-[10px] font-bold text-indigo-600 uppercase tracking-widest">Active Protein</span>
+            <h4 class="text-lg font-bold text-gray-900 truncate" [title]="(selectedHeatmapProtein() || {gene: hoveredGeneId()})?.gene">
+              {{ selectedHeatmapProtein()?.gene || (allGenes() | findGene:hoveredGeneId())?.gene || 'Unknown' }}
+            </h4>
+            <code class="text-xs text-gray-500 font-mono">{{ selectedHeatmapProtein()?.uniprotId || hoveredGeneId() }}</code>
+          </div>
+          <button (click)="selectedHeatmapProtein.set(null)" class="text-gray-400 hover:text-gray-600 transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+        
+        <div class="flex flex-col gap-2 mt-4">
+          @if (selectedHeatmapProtein()) {
+            <button 
+              (click)="openProteinInNewTab(selectedHeatmapProtein()!)"
+              class="w-full flex items-center justify-center gap-2 px-3 py-2 bg-indigo-600 text-white text-xs font-bold rounded-md hover:bg-indigo-700 transition-all shadow-sm active:scale-95"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+              OPEN IN NEW TAB
+            </button>
+          }
+          <p class="text-[9px] text-gray-400 text-center italic">Click cell to lock selection, or use button to isolate.</p>
+        </div>
+      </div>
+    </div>
+  }
+
   @if (pendingBulkSelection()) {
     <div class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
       <div class="bg-white rounded-xl shadow-2xl border border-gray-200 max-w-md w-full overflow-hidden">
@@ -182,6 +215,20 @@
               @if (p.date) { <span class="text-[10px] text-gray-400 tabular-nums">{{ p.date }}</span> }
             </div>
             @if (isDefaultFlip(p)) { <span class="text-[10px] font-bold text-gray-400 uppercase ml-1">Default</span> }
+          </label>
+        }
+      </div>
+    </app-collapsible-section>
+
+    <app-collapsible-section title="Filter by Specific Experiment" [defaultOpen]="false">
+      <div class="space-y-1 max-h-64 overflow-y-auto border rounded p-2 bg-gray-50">
+        @for (p of projects(); track p.projectId) {
+          <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-1 rounded group">
+            <input type="checkbox" [checked]="selectedProjectIds().has(p.projectId)" (change)="toggleFilter('project', p.projectId)" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+            <div class="flex flex-col min-w-0 flex-1">
+              <span class="text-xs text-gray-700 truncate" [title]="p.projectName">{{ p.projectName }}</span>
+              @if (p.date) { <span class="text-[10px] text-gray-400 tabular-nums">{{ p.date }}</span> }
+            </div>
           </label>
         }
       </div>
@@ -345,15 +392,21 @@
           <div class="space-y-8">
             <div class="grid grid-cols-2 gap-4">
               <app-collapsible-section title="LRRK2 Dataset Rank Plot" [defaultOpen]="false">
-                <div class="flex items-center gap-2 mb-2 px-1">
-                  <label class="text-[10px] font-bold text-gray-500 uppercase">Min Data (%):</label>
-                  <input 
-                    type="number" 
-                    [ngModel]="rankCutoff()" 
-                    (ngModelChange)="rankCutoff.set($event)"
-                    min="0" max="100"
-                    class="w-12 px-1 py-0.5 text-[10px] border border-gray-300 rounded"
-                  />
+                <div class="flex items-center justify-between mb-2 px-1">
+                  <div class="flex items-center gap-2">
+                    <label class="text-[10px] font-bold text-gray-500 uppercase">Min Data (%):</label>
+                    <input 
+                      type="number" 
+                      [ngModel]="rankCutoff()" 
+                      (ngModelChange)="rankCutoff.set($event)"
+                      min="0" max="100"
+                      class="w-12 px-1 py-0.5 text-[10px] border border-gray-300 rounded"
+                    />
+                  </div>
+                  <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" [checked]="showOnlySelectedInRankPlot()" (change)="showOnlySelectedInRankPlot.set($any($event.target).checked)" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                    <span class="text-[10px] font-bold text-gray-500 uppercase">Only Selected</span>
+                  </label>
                 </div>
                 <app-rank-plot 
                   [data]="lrrk2RankData()" 
@@ -364,15 +417,21 @@
                 ></app-rank-plot>
               </app-collapsible-section>
               <app-collapsible-section title="GBA Dataset Rank Plot" [defaultOpen]="false">
-                <div class="flex items-center gap-2 mb-2 px-1">
-                  <label class="text-[10px] font-bold text-gray-500 uppercase">Min Data (%):</label>
-                  <input 
-                    type="number" 
-                    [ngModel]="rankCutoff()" 
-                    (ngModelChange)="rankCutoff.set($event)"
-                    min="0" max="100"
-                    class="w-12 px-1 py-0.5 text-[10px] border border-gray-300 rounded"
-                  />
+                <div class="flex items-center justify-between mb-2 px-1">
+                  <div class="flex items-center gap-2">
+                    <label class="text-[10px] font-bold text-gray-500 uppercase">Min Data (%):</label>
+                    <input 
+                      type="number" 
+                      [ngModel]="rankCutoff()" 
+                      (ngModelChange)="rankCutoff.set($event)"
+                      min="0" max="100"
+                      class="w-12 px-1 py-0.5 text-[10px] border border-gray-300 rounded"
+                    />
+                  </div>
+                  <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" [checked]="showOnlySelectedInRankPlot()" (change)="showOnlySelectedInRankPlot.set($any($event.target).checked)" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                    <span class="text-[10px] font-bold text-gray-500 uppercase">Only Selected</span>
+                  </label>
                 </div>
                 <app-rank-plot 
                   [data]="gbaRankData()" 
@@ -402,7 +461,7 @@
               @if (nonGbaProjects().length > 0) {
                 <div class="border border-gray-200 rounded-lg p-4 bg-gray-50">
                   <h3 class="text-md font-bold text-indigo-700 mb-3">LRRK2 Experiments ({{ nonGbaProjects().length }})</h3>
-                  <app-heatmap [genes]="displayedGenes()" [projects]="nonGbaProjects()" [allProjects]="projects()" [summaryDisplayMode]="summaryDisplayMode()" [isSwapped]="isHeatmapSwapped()" (geneHovered)="onGeneHovered($event)"></app-heatmap>
+                  <app-heatmap [genes]="displayedGenes()" [projects]="nonGbaProjects()" [allProjects]="projects()" [summaryDisplayMode]="summaryDisplayMode()" [isSwapped]="isHeatmapSwapped()" (geneHovered)="onGeneHovered($event)" (geneSelected)="onHeatmapGeneSelected($event)"></app-heatmap>
                   <div class="mt-3 flex flex-col gap-3">
                     <!-- <div class="flex items-center gap-2">
                       <label class="text-[10px] font-bold text-gray-500 uppercase">Quick Filter:</label>
@@ -429,7 +488,7 @@
               @if (gbaProjects().length > 0) {
                 <div class="border border-gray-200 rounded-lg p-4 bg-gray-50">
                   <h3 class="text-md font-bold text-emerald-700 mb-3">GBA Experiments ({{ gbaProjects().length }})</h3>
-                  <app-heatmap [genes]="displayedGenes()" [projects]="gbaProjects()" [allProjects]="projects()" [summaryDisplayMode]="summaryDisplayMode()" [isSwapped]="isHeatmapSwapped()" (geneHovered)="onGeneHovered($event)"></app-heatmap>
+                  <app-heatmap [genes]="displayedGenes()" [projects]="gbaProjects()" [allProjects]="projects()" [summaryDisplayMode]="summaryDisplayMode()" [isSwapped]="isHeatmapSwapped()" (geneHovered)="onGeneHovered($event)" (geneSelected)="onHeatmapGeneSelected($event)"></app-heatmap>
                   <div class="mt-3 flex flex-col gap-3">
                     <!-- <div class="flex items-center gap-2">
                       <label class="text-[10px] font-bold text-gray-500 uppercase">Quick Filter:</label>

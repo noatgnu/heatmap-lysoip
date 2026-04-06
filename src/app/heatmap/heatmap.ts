@@ -38,6 +38,7 @@ import { GeneData, ProjectMetadata } from '../models';
               [style]="{display: 'inline-block', width: graphData().layout.width + 'px', height: (graphData().layout.height || 600) + 'px'}"
               (hover)="onHover($event)"
               (unhover)="onUnhover()"
+              (plotlyClick)="onClick($event)"
             ></plotly-plot>
           } @else {
             <div class="flex flex-col justify-center items-center h-[400px] text-gray-400">
@@ -78,6 +79,7 @@ export class HeatmapComponent {
   isSwapped = input<boolean>(false);
 
   geneHovered = output<string | null>();
+  geneSelected = output<string>();
 
   plotContainer = viewChild<ElementRef<HTMLElement>>('plotContainer');
   topScrollContainer = viewChild<ElementRef<HTMLElement>>('topScrollContainer');
@@ -168,6 +170,25 @@ export class HeatmapComponent {
 
   onUnhover() {
     this.geneHovered.emit(null);
+  }
+
+  onClick(event: any) {
+    if (event?.points?.[0]) {
+      const p = event.points[0];
+      const genes = this.genes();
+      const swapped = this.isSwapped();
+
+      let geneIdx = -1;
+      if (swapped) {
+        geneIdx = p.x !== undefined ? (p.x as number) : -1;
+      } else {
+        geneIdx = p.y !== undefined ? (p.y as number) : -1;
+      }
+
+      if (genes[geneIdx]) {
+        this.geneSelected.emit(genes[geneIdx].uniprotId);
+      }
+    }
   }
 
   constructor() {
