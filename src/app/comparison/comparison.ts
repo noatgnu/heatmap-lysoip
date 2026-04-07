@@ -14,8 +14,9 @@ import { GeneData, ProjectMetadata } from '../models';
 @Component({
   selector: 'app-comparison',
   standalone: true,
-  imports: [RouterLink, FormsModule, HeatmapComponent, CurtainFilterComponent, SkeletonLoaderComponent],
-  templateUrl: './comparison.html'
+  imports: [RouterLink, FormsModule, HeatmapComponent, CurtainFilterComponent, SkeletonLoaderComponent, FindGenePipe, FilterChipsComponent, TitleCasePipe],
+  templateUrl: './comparison.html',
+  styleUrl: './comparison.scss'
 })
 export class ComparisonComponent {
   private dataService = inject(DataService);
@@ -42,6 +43,68 @@ export class ComparisonComponent {
   confidenceCutoff = signal<number | null>(null);
   summaryDisplayMode = signal<'number' | 'proportion'>('proportion');
   geneSortOrder = signal<'none' | 'increase' | 'decrease'>('none');
+  selectedHeatmapProteins = signal<Map<string, GeneData>>(new Map());
+  manualProjectOrder = signal<ProjectMetadata[]>([]);
+
+  selectedHeatmapProteinIds = computed(() => new Set(this.selectedHeatmapProteins().keys()));
+
+  firstSelectedGene = computed(() => {
+    const values = this.selectedHeatmapProteins().values();
+    return values.next().value;
+  });
+
+  clearHeatmapSelection() {
+    this.selectedHeatmapProteins.set(new Map());
+  }
+
+  onHeatmapGeneSelected(uniprotId: string) {
+    const gene = (this.lysoipData()?.genes || []).find(g => g.uniprotId === uniprotId) ||
+                 (this.wclData()?.genes || []).find(g => g.uniprotId === uniprotId);
+    if (gene) {
+      this.selectedHeatmapProteins.update(map => {
+        const newMap = new Map(map);
+        if (newMap.has(uniprotId)) {
+          newMap.delete(uniprotId);
+        } else {
+          newMap.set(uniprotId, gene);
+        }
+        return newMap;
+      });
+    }
+  }
+
+  isolateSelectedHeatmapProteins() {
+    const selected = this.selectedHeatmapProteins();
+    if (selected.size > 0) {
+      this.selectedGeneIds.set(new Set(selected.keys()));
+      this.selectedHeatmapProteins.set(new Map());
+      this.geneFilterTerm.set('');
+    }
+  }
+
+  openComparisonInNewTab() {
+    const selected = this.selectedHeatmapProteins();
+    if (selected.size === 0) return;
+
+    const log2fcCut = this.log2fcCutoff();
+    const confCut = this.confidenceCutoff();
+    const queryParams = new URLSearchParams({
+      genes: Array.from(selected.keys()).join(','),
+      cutoff: log2fcCut ? log2fcCut.toString() : '',
+      conf: confCut ? confCut.toString() : ''
+    });
+
+    const url = `${window.location.origin}${window.location.pathname}?${queryParams.toString()}`;
+    window.open(url, '_blank');
+  }
+
+  removeHeatmapSelection(uniprotId: string) {
+    this.selectedHeatmapProteins.update(map => {
+      const newMap = new Map(map);
+      newMap.delete(uniprotId);
+      return newMap;
+    });
+  }
 
   private defaultGenes = [
     'TMEM175', 'OGA', 'NOD2', 'USP30', 'STING1', 'ATP13A2', 'MCOLN1', 'TLR2', 'GPNMB',

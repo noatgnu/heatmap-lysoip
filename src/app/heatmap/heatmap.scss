@@ -1,0 +1,14 @@
+:host { display: block; }
+.top-scrollbar::-webkit-scrollbar {
+  height: 10px;
+}
+.top-scrollbar::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+.top-scrollbar::-webkit-scrollbar-thumb {
+  background: #bbb;
+  border-radius: 5px;
+}
+.top-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #999;
+}
