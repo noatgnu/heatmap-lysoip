@@ -1,0 +1,89 @@
+{
+  "datasets": [
+    {
+      "id": "lysoip",
+      "name": "LysoIP",
+      "file": "public/zzz-FinalDestination_LysoIP_summary_WTvsMutant_20240708.txt",
+      "idRow": 0,
+      "nameRow": 1,
+      "dataStartRow": 3,
+      "experimentStartCol": 6,
+      "stride": 3
+    },
+    {
+      "id": "wcl",
+      "name": "WCL",
+      "file": "public/zzz-FinalDestination_WCL_summary_WTvsMutant_20240708.txt",
+      "idRow": 0,
+      "nameRow": 1,
+      "dataStartRow": 3,
+      "experimentStartCol": 6,
+      "stride": 2
+    },
+    {
+      "id": "at2org",
+      "name": "AT2org",
+      "file": "public/20260319_Project2026-009_AT2org_LITE_FormattedTable.txt",
+      "idRow": 0,
+      "nameRow": 0,
+      "dataStartRow": 2,
+      "experimentStartCol": 5,
+      "stride": 2
+    }
+  ],
+  "categorization": [
+    {
+      "key": "organ",
+      "label": "Organ/Cell Line",
+      "rules": [
+        { "pattern": "brain", "value": "Brain" },
+        { "pattern": "lung", "value": "Lung" },
+        { "pattern": "mefs", "value": "MEFs" },
+        { "pattern": "a549", "value": "A549" }
+      ],
+      "default": "Other"
+    },
+    {
+      "key": "protein",
+      "label": "Protein",
+      "rules": [
+        { "pattern": "vps35", "value": "VPS35" },
+        { "pattern": "lrrk2", "value": "LRRK2" },
+        { "pattern": "gba", "value": "GBA" }
+      ],
+      "default": "Other"
+    },
+    {
+      "key": "mutation",
+      "label": "Mutation",
+      "rules": [
+        { "pattern": "D620N", "value": "D620N" },
+        { "pattern": "R1441C", "value": "R1441C" },
+        { "pattern": "G2019S", "value": "G2019S" },
+        { "pattern": "D409V", "value": "D409V" },
+        { "pattern": "E326K", "value": "E326K" },
+        { "pattern": "L444P", "value": "L444P" },
+        { "pattern": "N370S", "value": "N370S" },
+        { "pattern": "WT", "value": "WT" }
+      ],
+      "default": "None"
+    },
+    {
+      "key": "knockout",
+      "label": "Knockout",
+      "rules": [
+        { "pattern": "ko", "value": "KO" },
+        { "pattern": "knockout", "value": "KO" }
+      ],
+      "default": "None"
+    },
+    {
+      "key": "treatment",
+      "label": "Treatment",
+      "rules": [
+        { "pattern": "mli2", "value": "MLi2" }
+      ],
+      "default": "None"
+    }
+  ]
+}
