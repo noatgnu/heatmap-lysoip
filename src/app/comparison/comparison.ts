@@ -106,6 +106,13 @@ export class ComparisonComponent {
     window.open(url, '_blank');
   }
 
+  exportHighlightedProteins(format: 'csv' | 'tsv') {
+    const selected = Array.from(this.selectedHeatmapProteins().values());
+    if (selected.length === 0) return;
+    const filename = `highlighted_proteins_comparison_${new Date().toISOString().slice(0, 10)}`;
+    this.exportService.exportProteinList(selected, format, filename);
+  }
+
   removeHeatmapSelection(uniprotId: string) {
     this.selectedHeatmapProteins.update(map => {
       const newMap = new Map(map);

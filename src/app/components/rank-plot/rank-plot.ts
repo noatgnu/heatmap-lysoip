@@ -7,7 +7,8 @@ import { RankItem } from '../../models';
   standalone: true,
   imports: [PlotlyModule],
   templateUrl: './rank-plot.html',
-  styleUrl: './rank-plot.scss'
+  styleUrl: './rank-plot.scss',
+  host: { 'class': 'block w-full overflow-hidden' }
 })
 export class RankPlotComponent {
   data = input.required<RankItem[]>();
@@ -74,11 +75,11 @@ export class RankPlotComponent {
           font: { size: 11, color: '#374151' },
           x: 0.5,
           xanchor: 'center',
-          y: 0.8, // Shifted down
-          pad: { t: 10 }
+          y: 0.85,
+          pad: { t: 20 }
         },
         uirevision: this.uiRevision(),
-        margin: { l: 50, b: 60, t: 100, r: 20 }, // Increased top margin
+        margin: { l: 50, b: 60, t: 120, r: 20 },
         hovermode: 'closest',
         dragmode: 'zoom',
         showlegend: true,
@@ -91,7 +92,8 @@ export class RankPlotComponent {
         xaxis: {          
           title: 'Rank',
           showgrid: true,
-          gridcolor: '#f3f4f6'
+          gridcolor: '#f3f4f6',
+          automargin: true
         },
         yaxis: {
           title: 'Proportion (Inc - Dec) / Total',
@@ -99,7 +101,8 @@ export class RankPlotComponent {
           zerolinecolor: '#9ca3af',
           zerolinewidth: 1,
           showgrid: true,
-          gridcolor: '#f3f4f6'
+          gridcolor: '#f3f4f6',
+          automargin: true
         },
         plot_bgcolor: 'white',
         paper_bgcolor: 'white',
