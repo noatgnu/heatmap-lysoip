@@ -3,7 +3,7 @@
     {
       "id": "lysoip",
       "name": "LysoIP",
-      "file": "public/zzz-FinalDestination_LysoIP_summary_WTvsMutant_20240708.txt",
+      "file": "zzz-FinalDestination_LysoIP_summary_WTvsMutant_20240708.txt",
       "idRow": 0,
       "nameRow": 1,
       "dataStartRow": 3,
@@ -13,21 +13,11 @@
     {
       "id": "wcl",
       "name": "WCL",
-      "file": "public/zzz-FinalDestination_WCL_summary_WTvsMutant_20240708.txt",
+      "file": "zzz-FinalDestination_WCL_summary_WTvsMutant_20240708.txt",
       "idRow": 0,
       "nameRow": 1,
       "dataStartRow": 3,
       "experimentStartCol": 6,
-      "stride": 2
-    },
-    {
-      "id": "at2org",
-      "name": "AT2org",
-      "file": "public/20260319_Project2026-009_AT2org_LITE_FormattedTable.txt",
-      "idRow": 0,
-      "nameRow": 0,
-      "dataStartRow": 2,
-      "experimentStartCol": 5,
       "stride": 2
     }
   ],
