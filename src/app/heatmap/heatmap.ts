@@ -7,7 +7,30 @@ import { GeneData, ProjectMetadata } from '../models';
   standalone: true,
   imports: [PlotlyModule],
   template: `
-    <div class="w-full bg-white relative">
+    <div class="w-full bg-white relative group">
+      <!-- Floating Custom Toolbar -->
+      <div 
+        class="absolute right-4 top-4 z-[110] flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+        [style.position]="isSticky() ? 'fixed' : 'absolute'"
+        [style.top]="isSticky() ? '60px' : '16px'"
+      >
+        <div class="bg-white/90 backdrop-blur-sm border border-gray-200 rounded-lg shadow-lg p-1.5 flex flex-col gap-1">
+          <button (click)="zoomIn()" title="Zoom In" class="p-1.5 hover:bg-indigo-50 text-gray-600 hover:text-indigo-600 rounded transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7"/></svg>
+          </button>
+          <button (click)="zoomOut()" title="Zoom Out" class="p-1.5 hover:bg-indigo-50 text-gray-600 hover:text-indigo-600 rounded transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7"/></svg>
+          </button>
+          <div class="h-px bg-gray-100 mx-1"></div>
+          <button (click)="resetZoom()" title="Reset View" class="p-1.5 hover:bg-indigo-50 text-gray-600 hover:text-indigo-600 rounded transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          </button>
+          <button (click)="downloadSvg()" title="Download SVG" class="p-1.5 hover:bg-indigo-50 text-gray-600 hover:text-indigo-600 rounded transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          </button>
+        </div>
+      </div>
+
       <div
         #topScrollContainer
         [style.position]="isSticky() ? 'fixed' : 'relative'"
@@ -43,7 +66,7 @@ import { GeneData, ProjectMetadata } from '../models';
           } @else {
             <div class="flex flex-col justify-center items-center h-[400px] text-gray-400">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2-0 00-2-2H5a2 2-0 00-2 2v6a2 2(0 002 2h2a2 2-0 002-2m0 0V5a2 2-0 012-2h2a2 2 0 012 2v10m-6 0a2 2-0 002 2h2a2 2-0 002-2m0 0V5a2 2-0 012-2h2a2 2 0 012 2v14a2 2-0 01-2 2h-2a2 2-0 01-2-2z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2-0 00-2-2H5a2 2-0 00-2 2v6a2 2(0 002 2h2a2 2-0 002-2m0 0V5a2 2-0 012-2h2a2 2-0 012 2v10m-6 0a2 2-0 002 2h2a2 2-0 002-2m0 0V5a2 2-0 012-2h2a2 2-0 012 2v14a2 2-0 01-2 2h-2a2 2-0 01-2-2z" />
               </svg>
               <span>No data available for the current selection.</span>
             </div>
@@ -93,7 +116,6 @@ export class HeatmapComponent {
   @HostListener('window:scroll', [])
   onWindowScroll() {
     const rect = this.el.nativeElement.getBoundingClientRect();
-    // Sticky if the top of the component is above the viewport top AND bottom is still visible
     const shouldBeSticky = rect.top < 0 && rect.bottom > 150;
 
     if (shouldBeSticky !== this.isSticky() || shouldBeSticky) {
@@ -116,6 +138,7 @@ export class HeatmapComponent {
 
   graphConfig = computed(() => ({
     displaylogo: false,
+    displayModeBar: false,
     responsive: true,
     toImageButtonOptions: {
       format: 'svg',
@@ -125,6 +148,60 @@ export class HeatmapComponent {
       scale: 1
     }
   }));
+
+  downloadSvg() {
+    const plotly = (window as any).Plotly;
+    const element = this.getPlotElement()?.querySelector('.js-plotly-plot');
+    if (plotly && element) {
+      plotly.downloadImage(element, {
+        format: 'svg',
+        width: this.graphData().layout.width,
+        height: this.graphData().layout.height,
+        filename: 'heatmap_export'
+      });
+    }
+  }
+
+  zoomIn() {
+    this.updateZoom(0.8);
+  }
+
+  zoomOut() {
+    this.updateZoom(1.2);
+  }
+
+  private updateZoom(factor: number) {
+    const plotly = (window as any).Plotly;
+    const element = this.getPlotElement()?.querySelector('.js-plotly-plot');
+    if (!plotly || !element) return;
+
+    const layout = (element as any).layout;
+    const xRange = layout.xaxis.range;
+    const yRange = layout.yaxis.range;
+
+    if (xRange && yRange) {
+      const xCenter = (xRange[0] + xRange[1]) / 2;
+      const xSpan = (xRange[1] - xRange[0]) * factor;
+      const yCenter = (yRange[0] + yRange[1]) / 2;
+      const ySpan = (yRange[1] - yRange[0]) * factor;
+
+      plotly.relayout(element, {
+        'xaxis.range': [xCenter - xSpan / 2, xCenter + xSpan / 2],
+        'yaxis.range': [yCenter - ySpan / 2, yCenter + ySpan / 2]
+      });
+    }
+  }
+
+  resetZoom() {
+    const plotly = (window as any).Plotly;
+    const element = this.getPlotElement()?.querySelector('.js-plotly-plot');
+    if (plotly && element) {
+      plotly.relayout(element, {
+        'xaxis.autorange': true,
+        'yaxis.autorange': true
+      });
+    }
+  }
 
   private isSyncing = false;
 
@@ -232,8 +309,6 @@ export class HeatmapComponent {
         }))
       );
     } else {
-      xLabels = geneLabels;
-      yLabels = geneLabels;
       xLabels = geneLabels;
       yLabels = projLabels;
       xCoords = geneCoords;
