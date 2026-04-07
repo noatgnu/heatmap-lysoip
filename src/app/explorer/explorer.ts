@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { ScrollingModule } from '@angular/cdk/scrolling';
+import { TitleCasePipe } from '@angular/common';
 import { CurtainFilterComponent } from '../curtain-filter/curtain-filter';
 import { HeatmapComponent } from '../heatmap/heatmap';
 import { RankPlotComponent } from '../components/rank-plot/rank-plot';
@@ -11,14 +12,14 @@ import { FilterChipsComponent, FilterChip } from '../components/filter-chips/fil
 import { CollapsibleSectionComponent } from '../components/collapsible-section/collapsible-section';
 import { FindGenePipe } from '../pipes/find-gene.pipe';
 import { GeneData, ProjectMetadata, RankItem } from '../models';
-import { DataService } from '../services/data.service';
+import { DataService, AppConfig } from '../services/data.service';
 import { ExportService } from '../services/export.service';
 import { PreferencesService, FilterPreset, SortCriterion } from '../services/preferences';
 
 @Component({
   selector: 'app-explorer',
   standalone: true,
-  imports: [FormsModule, DragDropModule, ScrollingModule, CurtainFilterComponent, HeatmapComponent, RankPlotComponent, SkeletonLoaderComponent, FilterChipsComponent, CollapsibleSectionComponent, RouterLink, FindGenePipe],
+  imports: [FormsModule, DragDropModule, ScrollingModule, CurtainFilterComponent, HeatmapComponent, RankPlotComponent, SkeletonLoaderComponent, FilterChipsComponent, CollapsibleSectionComponent, RouterLink, FindGenePipe, TitleCasePipe],
   templateUrl: './explorer.html',
   styleUrl: './explorer.scss'
 })
@@ -33,8 +34,9 @@ export class ExplorerComponent implements OnInit {
 
   heatmapComponent = viewChild(HeatmapComponent);
 
-  dataset = input.required<'lysoip' | 'wcl'>();
-  currentDataset = signal<'lysoip' | 'wcl'>('lysoip');
+  dataset = input.required<string>();
+  currentDataset = signal<string>('');
+  config = signal<AppConfig | null>(null);
 
   isLoading = signal(true);
   searchTerm = signal('');
@@ -47,14 +49,35 @@ export class ExplorerComponent implements OnInit {
   pendingBulkSelection = signal<string[] | null>(null);
   isBulkReplacing = signal<boolean>(false);
 
-  selectedOrgans = signal<Set<string>>(new Set());
-  selectedProteins = signal<Set<string>>(new Set());
-  selectedMutations = signal<Set<string>>(new Set());
-  selectedKnockouts = signal<Set<string>>(new Set());
-  selectedTreatments = signal<Set<string>>(new Set());
-  selectedFractions = signal<Set<string>>(new Set());
+  filterState = signal<Map<string, Set<string>>>(new Map());
   selectedProjectIds = signal<Set<string>>(new Set());
   flippedProjectIds = signal<Set<string>>(new Set());
+
+  getFilterSet(key: string): Set<string> {
+    return this.filterState().get(key) || new Set();
+  }
+
+  toggleFilter(type: string, value: string) {
+    if (type === 'project') {
+      this.selectedProjectIds.update(set => {
+        const newSet = new Set(set);
+        if (newSet.has(value)) newSet.delete(value);
+        else newSet.add(value);
+        return newSet;
+      });
+      return;
+    }
+
+    this.filterState.update(map => {
+      const newMap = new Map(map);
+      const set = new Set(newMap.get(type) || []);
+      if (set.has(value)) set.delete(value);
+      else set.add(value);
+      newMap.set(type, set);
+      return newMap;
+    });
+  }
+
   summaryDisplayMode = signal<'number' | 'proportion'>('proportion');
   isHeatmapSwapped = signal<boolean>(false);
   log2fcCutoff = signal<number | null>(null);
@@ -104,22 +127,20 @@ export class ExplorerComponent implements OnInit {
 
     const log2fcCut = this.log2fcCutoff();
     const confCut = this.confidenceCutoff();
-    const queryParams = new URLSearchParams({
+    const queryParams: any = {
       genes: Array.from(selected.keys()).join(','),
-      organs: Array.from(this.selectedOrgans()).join(','),
-      proteins: Array.from(this.selectedProteins()).join(','),
-      mutations: Array.from(this.selectedMutations()).join(','),
-      knockouts: Array.from(this.selectedKnockouts()).join(','),
-      treatments: Array.from(this.selectedTreatments()).join(','),
-      fractions: Array.from(this.selectedFractions()).join(','),
       projects: Array.from(this.selectedProjectIds()).join(','),
       flipped: Array.from(this.flippedProjectIds()).join(','),
       swapped: this.isHeatmapSwapped() ? 'true' : '',
       cutoff: log2fcCut ? log2fcCut.toString() : '',
       conf: confCut ? confCut.toString() : ''
+    };
+
+    this.filterState().forEach((set, key) => {
+      if (set.size > 0) queryParams[key] = Array.from(set).join(',');
     });
 
-    const url = `${window.location.origin}${window.location.pathname}?${queryParams.toString()}`;
+    const url = `${window.location.origin}${window.location.pathname}?${new URLSearchParams(queryParams).toString()}`;
     window.open(url, '_blank');
   }
 
@@ -165,12 +186,7 @@ export class ExplorerComponent implements OnInit {
     effect(() => {
       const ds = this.dataset();
       this.currentDataset.set(ds);
-      this.selectedOrgans.set(new Set());
-      this.selectedProteins.set(new Set());
-      this.selectedMutations.set(new Set());
-      this.selectedKnockouts.set(new Set());
-      this.selectedTreatments.set(new Set());
-      this.selectedFractions.set(new Set());
+      this.filterState.set(new Map());
       this.selectedProjectIds.set(new Set());
       this.flippedProjectIds.set(new Set());
       this.log2fcCutoff.set(null);
@@ -181,14 +197,8 @@ export class ExplorerComponent implements OnInit {
     effect(() => {
       const log2fcCut = this.log2fcCutoff();
       const confCut = this.confidenceCutoff();
-      const queryParams = {
+      const queryParams: any = {
         genes: Array.from(this.selectedGeneIds()).join(',') || null,
-        organs: Array.from(this.selectedOrgans()).join(',') || null,
-        proteins: Array.from(this.selectedProteins()).join(',') || null,
-        mutations: Array.from(this.selectedMutations()).join(',') || null,
-        knockouts: Array.from(this.selectedKnockouts()).join(',') || null,
-        treatments: Array.from(this.selectedTreatments()).join(',') || null,
-        fractions: Array.from(this.selectedFractions()).join(',') || null,
         projects: Array.from(this.selectedProjectIds()).join(',') || null,
         flipped: Array.from(this.flippedProjectIds()).join(',') || null,
         mode: this.summaryDisplayMode() === 'proportion' ? null : 'number',
@@ -197,6 +207,11 @@ export class ExplorerComponent implements OnInit {
         cutoff: log2fcCut !== null && log2fcCut > 0 ? log2fcCut.toString() : null,
         conf: confCut !== null && confCut > 0 ? confCut.toString() : null
       };
+
+      this.filterState().forEach((set, key) => {
+        if (set.size > 0) queryParams[key] = Array.from(set).join(',');
+      });
+
       this.router.navigate([this.currentDataset()], {
         queryParams,
         queryParamsHandling: 'merge',
@@ -205,7 +220,7 @@ export class ExplorerComponent implements OnInit {
     });
   }
 
-  setPreset(preset: 'organ' | 'mutation' | 'protein' | 'treatment' | 'fraction' | 'knockout') {
+  setPreset(preset: string) {
     if (preset === 'organ') this.sortStack.set(['organ', 'protein', 'mutation', 'knockout', 'treatment']);
     else if (preset === 'mutation') this.sortStack.set(['mutation', 'treatment', 'organ', 'protein', 'knockout']);
     else if (preset === 'protein') this.sortStack.set(['protein', 'mutation', 'knockout', 'treatment', 'organ']);
@@ -213,7 +228,7 @@ export class ExplorerComponent implements OnInit {
     else if (preset === 'knockout') this.sortStack.set(['knockout', 'mutation', 'treatment', 'organ', 'protein']);
   }
 
-  loadData(type: 'lysoip' | 'wcl') {
+  loadData(type: string) {
     this.isLoading.set(true);
 
     this.dataService.loadDataset(type).subscribe(({ projects, genes }) => {
@@ -281,21 +296,15 @@ export class ExplorerComponent implements OnInit {
     }
   }
 
-  organs = computed(() => Array.from(new Set(this.projects().map((p: ProjectMetadata) => p.organ))).sort());
-  proteins = computed(() => Array.from(new Set(this.projects().map((p: ProjectMetadata) => p.protein))).sort());
-  mutations = computed(() => Array.from(new Set(this.projects().map((p: ProjectMetadata) => p.mutation))).sort());
-  knockouts = computed(() => Array.from(new Set(this.projects().map((p: ProjectMetadata) => p.knockout))).sort());
-  treatments = computed(() => Array.from(new Set(this.projects().map((p: ProjectMetadata) => p.treatment))).sort());
-  fractions = computed(() => Array.from(new Set(this.projects().map((p: ProjectMetadata) => p.fraction))).sort());
+  getUniqueValues(key: string): string[] {
+    return Array.from(new Set(this.projects().map((p: any) => p[key]))).sort();
+  }
 
   activeFilterChips = computed((): FilterChip[] => {
     const chips: FilterChip[] = [];
-    this.selectedOrgans().forEach(v => chips.push({ type: 'organ', value: v }));
-    this.selectedProteins().forEach(v => chips.push({ type: 'protein', value: v }));
-    this.selectedMutations().forEach(v => chips.push({ type: 'mutation', value: v }));
-    this.selectedKnockouts().forEach(v => chips.push({ type: 'knockout' as any, value: v }));
-    this.selectedTreatments().forEach(v => chips.push({ type: 'treatment', value: v }));
-    this.selectedFractions().forEach(v => chips.push({ type: 'fraction' as any, value: v }));
+    this.filterState().forEach((set, key) => {
+      set.forEach(v => chips.push({ type: key as any, value: v }));
+    });
     this.selectedProjectIds().forEach(v => {
       const p = this.projects().find(p => p.projectId === v);
       if (p) chips.push({ type: 'project' as any, value: p.projectName });
@@ -386,106 +395,55 @@ export class ExplorerComponent implements OnInit {
 
   filteredProjects = computed(() => {
     const projs = this.projects();
-    const sOrgans = this.selectedOrgans();
-    const sProteins = this.selectedProteins();
-    const sMutations = this.selectedMutations();
-    const sKnockouts = this.selectedKnockouts();
-    const sTreatments = this.selectedTreatments();
-    const sFractions = this.selectedFractions();
+    const fState = this.filterState();
     const sProjectIds = this.selectedProjectIds();
     const stack = this.sortStack();
 
-    let filtered = projs.filter((p: ProjectMetadata) => {
+    let filtered = projs.filter((p: any) => {
       const projectMatch = sProjectIds.size === 0 || sProjectIds.has(p.projectId);
-      const organMatch = sOrgans.size === 0 || sOrgans.has(p.organ);
-      const proteinMatch = sProteins.size === 0 || sProteins.has(p.protein);
-      const mutationMatch = sMutations.size === 0 || sMutations.has(p.mutation);
-      const knockoutMatch = sKnockouts.size === 0 || sKnockouts.has(p.knockout);
-      const treatmentMatch = sTreatments.size === 0 || sTreatments.has(p.treatment);
-      const fractionMatch = sFractions.size === 0 || sFractions.has(p.fraction);
-      return projectMatch && organMatch && proteinMatch && mutationMatch && knockoutMatch && treatmentMatch && fractionMatch;
+      
+      let categorizationMatch = true;
+      fState.forEach((selectedValues, key) => {
+        if (selectedValues.size > 0 && !selectedValues.has(p[key])) {
+          categorizationMatch = false;
+        }
+      });
+
+      return projectMatch && categorizationMatch;
     });
 
-    return [...filtered].sort((a: ProjectMetadata, b: ProjectMetadata) => {
-      const organPriority: Record<string, number> = { 'mefs': 1, 'lung': 2, 'brain': 3, 'a549': 4 };
-      const mutationPriority: Record<string, number> = {
-        'r1441c': 1,
-        'g2019s': 2,
-        'd620n': 3,
-        'd409v': 4,
-        'e326k': 5,
-        'l444p': 6,
-        'n370s': 7,
-        'none': 8,
-        'wt': 9
-      };
-      const knockoutPriority: Record<string, number> = {
-        'none': 1,
-        'ko': 2
-      };
-      const treatmentPriority: Record<string, number> = {
-        'none': 1,
-        'mli2': 2
-      };
-      const fractionPriority: Record<string, number> = {
-        'lyso': 1,
-        'mito': 2,
-        'wcl': 3
-      };
-
+    return [...filtered].sort((a: any, b: any) => {
       for (const criterion of stack) {
-        let cmp = 0;
-        if (criterion === 'organ') {
-          const pA = organPriority[a.organ.toLowerCase()] || 99;
-          const pB = organPriority[b.organ.toLowerCase()] || 99;
-          cmp = pA - pB;
-          if (cmp === 0) cmp = a.organ.localeCompare(b.organ);
-        }
-        else if (criterion === 'protein') cmp = a.protein.localeCompare(b.protein);
-        else if (criterion === 'mutation') {
-          const pA = mutationPriority[a.mutation.toLowerCase()] || 99;
-          const pB = mutationPriority[b.mutation.toLowerCase()] || 99;
-          cmp = pA - pB;
-          if (cmp === 0) cmp = a.mutation.localeCompare(b.mutation);
-        }
-        else if (criterion === 'knockout') {
-          const pA = knockoutPriority[a.knockout.toLowerCase()] || 99;
-          const pB = knockoutPriority[b.knockout.toLowerCase()] || 99;
-          cmp = pA - pB;
-          if (cmp === 0) cmp = a.knockout.localeCompare(b.knockout);
-        }
-        else if (criterion === 'treatment') {
-          const pA = treatmentPriority[a.treatment.toLowerCase()] || 99;
-          const pB = treatmentPriority[b.treatment.toLowerCase()] || 99;
-          cmp = pA - pB;
-          if (cmp === 0) cmp = a.treatment.localeCompare(b.treatment);
-        }
-        else if (criterion === 'fraction') {
-          const pA = fractionPriority[a.fraction.toLowerCase()] || 99;
-          const pB = fractionPriority[b.fraction.toLowerCase()] || 99;
-          cmp = pA - pB;
-          if (cmp === 0) cmp = a.fraction.localeCompare(b.fraction);
-        }
-
+        if (!a[criterion] || !b[criterion]) continue;
+        const cmp = a[criterion].toString().localeCompare(b[criterion].toString());
         if (cmp !== 0) return cmp;
       }
-      return a.date.localeCompare(b.date);
+      return (a.date || '').localeCompare(b.date || '');
     });
   });
 
-  gbaProjects = computed(() =>
-    this.filteredProjects().filter(p => p.projectName.toUpperCase().includes('GBA'))
-  );
+  projectGroups = computed(() => {
+    const projs = this.filteredProjects();
+    const config = this.config();
+    if (!config || projs.length === 0) return [];
 
-  nonGbaProjects = computed(() =>
-    this.filteredProjects().filter(p => !p.projectName.toUpperCase().includes('GBA'))
-  );
+    // Group by the first available category
+    const groupKey = config.categorization[0].key;
+    const groups = new Map<string, ProjectMetadata[]>();
+    
+    projs.forEach(p => {
+      const val = (p as any)[groupKey] || 'Other';
+      if (!groups.has(val)) groups.set(val, []);
+      groups.get(val)!.push(p);
+    });
 
-  lrrk2Summary = computed(() => this.calculateHeatmapSummary(this.nonGbaProjects()));
-  gbaSummary = computed(() => this.calculateHeatmapSummary(this.gbaProjects()));
-
-  lrrk2RankData = computed(() => this.calculateRankData(this.nonGbaProjects()));
-  gbaRankData = computed(() => this.calculateRankData(this.gbaProjects()));
+    return Array.from(groups.entries()).map(([name, projects]) => ({
+      name,
+      projects,
+      summary: this.calculateHeatmapSummary(projects),
+      rankData: this.calculateRankData(projects)
+    }));
+  });
 
   private calculateRankData(projects: ProjectMetadata[]): RankItem[] {
     const allGenes = this.allGenes();
@@ -599,25 +557,6 @@ export class ExplorerComponent implements OnInit {
     return { increase, decrease, total };
   }
 
-  toggleFilter(type: 'organ' | 'protein' | 'mutation' | 'knockout' | 'treatment' | 'fraction' | 'project', value: string) {
-    const map = {
-      organ: this.selectedOrgans,
-      protein: this.selectedProteins,
-      mutation: this.selectedMutations,
-      knockout: this.selectedKnockouts,
-      treatment: this.selectedTreatments,
-      fraction: this.selectedFractions,
-      project: this.selectedProjectIds
-    };
-    const target = (map as any)[type];
-    target.update((set: Set<string>) => {
-      const newSet = new Set(set);
-      if (newSet.has(value)) newSet.delete(value);
-      else newSet.add(value);
-      return newSet;
-    });
-  }
-
   toggleFlip(projectId: string) {
     this.flippedProjectIds.update(set => {
       const newSet = new Set(set);
@@ -645,7 +584,14 @@ export class ExplorerComponent implements OnInit {
   }
 
   copyUrl() {
-    navigator.clipboard.writeText(window.location.href);
+    const url = window.location.href;
+    const maxLength = 2000;
+    
+    navigator.clipboard.writeText(url).then(() => {
+      if (url.length > maxLength) {
+        alert(`Warning: The current URL is very long (${url.length} characters). It may not work correctly when shared.`);
+      }
+    });
   }
 
   async exportAsPng() {
@@ -683,12 +629,7 @@ export class ExplorerComponent implements OnInit {
   }
 
   resetToDefault() {
-    this.selectedOrgans.set(new Set());
-    this.selectedProteins.set(new Set());
-    this.selectedMutations.set(new Set());
-    this.selectedKnockouts.set(new Set());
-    this.selectedTreatments.set(new Set());
-    this.selectedFractions.set(new Set());
+    this.filterState.set(new Map());
     this.selectedProjectIds.set(new Set());
     this.log2fcCutoff.set(null);
     this.confidenceCutoff.set(null);
@@ -708,39 +649,31 @@ export class ExplorerComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.initializeFromUrl();
+    this.dataService.loadConfig().subscribe(config => {
+      this.config.set(config);
+      this.initializeFromUrl();
+    });
   }
 
   private initializeFromUrl() {
     const params = this.route.snapshot.queryParams;
+    const config = this.config();
     if (params['genes']) {
       this.selectedGeneIds.set(new Set(params['genes'].split(',')));
     } else {
       this.applyDefaultGenes();
     }
 
-    if (params['organs']) {
-      this.selectedOrgans.set(new Set(params['organs'].split(',')));
-    }
-
-    if (params['proteins']) {
-      this.selectedProteins.set(new Set(params['proteins'].split(',')));
-    }
-
-    if (params['mutations']) {
-      this.selectedMutations.set(new Set(params['mutations'].split(',')));
-    }
-
-    if (params['knockouts']) {
-      this.selectedKnockouts.set(new Set(params['knockouts'].split(',')));
-    }
-
-    if (params['treatments']) {
-      this.selectedTreatments.set(new Set(params['treatments'].split(',')));
-    }
-
-    if (params['fractions']) {
-      this.selectedFractions.set(new Set(params['fractions'].split(',')));
+    if (config) {
+      config.categorization.forEach(cat => {
+        if (params[cat.key]) {
+          this.filterState.update(map => {
+            const newMap = new Map(map);
+            newMap.set(cat.key, new Set(params[cat.key].split(',')));
+            return newMap;
+          });
+        }
+      });
     }
 
     if (params['projects']) {
@@ -801,21 +734,11 @@ export class ExplorerComponent implements OnInit {
   }
 
   removeFilterChip(chip: FilterChip) {
-    if (chip.type === 'project') {
-      const p = this.projects().find(p => p.projectName === chip.value);
-      if (p) this.toggleFilter('project', p.projectId);
-    } else {
-      this.toggleFilter(chip.type as any, chip.value);
-    }
+    this.toggleFilter(chip.type, chip.value);
   }
 
   clearAllFilters() {
-    this.selectedOrgans.set(new Set());
-    this.selectedProteins.set(new Set());
-    this.selectedMutations.set(new Set());
-    this.selectedKnockouts.set(new Set());
-    this.selectedTreatments.set(new Set());
-    this.selectedFractions.set(new Set());
+    this.filterState.set(new Map());
     this.selectedProjectIds.set(new Set());
   }
 
@@ -869,12 +792,12 @@ export class ExplorerComponent implements OnInit {
       name,
       this.currentDataset(),
       this.selectedGeneIds(),
-      this.selectedOrgans(),
-      this.selectedProteins(),
-      this.selectedMutations(),
-      this.selectedKnockouts(),
-      this.selectedTreatments(),
-      this.selectedFractions(),
+      this.getFilterSet('organ'),
+      this.getFilterSet('protein'),
+      this.getFilterSet('mutation'),
+      this.getFilterSet('knockout'),
+      this.getFilterSet('treatment'),
+      this.getFilterSet('fraction'),
       this.sortStack(),
       this.flippedProjectIds()
     );
@@ -885,12 +808,16 @@ export class ExplorerComponent implements OnInit {
 
   loadPreset(preset: FilterPreset) {
     this.selectedGeneIds.set(new Set(preset.geneIds));
-    this.selectedOrgans.set(new Set(preset.organs));
-    this.selectedProteins.set(new Set(preset.proteins));
-    this.selectedMutations.set(new Set(preset.mutations));
-    this.selectedKnockouts.set(new Set(preset.knockouts || []));
-    this.selectedTreatments.set(new Set(preset.treatments || []));
-    this.selectedFractions.set(new Set(preset.fractions || []));
+    this.filterState.update(map => {
+      const newMap = new Map(map);
+      if (preset.organs) newMap.set('organ', new Set(preset.organs));
+      if (preset.proteins) newMap.set('protein', new Set(preset.proteins));
+      if (preset.mutations) newMap.set('mutation', new Set(preset.mutations));
+      if (preset.knockouts) newMap.set('knockout', new Set(preset.knockouts));
+      if (preset.treatments) newMap.set('treatment', new Set(preset.treatments));
+      if (preset.fractions) newMap.set('fraction', new Set(preset.fractions));
+      return newMap;
+    });
     this.sortStack.set([...preset.sortStack]);
     this.flippedProjectIds.set(new Set(preset.flippedProjectIds));
   }
@@ -928,5 +855,4 @@ export class ExplorerComponent implements OnInit {
   setGeneSortOrder(order: 'none' | 'increase' | 'decrease') {
     this.geneSortOrder.set(order);
   }
-
 }

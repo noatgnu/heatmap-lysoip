@@ -126,40 +126,28 @@
     <div class="bg-white shadow rounded-lg p-4 border border-gray-200">
       <h4 class="text-sm font-bold text-gray-900 mb-4 uppercase tracking-wider">Dataset Selection</h4>
       <div class="flex flex-col gap-2">
-        <a 
-          routerLink="/lysoip"
-          queryParamsHandling="merge"
-          [class.bg-indigo-600]="dataset() === 'lysoip'"
-          [class.text-white]="dataset() === 'lysoip'"
-          [class.bg-gray-100]="dataset() !== 'lysoip'"
-          [class.text-gray-700]="dataset() !== 'lysoip'"
-          class="px-4 py-2 text-sm font-medium rounded-md transition-colors text-left flex justify-between items-center no-underline border border-transparent shadow-sm"
-        >
-          LysoIP
-          @if (dataset() === 'lysoip') {
-            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-          }
-        </a>
-        <a 
-          routerLink="/wcl"
-          queryParamsHandling="merge"
-          [class.bg-indigo-600]="dataset() === 'wcl'"
-          [class.text-white]="dataset() === 'wcl'"
-          [class.bg-gray-100]="dataset() !== 'wcl'"
-          [class.text-gray-700]="dataset() !== 'wcl'"
-          class="px-4 py-2 text-sm font-medium rounded-md transition-colors text-left flex justify-between items-center no-underline border border-transparent shadow-sm"
-        >
-          WCL
-          @if (dataset() === 'wcl') {
-            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-          }
-        </a>
+        @for (ds of config()?.datasets; track ds.id) {
+          <a 
+            [routerLink]="['/', ds.id]"
+            queryParamsHandling="merge"
+            [class.bg-indigo-600]="dataset() === ds.id"
+            [class.text-white]="dataset() === ds.id"
+            [class.bg-gray-100]="dataset() !== ds.id"
+            [class.text-gray-700]="dataset() !== ds.id"
+            class="px-4 py-2 text-sm font-medium rounded-md transition-colors text-left flex justify-between items-center no-underline border border-transparent shadow-sm"
+          >
+            {{ ds.name }}
+            @if (dataset() === ds.id) {
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+            }
+          </a>
+        }
         <div class="border-t border-gray-100 my-1"></div>
         <a 
           routerLink="/comparison"
           class="px-4 py-2 text-sm font-medium rounded-md transition-colors text-left flex items-center gap-2 no-underline bg-indigo-50 text-indigo-700 border border-indigo-100 shadow-sm hover:bg-indigo-100"
         >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2-0 00-2-2H5a2 2-0 00-2 2v6a2 2 0 002 2h2a2 2-0 002-2m0 0V5a2 2-0 012-2h2a2 2-0 012 2v10m-6 0a2 2-0 002 2h2a2 2-0 002-2m0 0V5a2 2-0 012-2h2a2 2-0 012 2v14a2 2-0 01-2 2h-2a2 2-0 01-2-2z"/></svg>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2(0 00-2-2H5a2 2-0 00-2 2v6a2 2(0 002 2h2a2 2-0 002-2m0 0V5a2 2-0 012-2h2a2 2-0 012 2v10m-6 0a2 2-0 002 2h2a2 2-0 002-2m0 0V5a2 2-0 012-2h2a2 2-0 012 2v14a2 2-0 01-2 2h-2a2 2-0 01-2-2z"/></svg>
           Dataset Comparison
         </a>
       </div>
@@ -218,7 +206,6 @@
         <button (click)="setPreset('mutation')" class="text-left text-[11px] font-medium px-3 py-2 bg-white hover:bg-gray-50 rounded border border-gray-200 transition-colors shadow-sm">Mutation > Knockout > Treatment > Organ > Protein</button>
         <button (click)="setPreset('knockout')" class="text-left text-[11px] font-medium px-3 py-2 bg-white hover:bg-gray-50 rounded border border-gray-200 transition-colors shadow-sm">Knockout > Mutation > Treatment > Organ > Protein</button>
         <button (click)="setPreset('treatment')" class="text-left text-[11px] font-medium px-3 py-2 bg-white hover:bg-gray-50 rounded border border-gray-200 transition-colors shadow-sm">Treatment > Mutation > Organ > Protein > Knockout</button>
-        <!-- <button (click)="setPreset('fraction')" class="text-left text-[11px] font-medium px-3 py-2 bg-white hover:bg-gray-50 rounded border border-gray-200 transition-colors shadow-sm">Fraction > Organ > Protein > Mutation > Treatment > Knockout</button> -->
       </div>
     </app-collapsible-section>
 
@@ -264,71 +251,18 @@
       </div>
     </app-collapsible-section>
 
-    <app-collapsible-section title="Filter by Organ/Cell Line" [defaultOpen]="false">
-      <div class="space-y-1 max-h-48 overflow-y-auto border rounded p-2 bg-gray-50">
-        @for (organ of organs(); track organ) {
-          <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-1 rounded">
-            <input type="checkbox" [checked]="selectedOrgans().has(organ)" (change)="toggleFilter('organ', organ)" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-            <span class="text-sm text-gray-700">{{ organ }}</span>
-          </label>
-        }
-      </div>
-    </app-collapsible-section>
-
-    <app-collapsible-section title="Filter by Protein" [defaultOpen]="false">
-      <div class="space-y-1 max-h-48 overflow-y-auto border rounded p-2 bg-gray-50">
-        @for (protein of proteins(); track protein) {
-          <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-1 rounded">
-            <input type="checkbox" [checked]="selectedProteins().has(protein)" (change)="toggleFilter('protein', protein)" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-            <span class="text-sm text-gray-700">{{ protein }}</span>
-          </label>
-        }
-      </div>
-    </app-collapsible-section>
-
-    <app-collapsible-section title="Filter by Mutation" [defaultOpen]="false">
-      <div class="space-y-1 max-h-48 overflow-y-auto border rounded p-2 bg-gray-50">
-        @for (mut of mutations(); track mut) {
-          <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-1 rounded">
-            <input type="checkbox" [checked]="selectedMutations().has(mut)" (change)="toggleFilter('mutation', mut)" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-            <span class="text-sm text-gray-700">{{ mut }}</span>
-          </label>
-        }
-      </div>
-    </app-collapsible-section>
-
-    <app-collapsible-section title="Filter by Knockout" [defaultOpen]="false">
-      <div class="space-y-1 max-h-48 overflow-y-auto border rounded p-2 bg-gray-50">
-        @for (ko of knockouts(); track ko) {
-          <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-1 rounded">
-            <input type="checkbox" [checked]="selectedKnockouts().has(ko)" (change)="toggleFilter('knockout', ko)" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-            <span class="text-sm text-gray-700">{{ ko }}</span>
-          </label>
-        }
-      </div>
-    </app-collapsible-section>
-
-    <app-collapsible-section title="Filter by Treatment" [defaultOpen]="false">
-      <div class="space-y-1 max-h-48 overflow-y-auto border rounded p-2 bg-gray-50">
-        @for (t of treatments(); track t) {
-          <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-1 rounded">
-            <input type="checkbox" [checked]="selectedTreatments().has(t)" (change)="toggleFilter('treatment', t)" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-            <span class="text-sm text-gray-700">{{ t }}</span>
-          </label>
-        }
-      </div>
-    </app-collapsible-section>
-
-    <!-- <app-collapsible-section title="Filter by Fraction" [defaultOpen]="false">
-      <div class="space-y-1 max-h-48 overflow-y-auto border rounded p-2 bg-gray-50">
-        @for (f of fractions(); track f) {
-          <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-1 rounded">
-            <input type="checkbox" [checked]="selectedFractions().has(f)" (change)="toggleFilter('fraction', f)" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-            <span class="text-sm text-gray-700">{{ f }}</span>
-          </label>
-        }
-      </div>
-    </app-collapsible-section> -->
+    @for (cat of config()?.categorization; track cat.key) {
+      <app-collapsible-section [title]="'Filter by ' + cat.label" [defaultOpen]="false">
+        <div class="space-y-1 max-h-48 overflow-y-auto border rounded p-2 bg-gray-50">
+          @for (val of getUniqueValues(cat.key); track val) {
+            <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-1 rounded">
+              <input type="checkbox" [checked]="getFilterSet(cat.key).has(val)" (change)="toggleFilter(cat.key, val)" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+              <span class="text-sm text-gray-700">{{ val }}</span>
+            </label>
+          }
+        </div>
+      </app-collapsible-section>
+    }
   </div>
 
   <div class="flex-1 flex flex-col gap-6 min-w-0">
@@ -336,7 +270,7 @@
       <div class="px-4 py-5 sm:px-6 border-b border-gray-200 flex justify-between items-center bg-white">
         <div>
           <h3 class="text-lg leading-6 font-medium text-gray-900 uppercase tracking-tight">
-            <span class="text-indigo-600 font-bold">{{ dataset() === 'lysoip' ? 'LysoIP' : 'WCL' }}</span> Log2FC Heatmap Explorer
+            <span class="text-indigo-600 font-bold">{{ currentDataset() | titlecase }}</span> Log2FC Heatmap Explorer
           </h3>
           <p class="mt-1 max-w-2xl text-sm text-gray-500 italic">Multi-level grouping and filtering enabled.</p>
         </div>
@@ -421,56 +355,33 @@
         } @else {
           <div class="space-y-8">
             <div class="grid grid-cols-2 gap-4">
-              <app-collapsible-section title="LRRK2 Dataset Rank Plot" [defaultOpen]="false">
-                <div class="flex items-center justify-between mb-2 px-1">
-                  <div class="flex items-center gap-2">
-                    <label class="text-[10px] font-bold text-gray-500 uppercase">Min Data (%):</label>
-                    <input 
-                      type="number" 
-                      [ngModel]="rankCutoff()" 
-                      (ngModelChange)="rankCutoff.set($event)"
-                      min="0" max="100"
-                      class="w-12 px-1 py-0.5 text-[10px] border border-gray-300 rounded"
-                    />
+              @for (group of projectGroups(); track group.name) {
+                <app-collapsible-section [title]="group.name + ' Dataset Rank Plot'" [defaultOpen]="false">
+                  <div class="flex items-center justify-between mb-2 px-1">
+                    <div class="flex items-center gap-2">
+                      <label class="text-[10px] font-bold text-gray-500 uppercase">Min Data (%):</label>
+                      <input 
+                        type="number" 
+                        [ngModel]="rankCutoff()" 
+                        (ngModelChange)="rankCutoff.set($event)"
+                        min="0" max="100"
+                        class="w-12 px-1 py-0.5 text-[10px] border border-gray-300 rounded"
+                      />
+                    </div>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" [checked]="showOnlySelectedInRankPlot()" (change)="showOnlySelectedInRankPlot.set($any($event.target).checked)" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                      <span class="text-[10px] font-bold text-gray-500 uppercase">Only Selected</span>
+                    </label>
                   </div>
-                  <label class="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" [checked]="showOnlySelectedInRankPlot()" (change)="showOnlySelectedInRankPlot.set($any($event.target).checked)" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-                    <span class="text-[10px] font-bold text-gray-500 uppercase">Only Selected</span>
-                  </label>
-                </div>
-                <app-rank-plot 
-                  [data]="lrrk2RankData()" 
-                  [selectedGeneIds]="effectiveHighlightedIds()"
-                  [uiRevision]="uiRevision()"
-                  title="Proportion of Proteomic Datasets Showing Protein Abundance Changes Linked to LRRK2 Activation"
-                  (genesSelected)="selectGenesFromPlot($event)"
-                ></app-rank-plot>
-              </app-collapsible-section>
-              <app-collapsible-section title="GBA Dataset Rank Plot" [defaultOpen]="false">
-                <div class="flex items-center justify-between mb-2 px-1">
-                  <div class="flex items-center gap-2">
-                    <label class="text-[10px] font-bold text-gray-500 uppercase">Min Data (%):</label>
-                    <input 
-                      type="number" 
-                      [ngModel]="rankCutoff()" 
-                      (ngModelChange)="rankCutoff.set($event)"
-                      min="0" max="100"
-                      class="w-12 px-1 py-0.5 text-[10px] border border-gray-300 rounded"
-                    />
-                  </div>
-                  <label class="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" [checked]="showOnlySelectedInRankPlot()" (change)="showOnlySelectedInRankPlot.set($any($event.target).checked)" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-                    <span class="text-[10px] font-bold text-gray-500 uppercase">Only Selected</span>
-                  </label>
-                </div>
-                <app-rank-plot 
-                  [data]="gbaRankData()" 
-                  [selectedGeneIds]="effectiveHighlightedIds()"
-                  [uiRevision]="uiRevision()"
-                  title="Proportion of Proteomic Datasets Showing Protein Abundance Changes Linked to GBA Activation"
-                  (genesSelected)="selectGenesFromPlot($event)"
-                ></app-rank-plot>
-              </app-collapsible-section>
+                  <app-rank-plot 
+                    [data]="group.rankData" 
+                    [selectedGeneIds]="effectiveHighlightedIds()"
+                    [uiRevision]="uiRevision()"
+                    [title]="'Proportion of Proteomic Datasets Showing Protein Abundance Changes Linked to ' + group.name"
+                    (genesSelected)="selectGenesFromPlot($event)"
+                  ></app-rank-plot>
+                </app-collapsible-section>
+              }
             </div>
 
             <div class="flex justify-end px-1 items-center gap-4">
@@ -488,56 +399,19 @@
             </div>
 
             <div class="grid grid-cols-2 gap-4">
-              @if (nonGbaProjects().length > 0) {
+              @for (group of projectGroups(); track group.name) {
                 <div class="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                  <h3 class="text-md font-bold text-indigo-700 mb-3">LRRK2 Experiments ({{ nonGbaProjects().length }})</h3>
-                  <app-heatmap [genes]="displayedGenes()" [projects]="nonGbaProjects()" [allProjects]="projects()" [selectedGeneIds]="effectiveHighlightedIds()" [summaryDisplayMode]="summaryDisplayMode()" [isSwapped]="isHeatmapSwapped()" (geneHovered)="onGeneHovered($event)" (geneSelected)="onHeatmapGeneSelected($event)"></app-heatmap>
+                  <h3 class="text-md font-bold text-indigo-700 mb-3">{{ group.name }} Experiments ({{ group.projects.length }})</h3>
+                  <app-heatmap [genes]="displayedGenes()" [projects]="group.projects" [allProjects]="projects()" [selectedGeneIds]="effectiveHighlightedIds()" [summaryDisplayMode]="summaryDisplayMode()" [isSwapped]="isHeatmapSwapped()" (geneHovered)="onGeneHovered($event)" (geneSelected)="onHeatmapGeneSelected($event)"></app-heatmap>
                   <div class="mt-3 flex flex-col gap-3">
-                    <!-- <div class="flex items-center gap-2">
-                      <label class="text-[10px] font-bold text-gray-500 uppercase">Quick Filter:</label>
-                      <input 
-                        type="text" 
-                        [ngModel]="geneFilterTerm()" 
-                        (ngModelChange)="geneFilterTerm.set($event)"
-                        placeholder="Search selected..."
-                        class="px-2 py-1 text-xs border border-gray-300 rounded focus:ring-indigo-500 focus:border-indigo-500 w-32"
-                      />
-                    </div> -->
                     <div class="flex gap-4 text-xs">
                       <span class="px-2 py-1 rounded bg-red-100 text-red-800">
-                        ↑ Increase: @if (summaryDisplayMode() === 'number') { {{ lrrk2Summary().increase }} } @else { {{ lrrk2Summary().total > 0 ? Math.round((lrrk2Summary().increase / lrrk2Summary().total) * 100) : 0 }}% }
+                        ↑ Increase: @if (summaryDisplayMode() === 'number') { {{ group.summary.increase }} } @else { {{ group.summary.total > 0 ? Math.round((group.summary.increase / group.summary.total) * 100) : 0 }}% }
                       </span>
                       <span class="px-2 py-1 rounded bg-blue-100 text-blue-800">
-                        ↓ Decrease: @if (summaryDisplayMode() === 'number') { {{ lrrk2Summary().decrease }} } @else { {{ lrrk2Summary().total > 0 ? Math.round((lrrk2Summary().decrease / lrrk2Summary().total) * 100) : 0 }}% }
+                        ↓ Decrease: @if (summaryDisplayMode() === 'number') { {{ group.summary.decrease }} } @else { {{ group.summary.total > 0 ? Math.round((group.summary.decrease / group.summary.total) * 100) : 0 }}% }
                       </span>
-                      <span class="px-2 py-1 rounded bg-gray-100 text-gray-600">Total values: {{ lrrk2Summary().total }}</span>
-                    </div>
-                  </div>
-                </div>
-              }
-              @if (gbaProjects().length > 0) {
-                <div class="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                  <h3 class="text-md font-bold text-emerald-700 mb-3">GBA Experiments ({{ gbaProjects().length }})</h3>
-                  <app-heatmap [genes]="displayedGenes()" [projects]="gbaProjects()" [allProjects]="projects()" [summaryDisplayMode]="summaryDisplayMode()" [isSwapped]="isHeatmapSwapped()" (geneHovered)="onGeneHovered($event)" (geneSelected)="onHeatmapGeneSelected($event)"></app-heatmap>
-                  <div class="mt-3 flex flex-col gap-3">
-                    <!-- <div class="flex items-center gap-2">
-                      <label class="text-[10px] font-bold text-gray-500 uppercase">Quick Filter:</label>
-                      <input 
-                        type="text" 
-                        [ngModel]="geneFilterTerm()" 
-                        (ngModelChange)="geneFilterTerm.set($event)"
-                        placeholder="Search selected..."
-                        class="px-2 py-1 text-xs border border-gray-300 rounded focus:ring-indigo-500 focus:border-indigo-500 w-32"
-                      />
-                    </div> -->
-                    <div class="flex gap-4 text-xs">
-                      <span class="px-2 py-1 rounded bg-red-100 text-red-800">
-                        ↑ Increase: @if (summaryDisplayMode() === 'number') { {{ gbaSummary().increase }} } @else { {{ gbaSummary().total > 0 ? Math.round((gbaSummary().increase / gbaSummary().total) * 100) : 0 }}% }
-                      </span>
-                      <span class="px-2 py-1 rounded bg-blue-100 text-blue-800">
-                        ↓ Decrease: @if (summaryDisplayMode() === 'number') { {{ gbaSummary().decrease }} } @else { {{ gbaSummary().total > 0 ? Math.round((gbaSummary().decrease / gbaSummary().total) * 100) : 0 }}% }
-                      </span>
-                      <span class="px-2 py-1 rounded bg-gray-100 text-gray-600">Total values: {{ gbaSummary().total }}</span>
+                      <span class="px-2 py-1 rounded bg-gray-100 text-gray-600">Total values: {{ group.summary.total }}</span>
                     </div>
                   </div>
                 </div>

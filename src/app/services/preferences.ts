@@ -1,18 +1,19 @@
 import { Injectable, signal } from '@angular/core';
 
-export type SortCriterion = 'organ' | 'protein' | 'mutation' | 'knockout' | 'treatment';
+export type SortCriterion = string;
 
 export interface FilterPreset {
   id: string;
   name: string;
-  dataset: 'lysoip' | 'wcl';
+  dataset: string;
   geneIds: string[];
-  organs: string[];
-  proteins: string[];
-  mutations: string[];
-  knockouts: string[];
-  treatments: string[];
-  fractions: string[];
+  filterState?: Record<string, string[]>; // New generic state
+  organs?: string[];
+  proteins?: string[];
+  mutations?: string[];
+  knockouts?: string[];
+  treatments?: string[];
+  fractions?: string[];
   sortStack: SortCriterion[];
   flippedProjectIds: string[];
   createdAt: number;
@@ -58,7 +59,7 @@ export class PreferencesService {
 
   savePreset(
     name: string,
-    dataset: 'lysoip' | 'wcl',
+    dataset: string,
     geneIds: Set<string>,
     organs: Set<string>,
     proteins: Set<string>,
@@ -103,7 +104,7 @@ export class PreferencesService {
     return this.presetsSignal().find(p => p.id === id);
   }
 
-  getPresetsForDataset(dataset: 'lysoip' | 'wcl'): FilterPreset[] {
+  getPresetsForDataset(dataset: string): FilterPreset[] {
     return this.presetsSignal().filter(p => p.dataset === dataset);
   }
 

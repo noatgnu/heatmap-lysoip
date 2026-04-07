@@ -1,151 +1,141 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of, tap, map } from 'rxjs';
+import { Observable, of, tap, map, switchMap } from 'rxjs';
 import { GeneData, ProjectMetadata } from '../models';
 
-export type DatasetType = 'lysoip' | 'wcl';
+export type DatasetType = string;
+
+export interface DatasetConfig {
+  id: string;
+  name: string;
+  file: string;
+  idRow: number;
+  nameRow: number;
+  dataStartRow: number;
+  experimentStartCol: number;
+  stride: number;
+}
+
+export interface CategorizationRule {
+  pattern: string;
+  value: string;
+}
+
+export interface CategorizationConfig {
+  key: string;
+  label: string;
+  rules: CategorizationRule[];
+  default: string;
+}
+
+export interface AppConfig {
+  datasets: DatasetConfig[];
+  categorization: CategorizationConfig[];
+}
 
 export interface ParsedData {
   projects: ProjectMetadata[];
   genes: GeneData[];
 }
 
-/**
- * Service responsible for loading and parsing proteomics TSV data files.
- * Provides caching to avoid redundant network requests.
- */
 @Injectable({ providedIn: 'root' })
 export class DataService {
   private http = inject(HttpClient);
-  private cache = new Map<DatasetType, ParsedData>();
+  private cache = new Map<string, ParsedData>();
+  private config: AppConfig | null = null;
 
   isLoading = signal(false);
 
-  private readonly fileNames: Record<DatasetType, string> = {
-    lysoip: 'zzz-FinalDestination_LysoIP_summary_WTvsMutant_20240708.txt',
-    wcl: 'zzz-FinalDestination_WCL_summary_WTvsMutant_20240708.txt'
-  };
+  loadConfig(): Observable<AppConfig> {
+    if (this.config) return of(this.config);
+    return this.http.get<AppConfig>('assets/config.json').pipe(
+      tap(config => this.config = config)
+    );
+  }
 
-  /**
-   * Loads and parses dataset, returning cached data if available.
-   */
-  loadDataset(type: DatasetType): Observable<ParsedData> {
+  getConfig(): AppConfig | null {
+    return this.config;
+  }
+
+  loadDataset(type: string): Observable<ParsedData> {
     const cached = this.cache.get(type);
-    if (cached) {
-      return of(cached);
-    }
+    if (cached) return of(cached);
 
-    this.isLoading.set(true);
-    const fileName = this.fileNames[type];
+    return this.loadConfig().pipe(
+      switchMap((config: AppConfig) => {
+        const dsConfig = config.datasets.find((d: DatasetConfig) => d.id === type);
+        if (!dsConfig) throw new Error(`Dataset ${type} not found in config`);
 
-    return this.http.get(fileName, { responseType: 'text' }).pipe(
-      map(content => this.parseData(content)),
-      tap(data => {
-        this.cache.set(type, data);
-        this.isLoading.set(false);
+        this.isLoading.set(true);
+        // Map public/ path to just filename if it's served from root, or keep as is.
+        // Assuming the app is served such that 'public/' files are at root.
+        const fileName = dsConfig.file.replace(/^public\//, '');
+
+        return this.http.get(fileName, { responseType: 'text' }).pipe(
+          map(content => this.parseData(content, dsConfig, config.categorization)),
+          tap(data => {
+            this.cache.set(type, data);
+            this.isLoading.set(false);
+          })
+        );
       })
     );
   }
 
-  /**
-   * Clears the cache for a specific dataset or all datasets.
-   */
-  clearCache(type?: DatasetType): void {
-    if (type) {
-      this.cache.delete(type);
-    } else {
-      this.cache.clear();
-    }
-  }
-
-  /**
-   * Checks if a dataset is already cached.
-   */
-  isCached(type: DatasetType): boolean {
-    return this.cache.has(type);
-  }
-
-  /**
-   * Parses TSV content into structured project and gene data.
-   */
-  parseData(content: string): ParsedData {
+  parseData(content: string, dsConfig: DatasetConfig, catConfigs: CategorizationConfig[]): ParsedData {
     const rows = this.parseTSV(content);
-    if (rows.length < 3) {
+    if (rows.length <= Math.max(dsConfig.idRow, dsConfig.nameRow, dsConfig.dataStartRow)) {
       return { projects: [], genes: [] };
     }
 
-    const row1 = rows[0];
-    const row2 = rows[1];
-
-    const stride = this.detectColumnStride(row1);
+    const idRow = rows[dsConfig.idRow];
+    const nameRow = rows[dsConfig.nameRow];
 
     const projects: ProjectMetadata[] = [];
-    for (let i = 6; i < row1.length; i += stride) {
-      const projectId = row1[i];
-      let fullProjectName = (row2[i] || '').trim();
+    for (let i = dsConfig.experimentStartCol; i < idRow.length; i += dsConfig.stride) {
+      const projectId = idRow[i];
+      let fullProjectName = (nameRow[i] || '').trim();
       if (!projectId && !fullProjectName) continue;
 
-      let date = '';
       let projectName = fullProjectName.replace(/\n/g, ' ').trim();
       projectName = projectName.replace(/ko vs wt/gi, 'WT vs KO');
 
+      let date = '';
       const dateAtEndMatch = projectName.match(/\(Date\s*(\d{8})\)/i);
-      if (dateAtEndMatch) {
-        date = dateAtEndMatch[1];
-      } else {
+      if (dateAtEndMatch) date = dateAtEndMatch[1];
+      else {
         const dateAtStartMatch = projectName.match(/^(\d{8})/);
-        if (dateAtStartMatch) {
-          date = dateAtStartMatch[1];
+        if (dateAtStartMatch) date = dateAtStartMatch[1];
+      }
+
+      const categorization: Record<string, string> = {};
+      catConfigs.forEach(cat => {
+        let value = cat.default;
+        for (const rule of cat.rules) {
+          if (new RegExp(rule.pattern, 'i').test(projectName)) {
+            value = rule.value;
+            break;
+          }
         }
-      }
-
-      let organ = 'Other';
-      if (projectName.toLowerCase().includes('brain')) organ = 'Brain';
-      else if (projectName.toLowerCase().includes('lung')) organ = 'Lung';
-      else if (projectName.toLowerCase().includes('mefs')) organ = 'MEFs';
-      else if (projectName.toLowerCase().includes('a549')) organ = 'A549';
-
-      let protein = 'Other';
-      if (projectName.toLowerCase().includes('vps35')) protein = 'VPS35';
-      else if (projectName.toLowerCase().includes('lrrk2')) protein = 'LRRK2';
-      else if (projectName.toLowerCase().includes('gba')) protein = 'GBA';
-
-      let mutation = 'None';
-      const mutMatch = projectName.match(/(D620N|R1441C|G2019S|D409V|E326K|L444P|N370S)/i);
-      if (mutMatch) {
-        mutation = mutMatch[0].toUpperCase();
-      } else if (projectName.toLowerCase().includes('wt')) {
-        mutation = 'WT';
-      }
-
-      let knockout = 'None';
-      if (projectName.toLowerCase().includes('ko') || projectName.toLowerCase().includes('knockout')) {
-        const koMatch = projectName.match(/([A-Z0-9]+-ko)/i);
-        knockout = koMatch ? koMatch[0].toUpperCase() : 'KO';
-      }
-
-      let treatment = 'None';
-      if (projectName.toLowerCase().includes('mli2')) treatment = 'MLi2';
-
-      let fraction = content.includes('LysoIP') ? 'Lyso' : 'WCL';
-      if (projectName.toLowerCase().includes('mito')) fraction = 'Mito';
+        categorization[cat.key] = value;
+      });
 
       projects.push({
-        projectId: (projectId || '').trim(),
+        projectId: (projectId || '').trim() || `proj-${i}`,
         projectName,
-        log2fcIndex: i + 1,
-        organ,
-        protein,
-        mutation,
-        knockout,
-        treatment,
-        fraction,
+        log2fcIndex: i + 1, // Assumes Log2FC is always 1 after Marker/Conf
+        organ: categorization['organ'] || 'Other',
+        protein: categorization['protein'] || 'Other',
+        mutation: categorization['mutation'] || 'None',
+        knockout: categorization['knockout'] || 'None',
+        treatment: categorization['treatment'] || 'None',
+        fraction: categorization['fraction'] || (content.includes('LysoIP') ? 'Lyso' : 'WCL'),
         date
       });
     }
 
     const genes: GeneData[] = [];
-    for (let i = 3; i < rows.length; i++) {
+    for (let i = dsConfig.dataStartRow; i < rows.length; i++) {
       const r = rows[i];
       if (r.length < 2) continue;
       const uniprotId = (r[0] || '').trim();
@@ -177,6 +167,7 @@ export class DataService {
 
     return { projects, genes };
   }
+
 
   /**
    * Detects the column stride between projects (2 or 3 columns per project).
