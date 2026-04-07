@@ -153,6 +153,20 @@
       </div>
     </div>
 
+    <app-collapsible-section title="Filter by Specific Experiment" [defaultOpen]="true">
+      <div class="space-y-1 max-h-64 overflow-y-auto border rounded p-2 bg-gray-50">
+        @for (p of projects(); track p.projectId) {
+          <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-1 rounded group">
+            <input type="checkbox" [checked]="selectedProjectIds().has(p.projectId)" (change)="toggleFilter('project', p.projectId)" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+            <div class="flex flex-col min-w-0 flex-1">
+              <span class="text-xs text-gray-700 truncate" [title]="p.projectName">{{ p.projectName }}</span>
+              @if (p.date) { <span class="text-[10px] text-gray-400 tabular-nums">{{ p.date }}</span> }
+            </div>
+          </label>
+        }
+      </div>
+    </app-collapsible-section>
+
     <app-curtain-filter (filterSelected)="applyCurtainFilter($event)"></app-curtain-filter>
 
     <app-collapsible-section title="Significance Filters" [defaultOpen]="true">
@@ -232,20 +246,6 @@
               @if (p.date) { <span class="text-[10px] text-gray-400 tabular-nums">{{ p.date }}</span> }
             </div>
             @if (isDefaultFlip(p)) { <span class="text-[10px] font-bold text-gray-400 uppercase ml-1">Default</span> }
-          </label>
-        }
-      </div>
-    </app-collapsible-section>
-
-    <app-collapsible-section title="Filter by Specific Experiment" [defaultOpen]="false">
-      <div class="space-y-1 max-h-64 overflow-y-auto border rounded p-2 bg-gray-50">
-        @for (p of projects(); track p.projectId) {
-          <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-1 rounded group">
-            <input type="checkbox" [checked]="selectedProjectIds().has(p.projectId)" (change)="toggleFilter('project', p.projectId)" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-            <div class="flex flex-col min-w-0 flex-1">
-              <span class="text-xs text-gray-700 truncate" [title]="p.projectName">{{ p.projectName }}</span>
-              @if (p.date) { <span class="text-[10px] text-gray-400 tabular-nums">{{ p.date }}</span> }
-            </div>
           </label>
         }
       </div>
