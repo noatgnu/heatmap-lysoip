@@ -142,21 +142,18 @@ export class ExplorerComponent implements OnInit {
 
     const log2fcCut = this.log2fcCutoff();
     const confCut = this.confidenceCutoff();
-    const queryParams: any = {
-      genes: Array.from(selected.keys()).join(','),
-      projects: Array.from(this.selectedProjectIds()).join(','),
-      flipped: Array.from(this.flippedProjectIds()).join(','),
-      swapped: this.isHeatmapSwapped() ? 'true' : '',
-      cutoff: log2fcCut ? log2fcCut.toString() : '',
-      conf: confCut ? confCut.toString() : ''
-    };
-
-    this.filterState().forEach((set, key) => {
-      if (set.size > 0) queryParams[key] = Array.from(set).join(',');
+    
+    // Create a clean URL with ONLY highlighted genes and cutoffs
+    const urlTree = this.router.createUrlTree(['/', this.currentDataset()], {
+      queryParams: {
+        genes: Array.from(selected.keys()).join(','),
+        cutoff: log2fcCut ? log2fcCut.toString() : null,
+        conf: confCut ? confCut.toString() : null
+      }
     });
 
-    const url = `${window.location.origin}${window.location.pathname}?${new URLSearchParams(queryParams).toString()}`;
-    window.open(url, '_blank');
+    const serializedUrl = this.router.serializeUrl(urlTree);
+    window.open(`${window.location.origin}${window.location.pathname}${serializedUrl}`, '_blank');
   }
 
   exportHighlightedProteins(format: 'csv' | 'tsv') {
