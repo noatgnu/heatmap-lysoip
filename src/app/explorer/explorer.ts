@@ -150,6 +150,7 @@ export class ExplorerComponent implements OnInit {
   showPresetInput = signal(false);
   presetName = signal('');
   currentPresets = computed(() => this.preferencesService.getPresetsForDataset(this.currentDataset()));
+  hasMultipleDatasets = computed(() => (this.config()?.datasets?.length || 0) > 1);
   private defaultGenes = [
     'TMEM175', 'OGA', 'NOD2', 'USP30', 'STING1', 'ATP13A2', 'MCOLN1', 'TLR2', 'GPNMB', 'GCG',
     'MAPT', 'PARP1', 'BECN1', 'CACNA1D', 'TREM2', 'NFE2L2', 'GBAP1', 'TGM2', 'VPS35', 'CTSB',
