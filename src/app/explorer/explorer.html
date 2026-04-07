@@ -1,5 +1,4 @@
 <div class="min-h-screen bg-gray-100 flex py-10 px-4 sm:px-6 lg:px-8 gap-8">
-  <!-- Floating Sticky Quick Filter -->
   <div class="fixed bottom-8 right-8 z-[90]">
     <div class="bg-white rounded-lg shadow-xl border border-indigo-100 p-3 flex flex-col gap-2 w-64">
       <div class="flex items-center justify-between">
@@ -25,7 +24,6 @@
     </div>
   </div>
 
-  <!-- Floating Selection Indicator -->
   @if (selectedHeatmapProteins().size > 0 || hoveredGeneId()) {
     <div class="fixed bottom-8 left-8 z-[90] animate-in fade-in slide-in-from-bottom-4 duration-300">
       <div class="bg-white rounded-lg shadow-xl border-2 border-indigo-500 p-4 w-80 backdrop-blur-sm bg-white/95">

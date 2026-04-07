@@ -36,7 +36,6 @@ export class RankPlotComponent {
 
     const sorted = [...rawData].sort((a, b) => b.score - a.score);
     
-    // Separate into two traces for the legend
     const selectedData = sorted.filter(d => selected.has(d.uniprotId));
     const unselectedData = sorted.filter(d => !selected.has(d.uniprotId));
 
@@ -72,19 +71,20 @@ export class RankPlotComponent {
       layout: {
         title: {
           text: this.title(),
-          font: { size: 12, color: '#374151' },
+          font: { size: 11, color: '#374151' },
           x: 0.5,
           xanchor: 'center',
-          y: 0.95
+          y: 0.8, // Shifted down
+          pad: { t: 10 }
         },
         uirevision: this.uiRevision(),
-        margin: { l: 50, b: 60, t: 60, r: 20 },
+        margin: { l: 50, b: 60, t: 100, r: 20 }, // Increased top margin
         hovermode: 'closest',
         dragmode: 'zoom',
         showlegend: true,
         legend: {
           orientation: 'h',
-          y: -0.2,
+          y: -0.25,
           x: 0.5,
           xanchor: 'center'
         },
