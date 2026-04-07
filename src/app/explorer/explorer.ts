@@ -88,6 +88,8 @@ export class ExplorerComponent implements OnInit {
   selectedHeatmapProteins = signal<Map<string, GeneData>>(new Map());
   uiRevision = signal<number>(0);
 
+  selectedHeatmapProteinIds = computed(() => new Set(this.selectedHeatmapProteins().keys()));
+
   firstSelectedGene = computed(() => {
     const values = this.selectedHeatmapProteins().values();
     return values.next().value;
