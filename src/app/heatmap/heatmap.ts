@@ -10,9 +10,7 @@ import { GeneData, ProjectMetadata } from '../models';
     <div class="w-full bg-white relative group">
       <!-- Floating Custom Toolbar -->
       <div 
-        class="absolute right-4 top-4 z-[110] flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-        [style.position]="isSticky() ? 'fixed' : 'absolute'"
-        [style.top]="isSticky() ? '60px' : '16px'"
+        class="absolute right-4 top-16 z-[110] flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
       >
         <div class="bg-white/90 backdrop-blur-sm border border-gray-200 rounded-lg shadow-lg p-1.5 flex flex-col gap-1">
           <button (click)="zoomIn()" title="Zoom In" class="p-1.5 hover:bg-indigo-50 text-gray-600 hover:text-indigo-600 rounded transition-colors">
