@@ -48,7 +48,7 @@ export class DataService {
 
   loadConfig(): Observable<AppConfig> {
     if (this.config) return of(this.config);
-    return this.http.get<AppConfig>('assets/config.json').pipe(
+    return this.http.get<AppConfig>('config.json').pipe(
       tap(config => this.config = config)
     );
   }
