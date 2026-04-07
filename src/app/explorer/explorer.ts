@@ -523,7 +523,11 @@ export class ExplorerComponent implements OnInit {
 
   selectGenesFromPlot(uniprotIds: string[]) {
     if (uniprotIds.length === 1) {
-      this.onHeatmapGeneSelected(uniprotIds[0]);
+      this.selectedGeneIds.update(set => {
+        const newSet = new Set(set);
+        newSet.add(uniprotIds[0]);
+        return newSet;
+      });
     } else if (uniprotIds.length > 1) {
       this.pendingBulkSelection.set(uniprotIds);
     }
@@ -532,14 +536,10 @@ export class ExplorerComponent implements OnInit {
   confirmBulkAdd() {
     const ids = this.pendingBulkSelection();
     if (ids) {
-      const allGenes = this.allGenes();
-      this.selectedHeatmapProteins.update(map => {
-        const newMap = new Map(map);
-        ids.forEach(id => {
-          const gene = allGenes.find(g => g.uniprotId === id);
-          if (gene) newMap.set(id, gene);
-        });
-        return newMap;
+      this.selectedGeneIds.update(set => {
+        const newSet = new Set(set);
+        ids.forEach(id => newSet.add(id));
+        return newSet;
       });
     }
     this.pendingBulkSelection.set(null);
@@ -548,13 +548,8 @@ export class ExplorerComponent implements OnInit {
   confirmBulkReplace() {
     const ids = this.pendingBulkSelection();
     if (ids) {
-      const allGenes = this.allGenes();
-      const newMap = new Map<string, GeneData>();
-      ids.forEach(id => {
-        const gene = allGenes.find(g => g.uniprotId === id);
-        if (gene) newMap.set(id, gene);
-      });
-      this.selectedHeatmapProteins.set(newMap);
+      this.selectedGeneIds.set(new Set([...ids]));
+      this.geneFilterTerm.set('');
     }
     this.pendingBulkSelection.set(null);
   }
