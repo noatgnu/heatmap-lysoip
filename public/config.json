@@ -23,6 +23,14 @@
   ],
   "categorization": [
     {
+      "key": "experimental_group",
+      "label": "Experimental Group",
+      "rules": [
+        { "pattern": "gba", "value": "GBA" }
+      ],
+      "default": "LRRK2"
+    },
+    {
       "key": "organ",
       "label": "Organ/Cell Line",
       "rules": [
@@ -31,7 +39,8 @@
         { "pattern": "mefs", "value": "MEFs" },
         { "pattern": "a549", "value": "A549" }
       ],
-      "default": "Other"
+      "default": "Other",
+      "priorities": { "mefs": 1, "lung": 2, "brain": 3, "a549": 4 }
     },
     {
       "key": "protein",
@@ -47,25 +56,31 @@
       "key": "mutation",
       "label": "Mutation",
       "rules": [
-        { "pattern": "D620N", "value": "D620N" },
-        { "pattern": "R1441C", "value": "R1441C" },
-        { "pattern": "G2019S", "value": "G2019S" },
-        { "pattern": "D409V", "value": "D409V" },
-        { "pattern": "E326K", "value": "E326K" },
-        { "pattern": "L444P", "value": "L444P" },
-        { "pattern": "N370S", "value": "N370S" },
-        { "pattern": "WT", "value": "WT" }
+        { "pattern": "(D620N|R1441C|G2019S|D409V|E326K|L444P|N370S)", "useCaptureGroup": true },
+        { "pattern": "wt", "value": "WT", "isFallback": true }
       ],
-      "default": "None"
+      "default": "None",
+      "priorities": {
+        "R1441C": 1,
+        "G2019S": 2,
+        "D620N": 3,
+        "D409V": 4,
+        "E326K": 5,
+        "L444P": 6,
+        "N370S": 7,
+        "NONE": 8,
+        "WT": 9
+      }
     },
     {
       "key": "knockout",
       "label": "Knockout",
       "rules": [
-        { "pattern": "ko", "value": "KO" },
-        { "pattern": "knockout", "value": "KO" }
+        { "pattern": "([A-Z0-9]+-ko)", "useCaptureGroup": true },
+        { "pattern": "(ko|knockout)", "value": "KO" }
       ],
-      "default": "None"
+      "default": "None",
+      "priorities": { "NONE": 1, "KO": 2 }
     },
     {
       "key": "treatment",
@@ -73,7 +88,17 @@
       "rules": [
         { "pattern": "mli2", "value": "MLi2" }
       ],
-      "default": "None"
+      "default": "None",
+      "priorities": { "NONE": 1, "MLI2": 2 }
+    },
+    {
+      "key": "fraction",
+      "label": "Fraction",
+      "rules": [
+        { "pattern": "mito", "value": "Mito" }
+      ],
+      "default": "Auto",
+      "priorities": { "LYSO": 1, "MITO": 2, "WCL": 3 }
     }
   ]
 }

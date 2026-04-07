@@ -18,7 +18,9 @@ export interface DatasetConfig {
 
 export interface CategorizationRule {
   pattern: string;
-  value: string;
+  value?: string;
+  useCaptureGroup?: boolean;
+  isFallback?: boolean;
 }
 
 export interface CategorizationConfig {
@@ -26,6 +28,7 @@ export interface CategorizationConfig {
   label: string;
   rules: CategorizationRule[];
   default: string;
+  priorities?: Record<string, number>;
 }
 
 export interface AppConfig {
@@ -110,27 +113,45 @@ export class DataService {
 
       const categorization: Record<string, string> = {};
       catConfigs.forEach(cat => {
-        let value = cat.default;
+        let value = '';
         for (const rule of cat.rules) {
-          if (new RegExp(rule.pattern, 'i').test(projectName)) {
-            value = rule.value;
+          if (rule.isFallback) continue;
+          const match = projectName.match(new RegExp(rule.pattern, 'i'));
+          if (match) {
+            if (rule.useCaptureGroup && match[1]) {
+              value = match[1].toUpperCase();
+            } else if (rule.value) {
+              value = rule.value;
+            } else {
+              value = match[0].toUpperCase();
+            }
             break;
           }
         }
-        categorization[cat.key] = value;
+        
+        if (!value) {
+          for (const rule of cat.rules) {
+            if (rule.isFallback && new RegExp(rule.pattern, 'i').test(projectName)) {
+              value = rule.value || cat.default;
+              break;
+            }
+          }
+        }
+        categorization[cat.key] = value || cat.default;
       });
 
       projects.push({
         projectId: (projectId || '').trim() || `proj-${i}`,
         projectName,
-        log2fcIndex: i + 1, // Assumes Log2FC is always 1 after Marker/Conf
+        log2fcIndex: i + 1,
         organ: categorization['organ'] || 'Other',
         protein: categorization['protein'] || 'Other',
         mutation: categorization['mutation'] || 'None',
         knockout: categorization['knockout'] || 'None',
         treatment: categorization['treatment'] || 'None',
         fraction: categorization['fraction'] || (content.includes('LysoIP') ? 'Lyso' : 'WCL'),
-        date
+        date,
+        ...categorization
       });
     }
 
