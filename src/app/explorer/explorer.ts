@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, computed, effect, input, viewChild } from '@angular/core';
+import { Component, OnInit, inject, signal, computed, effect, input, viewChild, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
@@ -177,9 +177,52 @@ export class ExplorerComponent implements OnInit {
       this.filterState.set(new Map());
       this.selectedProjectIds.set(new Set());
       this.flippedProjectIds.set(new Set());
+      this.manualProjectOrder.set([]);
       this.log2fcCutoff.set(null);
       this.confidenceCutoff.set(null);
       this.loadData(ds);
+    });
+    effect(() => {
+      const projs = this.projects();
+      const fState = this.filterState();
+      const sProjectIds = this.selectedProjectIds();
+      const stack = this.sortStack();
+      const filtered = projs.filter((p: any) => {
+        const projectMatch = sProjectIds.size === 0 || sProjectIds.has(p.projectId);
+        let categorizationMatch = true;
+        fState.forEach((selectedValues, key) => {
+          if (selectedValues.size > 0 && !selectedValues.has(p[key])) categorizationMatch = false;
+        });
+        return projectMatch && categorizationMatch;
+      }).sort((a: any, b: any) => {
+        const categorization = this.config()?.categorization || [];
+        for (const criterion of stack) {
+          const cat = categorization.find(c => c.key === criterion);
+          const priorities = cat?.priorities || {};
+          const valA = (a[criterion] || '').toString();
+          const valB = (b[criterion] || '').toString();
+          const pA = priorities[valA] || priorities[valA.toUpperCase()] || 99;
+          const pB = priorities[valB] || priorities[valB.toUpperCase()] || 99;
+          let cmp = pA - pB;
+          if (cmp === 0) cmp = valA.localeCompare(valB);
+          if (cmp !== 0) return cmp;
+        }
+        return (a.date || '').localeCompare(b.date || '');
+      });
+      untracked(() => {
+        const currentManual = this.manualProjectOrder();
+        if (currentManual.length === 0) {
+          this.manualProjectOrder.set(filtered);
+        } else {
+          const filteredIds = new Set(filtered.map(p => p.projectId));
+          let newManual = currentManual.filter(p => filteredIds.has(p.projectId));
+          const manualIds = new Set(newManual.map(p => p.projectId));
+          filtered.forEach(p => {
+            if (!manualIds.has(p.projectId)) newManual.push(p);
+          });
+          this.manualProjectOrder.set(newManual);
+        }
+      });
     });
     effect(() => {
       const log2fcCut = this.log2fcCutoff();
@@ -356,6 +399,7 @@ export class ExplorerComponent implements OnInit {
     const fState = this.filterState();
     const sProjectIds = this.selectedProjectIds();
     const stack = this.sortStack();
+    const manualOrder = this.manualProjectOrder();
     let filtered = projs.filter((p: any) => {
       const projectMatch = sProjectIds.size === 0 || sProjectIds.has(p.projectId);
       let categorizationMatch = true;
@@ -366,6 +410,10 @@ export class ExplorerComponent implements OnInit {
       });
       return projectMatch && categorizationMatch;
     });
+    if (manualOrder.length > 0) {
+      const filteredIds = new Set(filtered.map(p => p.projectId));
+      return manualOrder.filter(p => filteredIds.has(p.projectId));
+    }
     return [...filtered].sort((a: any, b: any) => {
       const categorization = this.config()?.categorization || [];
       for (const criterion of stack) {
