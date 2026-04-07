@@ -32,7 +32,7 @@ export class RankPlotComponent {
   graphData = computed(() => {
     const rawData = this.data();
     const selected = this.selectedGeneIds();
-    if (rawData.length === 0) return { data: [], layout: {} };
+    if (rawData.length === 0) return { data: [], layout: { height: 300 } };
 
     const sorted = [...rawData].sort((a, b) => b.score - a.score);
     
