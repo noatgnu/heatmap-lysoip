@@ -119,8 +119,7 @@ export class RankPlotComponent {
         },
         plot_bgcolor: 'white',
         paper_bgcolor: 'white',
-        height: 350,
-        autosize: true
+        height: 350
       }
     };
   });

@@ -29,11 +29,21 @@ export class HeatmapComponent {
   isSticky = signal(false);
   stickyWidth = signal(0);
   stickyLeft = signal(0);
+  toolbarOffset = signal(64);
 
   @HostListener('window:scroll', [])
   onWindowScroll() {
     const rect = this.el.nativeElement.getBoundingClientRect();
     const shouldBeSticky = rect.top < 0 && rect.bottom > 150;
+
+    if (rect.top < 0) {
+      // Move toolbar down as we scroll, keeping it pinned to top of viewport
+      // 80px offset from viewport top to avoid overlapping sticky header
+      const offset = Math.min(Math.abs(rect.top) + 80, rect.height - 180);
+      this.toolbarOffset.set(offset);
+    } else {
+      this.toolbarOffset.set(64);
+    }
 
     if (shouldBeSticky !== this.isSticky() || shouldBeSticky) {
       this.isSticky.set(shouldBeSticky);
