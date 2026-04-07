@@ -1,14 +1,13 @@
 import { Component, inject, signal, computed, effect } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { TitleCasePipe } from '@angular/common';
 import { forkJoin } from 'rxjs';
 import { HeatmapComponent } from '../heatmap/heatmap';
 import { CurtainFilterComponent } from '../curtain-filter/curtain-filter';
 import { SkeletonLoaderComponent } from '../components/skeleton-loader/skeleton-loader';
 import { FindGenePipe } from '../pipes/find-gene.pipe';
-import { FilterChipsComponent } from '../components/filter-chips/filter-chips';
 import { DataService, ParsedData } from '../services/data.service';
+import { ExportService } from '../services/export.service';
 import { GeneData, ProjectMetadata } from '../models';
 
 /**
@@ -17,12 +16,13 @@ import { GeneData, ProjectMetadata } from '../models';
 @Component({
   selector: 'app-comparison',
   standalone: true,
-  imports: [RouterLink, FormsModule, HeatmapComponent, CurtainFilterComponent, SkeletonLoaderComponent, FindGenePipe, FilterChipsComponent, TitleCasePipe],
+  imports: [RouterLink, FormsModule, HeatmapComponent, CurtainFilterComponent, SkeletonLoaderComponent, FindGenePipe],
   templateUrl: './comparison.html',
   styleUrl: './comparison.scss'
 })
 export class ComparisonComponent {
   private dataService = inject(DataService);
+  private exportService = inject(ExportService);
 
   protected readonly Math = Math;
 

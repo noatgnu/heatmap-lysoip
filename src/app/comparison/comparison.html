@@ -36,13 +36,13 @@
                 Hovering
               }
             </span>
-            <h4 class="text-lg font-bold text-gray-900 truncate" [title]="(selectedHeatmapProteins().size > 0 ? null : (lysoipData()?.genes?.concat(wclData()?.genes || []) | findGene:hoveredGeneId())?.gene)">
+            <h4 class="text-lg font-bold text-gray-900 truncate" [title]="(selectedHeatmapProteins().size > 0 ? null : ((lysoipData()?.genes || []).concat(wclData()?.genes || []) | findGene:hoveredGeneId())?.gene)">
               @if (selectedHeatmapProteins().size === 1) {
                 {{ firstSelectedGene()?.gene }}
               } @else if (selectedHeatmapProteins().size > 1) {
                 Multiple Proteins
               } @else {
-                {{ (lysoipData()?.genes?.concat(wclData()?.genes || []) | findGene:hoveredGeneId())?.gene || '...' }}
+                {{ ((lysoipData()?.genes || []).concat(wclData()?.genes || []) | findGene:hoveredGeneId())?.gene || '...' }}
               }
             </h4>
           </div>
