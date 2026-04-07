@@ -36,38 +36,38 @@ export class RankPlotComponent {
 
     const sorted = [...rawData].sort((a, b) => b.score - a.score);
     
-    const x = sorted.map((_, i) => i + 1);
-    const y = sorted.map(d => d.score);
-    const ids = sorted.map(d => d.uniprotId);
-    const text = sorted.map(d => `${d.uniprotId} | ${d.gene}<br>Score: ${d.score.toFixed(2)}<br>Inc: ${d.increase}, Dec: ${d.decrease}, Total: ${d.total}`);
-    
-    const colors = y.map(val => val >= 0 ? 'rgb(103, 0, 31)' : 'rgb(5, 48, 97)');
-    const symbols = sorted.map(d => selected.has(d.uniprotId) ? 'diamond' : 'circle');
-    const sizes = sorted.map(d => selected.has(d.uniprotId) ? 12 : 6);
-    const opacities = sorted.map(d => selected.has(d.uniprotId) ? 1.0 : 0.5);
-    const lineWidths = sorted.map(d => selected.has(d.uniprotId) ? 2 : 0);
+    // Separate into two traces for the legend
+    const selectedData = sorted.filter(d => selected.has(d.uniprotId));
+    const unselectedData = sorted.filter(d => !selected.has(d.uniprotId));
+
+    const createTrace = (items: RankItem[], isSelected: boolean) => {
+      return {
+        x: items.map(d => sorted.indexOf(d) + 1),
+        y: items.map(d => d.score),
+        text: items.map(d => `${d.uniprotId} | ${d.gene}<br>Score: ${d.score.toFixed(2)}<br>Inc: ${d.increase}, Dec: ${d.decrease}, Total: ${d.total}`),
+        customdata: items.map(d => d.uniprotId),
+        name: isSelected ? 'Selected' : 'Unselected',
+        mode: 'markers',
+        type: 'scatter',
+        hoverinfo: 'text',
+        showlegend: true,
+        marker: {
+          color: items.map(d => d.score >= 0 ? 'rgb(103, 0, 31)' : 'rgb(5, 48, 97)'),
+          size: isSelected ? 12 : 6,
+          symbol: isSelected ? 'diamond' : 'circle',
+          opacity: isSelected ? 1.0 : 0.5,
+          line: {
+            color: '#000',
+            width: isSelected ? 2 : 0
+          }
+        }
+      };
+    };
 
     return {
       data: [
-        {
-          x: x,
-          y: y,
-          text: text,
-          customdata: ids,
-          mode: 'markers',
-          type: 'scatter',
-          hoverinfo: 'text',
-          marker: {
-            color: colors,
-            size: sizes,
-            symbol: symbols,
-            opacity: opacities,
-            line: {
-              color: '#000',
-              width: lineWidths
-            }
-          }
-        }
+        createTrace(unselectedData, false),
+        createTrace(selectedData, true)
       ],
       layout: {
         title: {
@@ -75,12 +75,19 @@ export class RankPlotComponent {
           font: { size: 12, color: '#374151' },
           x: 0.5,
           xanchor: 'center',
-          y: 0.9
+          y: 0.95
         },
         uirevision: this.uiRevision(),
-        margin: { l: 50, b: 40, t: 80, r: 20 },
+        margin: { l: 50, b: 60, t: 60, r: 20 },
         hovermode: 'closest',
         dragmode: 'zoom',
+        showlegend: true,
+        legend: {
+          orientation: 'h',
+          y: -0.2,
+          x: 0.5,
+          xanchor: 'center'
+        },
         xaxis: {          
           title: 'Rank',
           showgrid: true,

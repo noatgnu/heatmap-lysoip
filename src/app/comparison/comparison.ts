@@ -1,10 +1,13 @@
 import { Component, inject, signal, computed, effect } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { TitleCasePipe } from '@angular/common';
 import { forkJoin } from 'rxjs';
 import { HeatmapComponent } from '../heatmap/heatmap';
 import { CurtainFilterComponent } from '../curtain-filter/curtain-filter';
 import { SkeletonLoaderComponent } from '../components/skeleton-loader/skeleton-loader';
+import { FindGenePipe } from '../pipes/find-gene.pipe';
+import { FilterChipsComponent } from '../components/filter-chips/filter-chips';
 import { DataService, ParsedData } from '../services/data.service';
 import { GeneData, ProjectMetadata } from '../models';
 
@@ -45,6 +48,7 @@ export class ComparisonComponent {
   geneSortOrder = signal<'none' | 'increase' | 'decrease'>('none');
   selectedHeatmapProteins = signal<Map<string, GeneData>>(new Map());
   manualProjectOrder = signal<ProjectMetadata[]>([]);
+  hoveredGeneId = signal<string | null>(null);
 
   selectedHeatmapProteinIds = computed(() => new Set(this.selectedHeatmapProteins().keys()));
 
@@ -52,6 +56,10 @@ export class ComparisonComponent {
     const values = this.selectedHeatmapProteins().values();
     return values.next().value;
   });
+
+  onGeneHovered(uniprotId: string | null) {
+    this.hoveredGeneId.set(uniprotId);
+  }
 
   clearHeatmapSelection() {
     this.selectedHeatmapProteins.set(new Map());
