@@ -9,16 +9,13 @@ import { PlotlyModule, PlotlyService } from 'angular-plotly.js';
 import * as PlotlyJS from 'plotly.js-dist-min';
 import { DataService } from '../services/data.service';
 import { of } from 'rxjs';
-
 describe('ComparisonComponent', () => {
   let component: ComparisonComponent;
   let fixture: ComponentFixture<ComparisonComponent>;
-
   const mockDataService = {
     loadDataset: vi.fn().mockImplementation((type) => of({ projects: [], genes: [] })),
     isLoading: vi.fn().mockReturnValue(false)
   };
-
   const mockPlotlyService = {
     getPlotly: () => Promise.resolve({
       newPlot: vi.fn(),
@@ -27,7 +24,6 @@ describe('ComparisonComponent', () => {
       purge: vi.fn()
     })
   };
-
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [ComparisonComponent],
@@ -39,16 +35,13 @@ describe('ComparisonComponent', () => {
         importProvidersFrom(PlotlyModule.forRoot(PlotlyJS))
       ]
     }).compileComponents();
-
     fixture = TestBed.createComponent(ComparisonComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
-
   it('should create', () => {
     expect(component).toBeTruthy();
   });
-
   it('should have initial state set correctly', () => {
     expect(component.selectedGeneIds().size).toBe(0);
   });

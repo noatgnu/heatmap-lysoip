@@ -1,6 +1,5 @@
 import { Pipe, PipeTransform } from '@angular/core';
 import { GeneData } from '../models';
-
 @Pipe({
   name: 'findGene',
   standalone: true

@@ -1,14 +1,12 @@
 import { Injectable, inject } from '@angular/core';
 import { PlotlyService } from 'angular-plotly.js';
 import { GeneData, ProjectMetadata } from '../models';
-
 /**
  * Service for exporting heatmap visualizations and data in various formats.
  */
 @Injectable({ providedIn: 'root' })
 export class ExportService {
   private plotlyService = inject(PlotlyService);
-
   /**
    * Exports the Plotly heatmap as a PNG image using PlotlyService.
    */
@@ -18,7 +16,6 @@ export class ExportService {
     if (!gd) {
       throw new Error('Plotly graph not found');
     }
-
     await Plotly.downloadImage(gd, {
       format: 'png',
       width: 1600,
@@ -26,7 +23,6 @@ export class ExportService {
       filename: filename.replace('.png', '')
     });
   }
-
   /**
    * Exports the Plotly heatmap as an SVG image using PlotlyService.
    */
@@ -36,7 +32,6 @@ export class ExportService {
     if (!gd) {
       throw new Error('Plotly graph not found');
     }
-
     await Plotly.downloadImage(gd, {
       format: 'svg',
       width: 1600,
@@ -44,7 +39,6 @@ export class ExportService {
       filename: filename.replace('.svg', '')
     });
   }
-
   /**
    * Exports gene data as CSV.
    */
@@ -58,17 +52,14 @@ export class ExportService {
       ];
       return values.map(v => this.escapeCsvValue(v)).join(',');
     });
-
     const csvContent = [headers.map(h => this.escapeCsvValue(h)).join(','), ...rows].join('\n');
     this.downloadFile(csvContent, filename, 'text/csv');
   }
-
   /**
    * Copies gene list to clipboard.
    */
   async copyGeneListToClipboard(genes: GeneData[], format: 'genes' | 'uniprotIds' | 'both' = 'genes'): Promise<void> {
     let text: string;
-
     switch (format) {
       case 'genes':
         text = genes.map(g => g.gene).join('\n');
@@ -80,10 +71,8 @@ export class ExportService {
         text = genes.map(g => `${g.uniprotId}\t${g.gene}`).join('\n');
         break;
     }
-
     await navigator.clipboard.writeText(text);
   }
-
   /**
    * Exports filtered data as TSV (preserves original format better).
    */
@@ -97,11 +86,9 @@ export class ExportService {
       ];
       return values.join('\t');
     });
-
     const tsvContent = [headers.join('\t'), ...rows].join('\n');
     this.downloadFile(tsvContent, filename, 'text/tab-separated-values');
   }
-
   /**
    * Exports only the list of proteins (Uniprot ID and Gene Name) as CSV or TSV.
    */
@@ -110,29 +97,24 @@ export class ExportService {
     const separator = format === 'csv' ? ',' : '\t';
     const mimeType = format === 'csv' ? 'text/csv' : 'text/tab-separated-values';
     const ext = format === 'csv' ? '.csv' : '.tsv';
-
     const rows = genes.map(gene => {
       const values = [gene.uniprotId, gene.gene];
       return format === 'csv' 
         ? values.map(v => this.escapeCsvValue(v)).join(separator)
         : values.join(separator);
     });
-
     const headerLine = format === 'csv' 
       ? headers.map(h => this.escapeCsvValue(h)).join(separator)
       : headers.join(separator);
-
     const content = [headerLine, ...rows].join('\n');
     this.downloadFile(content, filename + ext, mimeType);
   }
-
   private escapeCsvValue(value: string): string {
     if (value.includes(',') || value.includes('"') || value.includes('\n')) {
       return `"${value.replace(/"/g, '""')}"`;
     }
     return value;
   }
-
   private downloadFile(content: string, filename: string, mimeType: string): void {
     const blob = new Blob([content], { type: mimeType });
     const url = URL.createObjectURL(blob);

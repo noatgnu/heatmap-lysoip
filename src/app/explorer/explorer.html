@@ -23,7 +23,6 @@
       <p class="text-[9px] text-gray-400 italic">Filters visible proteins in both heatmaps.</p>
     </div>
   </div>
-
   @if (selectedHeatmapProteins().size > 0 || hoveredGeneId()) {
     <div class="fixed bottom-8 left-8 z-[90] animate-in fade-in slide-in-from-bottom-4 duration-300">
       <div class="bg-white rounded-lg shadow-xl border-2 border-indigo-500 p-4 w-80 backdrop-blur-sm bg-white/95">
@@ -50,7 +49,6 @@
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
           </button>
         </div>
-
         @if (selectedHeatmapProteins().size > 0) {
           <div class="max-h-32 overflow-y-auto mb-4 border-y border-gray-100 py-2">
             @for (item of selectedHeatmapProteins().values(); track item.uniprotId) {
@@ -63,7 +61,6 @@
             }
           </div>
         }
-        
         <div class="flex flex-col gap-2 mt-4">
           @if (selectedHeatmapProteins().size > 0) {
             <button 
@@ -99,7 +96,6 @@
       </div>
     </div>
   }
-
   @if (pendingBulkSelection()) {
     <div class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
       <div class="bg-white rounded-xl shadow-2xl border border-gray-200 max-w-md w-full overflow-hidden">
@@ -133,7 +129,6 @@
       </div>
     </div>
   }
-
   <div class="w-64 flex-shrink-0 flex flex-col gap-6">
     <div class="bg-white shadow rounded-lg p-4 border border-gray-200">
       <h4 class="text-sm font-bold text-gray-900 mb-4 uppercase tracking-wider">Dataset Selection</h4>
@@ -164,7 +159,6 @@
         </a>
       </div>
     </div>
-
     <app-collapsible-section title="Filter by Specific Experiment" [defaultOpen]="true">
       <div class="space-y-1 max-h-64 overflow-y-auto border rounded p-2 bg-gray-50">
         @for (p of projects(); track p.projectId) {
@@ -178,9 +172,7 @@
         }
       </div>
     </app-collapsible-section>
-
     <app-curtain-filter (filterSelected)="applyCurtainFilter($event)"></app-curtain-filter>
-
     <app-collapsible-section title="Significance Filters" [defaultOpen]="true">
       <div class="flex flex-col gap-4 p-1">
         <div class="space-y-1">
@@ -202,7 +194,6 @@
           </div>
           <p class="text-[9px] text-gray-400 italic">Hides genes with |Log2FC| < threshold.</p>
         </div>
-
         <div class="space-y-1">
           <div class="flex justify-between items-center">
             <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Confidence Cutoff</label>
@@ -224,7 +215,6 @@
         </div>
       </div>
     </app-collapsible-section>
-
     <app-collapsible-section title="Grouping Presets">
       <div class="flex flex-col gap-2 p-1">
         <button (click)="setPreset('organ')" class="text-left text-[11px] font-medium px-3 py-2 bg-white hover:bg-gray-50 rounded border border-gray-200 transition-colors shadow-sm">Organ > Protein > Mutation > Knockout > Treatment</button>
@@ -234,7 +224,6 @@
         <button (click)="setPreset('treatment')" class="text-left text-[11px] font-medium px-3 py-2 bg-white hover:bg-gray-50 rounded border border-gray-200 transition-colors shadow-sm">Treatment > Mutation > Organ > Protein > Knockout</button>
       </div>
     </app-collapsible-section>
-
     <app-collapsible-section title="Group By Hierarchy">
       <div cdkDropList (cdkDropListDropped)="drop($event)" class="space-y-2 p-1">
         @for (item of sortStack(); track item) {
@@ -246,7 +235,6 @@
       </div>
       <p class="mt-2 text-xs text-gray-500 italic px-1">Drag to change nesting order.</p>
     </app-collapsible-section>
-
     <app-collapsible-section title="Experiment Manual Sort" [defaultOpen]="false">
       <p class="text-xs text-gray-500 mb-2 italic px-1">Drag to manually reorder current experiments.</p>
       <div cdkDropList (cdkDropListDropped)="dropExperiment($event)" class="space-y-1 max-h-64 overflow-y-auto border rounded p-2 bg-gray-50">
@@ -261,7 +249,6 @@
         <button (click)="clearManualSort()" class="mt-2 text-[10px] font-bold text-red-600 hover:text-red-800 uppercase px-1">Reset Manual Sort</button>
       }
     </app-collapsible-section>
-
     <app-collapsible-section title="Flip Signs" [defaultOpen]="false">
       <p class="text-xs text-gray-500 mb-2 italic px-1">Invert Log2FC signs for specific projects.</p>
       <div class="space-y-1 max-h-48 overflow-y-auto border rounded p-2 bg-gray-50">
@@ -277,7 +264,6 @@
         }
       </div>
     </app-collapsible-section>
-
     @for (cat of config()?.categorization; track cat.key) {
       <app-collapsible-section [title]="'Filter by ' + cat.label" [defaultOpen]="false">
         <div class="space-y-1 max-h-48 overflow-y-auto border rounded p-2 bg-gray-50">
@@ -291,7 +277,6 @@
       </app-collapsible-section>
     }
   </div>
-
   <div class="flex-1 flex flex-col gap-6 min-w-0 overflow-hidden">
     <div class="w-full bg-white shadow rounded-lg flex flex-col border border-gray-200">
       <div class="px-4 py-5 sm:px-6 border-b border-gray-200 flex justify-between items-center bg-white">
@@ -316,7 +301,6 @@
           </button>
         </div>
       </div>
-
       <div class="px-4 py-5 sm:p-6 bg-gray-50 flex flex-col gap-6 border-b border-gray-200">
         <app-filter-chips [chips]="activeFilterChips()" (removeFilter)="removeFilterChip($event)" (clearAll)="clearAllFilters()"></app-filter-chips>
         <div class="max-w-xl relative">
@@ -334,7 +318,6 @@
             </div>
           }
         </div>
-
         <div class="flex flex-col gap-3">
           <div class="flex justify-between items-center">
             <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Selected Proteins ({{ displayedGenes().length }})</span>
@@ -375,7 +358,6 @@
           }
         </div>
       </div>
-
       <div class="flex-1 w-full bg-white p-4">
         @if (isLoading()) {
           <app-skeleton-loader variant="heatmap"></app-skeleton-loader>
@@ -410,7 +392,6 @@
                 </app-collapsible-section>
               }
             </div>
-
             <div class="flex justify-end px-1 items-center gap-4">
               <span class="text-xs font-bold text-gray-500 uppercase">Heatmap Orientation:</span>
               <div class="flex bg-gray-100 p-1 rounded-lg border border-gray-200">
@@ -424,7 +405,6 @@
                 </label>
               </div>
             </div>
-
             <div [class]="projectGroups().length > 1 ? 'grid grid-cols-2 gap-4' : 'flex flex-col gap-4'">
               @for (group of projectGroups(); track group.name) {
                 <div class="border border-gray-200 rounded-lg p-4 bg-gray-50">

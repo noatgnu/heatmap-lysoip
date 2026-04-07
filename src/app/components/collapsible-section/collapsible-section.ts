@@ -1,5 +1,4 @@
 import { Component, input, signal, effect } from '@angular/core';
-
 /**
  * Collapsible section wrapper for compact desktop UI.
  * Allows sections to be collapsed to save vertical space.
@@ -36,10 +35,8 @@ import { Component, input, signal, effect } from '@angular/core';
 export class CollapsibleSectionComponent {
   title = input.required<string>();
   defaultOpen = input<boolean>(true);
-
   isOpen = signal(true);
   private initialized = false;
-
   constructor() {
     effect(() => {
       const defaultValue = this.defaultOpen();
@@ -49,7 +46,6 @@ export class CollapsibleSectionComponent {
       }
     });
   }
-
   toggle() {
     this.isOpen.update(v => !v);
   }

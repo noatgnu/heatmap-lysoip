@@ -1,5 +1,4 @@
 import { Component, input } from '@angular/core';
-
 /**
  * Skeleton loader component for better perceived performance during data loading.
  * Displays animated placeholder shapes that match the expected content layout.

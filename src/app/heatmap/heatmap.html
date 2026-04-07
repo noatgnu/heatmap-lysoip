@@ -1,5 +1,4 @@
 <div class="w-full bg-white relative group">
-  <!-- Floating Custom Toolbar -->
   <div 
     class="absolute right-4 z-[110] flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
     [style.top.px]="toolbarOffset()"
@@ -20,7 +19,6 @@
       </button>
     </div>
   </div>
-
   <div
     #topScrollContainer
     [style.position]="isSticky() ? 'fixed' : 'relative'"
@@ -34,7 +32,6 @@
   >
     <div [style.width.px]="graphData().layout.width" style="height: 1px;"></div>
   </div>
-
   <div
     #plotContainer
     class="w-full overflow-x-auto overflow-y-auto text-center main-plot-area"

@@ -1,10 +1,8 @@
 import { Component, input, output } from '@angular/core';
-
 export interface FilterChip {
   type: 'organ' | 'protein' | 'mutation' | 'treatment' | 'project';
   value: string;
 }
-
 /**
  * Displays active filters as removable chips for quick visibility and management.
  */
@@ -16,10 +14,8 @@ export interface FilterChip {
 })
 export class FilterChipsComponent {
   chips = input.required<FilterChip[]>();
-
   removeFilter = output<FilterChip>();
   clearAll = output<void>();
-
   getChipClass(type: FilterChip['type']): string {
     const classes: Record<FilterChip['type'], string> = {
       organ: 'bg-emerald-100 text-emerald-800 border border-emerald-200',

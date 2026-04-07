@@ -1,13 +1,11 @@
 import { Injectable, signal } from '@angular/core';
-
 export type SortCriterion = string;
-
 export interface FilterPreset {
   id: string;
   name: string;
   dataset: string;
   geneIds: string[];
-  filterState?: Record<string, string[]>; // New generic state
+  filterState?: Record<string, string[]>; 
   organs?: string[];
   proteins?: string[];
   mutations?: string[];
@@ -18,10 +16,8 @@ export interface FilterPreset {
   flippedProjectIds: string[];
   createdAt: number;
 }
-
 const STORAGE_KEY = 'heatmap_presets';
 const MAX_PRESETS = 10;
-
 /**
  * Service for persisting filter presets to localStorage.
  */
@@ -30,13 +26,10 @@ const MAX_PRESETS = 10;
 })
 export class PreferencesService {
   private presetsSignal = signal<FilterPreset[]>([]);
-
   readonly presets = this.presetsSignal.asReadonly();
-
   constructor() {
     this.loadFromStorage();
   }
-
   private loadFromStorage(): void {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
@@ -48,15 +41,12 @@ export class PreferencesService {
       this.presetsSignal.set([]);
     }
   }
-
   private saveToStorage(): void {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(this.presetsSignal()));
     } catch {
-      // Storage full or unavailable
     }
   }
-
   savePreset(
     name: string,
     dataset: string,
@@ -85,34 +75,27 @@ export class PreferencesService {
       flippedProjectIds: Array.from(flippedProjectIds),
       createdAt: Date.now()
     };
-
     this.presetsSignal.update(presets => {
       const updated = [preset, ...presets].slice(0, MAX_PRESETS);
       return updated;
     });
-
     this.saveToStorage();
     return preset;
   }
-
   deletePreset(id: string): void {
     this.presetsSignal.update(presets => presets.filter(p => p.id !== id));
     this.saveToStorage();
   }
-
   getPreset(id: string): FilterPreset | undefined {
     return this.presetsSignal().find(p => p.id === id);
   }
-
   getPresetsForDataset(dataset: string): FilterPreset[] {
     return this.presetsSignal().filter(p => p.dataset === dataset);
   }
-
   clearAllPresets(): void {
     this.presetsSignal.set([]);
     this.saveToStorage();
   }
-
   renamePreset(id: string, newName: string): void {
     this.presetsSignal.update(presets =>
       presets.map(p => (p.id === id ? { ...p, name: newName } : p))

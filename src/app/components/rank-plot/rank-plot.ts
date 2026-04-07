@@ -1,7 +1,6 @@
 import { Component, input, computed, signal, output } from '@angular/core';
 import { PlotlyModule } from 'angular-plotly.js';
 import { RankItem } from '../../models';
-
 @Component({
   selector: 'app-rank-plot',
   standalone: true,
@@ -15,9 +14,7 @@ export class RankPlotComponent {
   selectedGeneIds = input<Set<string>>(new Set());
   title = input<string>('Protein Rank Plot');
   uiRevision = input<any>(0);
-  
   genesSelected = output<string[]>();
-
   graphConfig = {
     displaylogo: false,
     responsive: true,
@@ -29,17 +26,13 @@ export class RankPlotComponent {
       scale: 1
     }
   };
-
   graphData = computed(() => {
     const rawData = this.data();
     const selected = this.selectedGeneIds();
     if (rawData.length === 0) return { data: [], layout: { height: 300 } };
-
     const sorted = [...rawData].sort((a, b) => b.score - a.score);
-    
     const selectedData = sorted.filter(d => selected.has(d.uniprotId));
     const unselectedData = sorted.filter(d => !selected.has(d.uniprotId));
-
     const createTrace = (items: RankItem[], isSelected: boolean) => {
       return {
         x: items.map(d => sorted.indexOf(d) + 1),
@@ -63,7 +56,6 @@ export class RankPlotComponent {
         }
       };
     };
-
     return {
       data: [
         createTrace(unselectedData, false),
@@ -111,20 +103,17 @@ export class RankPlotComponent {
       }
     };
   });
-
   onPlotClick(event: any) {
     const point = event?.points?.[0];
     if (point?.customdata) {
       this.genesSelected.emit([point.customdata]);
     }
   }
-
   onPlotSelected(event: any) {
     if (event?.points && event.points.length > 0) {
       const selectedIds = event.points
         .map((p: any) => p.customdata)
         .filter((id: any) => id);
-      
       if (selectedIds.length > 0) {
         this.genesSelected.emit(selectedIds);
       }

@@ -11,7 +11,6 @@ export interface ProjectMetadata {
   date: string;
   [key: string]: any;
 }
-
 export interface GeneData {
   uniprotId: string;
   gene: string;
@@ -19,7 +18,6 @@ export interface GeneData {
   confidences: (number | null)[];
   searchString: string;
 }
-
 export interface RankItem {
   uniprotId: string;
   gene: string;

@@ -9,7 +9,6 @@ import { FindGenePipe } from '../pipes/find-gene.pipe';
 import { DataService, ParsedData } from '../services/data.service';
 import { ExportService } from '../services/export.service';
 import { GeneData, ProjectMetadata } from '../models';
-
 /**
  * Side-by-side comparison view for LysoIP and WCL datasets.
  */
@@ -23,23 +22,17 @@ import { GeneData, ProjectMetadata } from '../models';
 export class ComparisonComponent {
   private dataService = inject(DataService);
   private exportService = inject(ExportService);
-
   protected readonly Math = Math;
-
   isLoading = signal(true);
-
   lysoipData = signal<ParsedData | null>(null);
   wclData = signal<ParsedData | null>(null);
-
   searchTerm = signal('');
   geneFilterTerm = signal('');
   selectedGeneIds = signal<Set<string>>(new Set());
   pendingBulkSelection = signal<string[] | null>(null);
   isBulkReplacing = signal<boolean>(false);
-
   lysoipOnlySearchTerm = signal('');
   selectedLysoipOnlyIds = signal<Set<string>>(new Set());
-
   wclOnlySearchTerm = signal('');
   selectedWclOnlyIds = signal<Set<string>>(new Set());
   log2fcCutoff = signal<number | null>(null);
@@ -49,22 +42,17 @@ export class ComparisonComponent {
   selectedHeatmapProteins = signal<Map<string, GeneData>>(new Map());
   manualProjectOrder = signal<ProjectMetadata[]>([]);
   hoveredGeneId = signal<string | null>(null);
-
   selectedHeatmapProteinIds = computed(() => new Set(this.selectedHeatmapProteins().keys()));
-
   firstSelectedGene = computed(() => {
     const values = this.selectedHeatmapProteins().values();
     return values.next().value;
   });
-
   onGeneHovered(uniprotId: string | null) {
     this.hoveredGeneId.set(uniprotId);
   }
-
   clearHeatmapSelection() {
     this.selectedHeatmapProteins.set(new Map());
   }
-
   onHeatmapGeneSelected(uniprotId: string) {
     const gene = (this.lysoipData()?.genes || []).find(g => g.uniprotId === uniprotId) ||
                  (this.wclData()?.genes || []).find(g => g.uniprotId === uniprotId);
@@ -80,7 +68,6 @@ export class ComparisonComponent {
       });
     }
   }
-
   isolateSelectedHeatmapProteins() {
     const selected = this.selectedHeatmapProteins();
     if (selected.size > 0) {
@@ -89,11 +76,9 @@ export class ComparisonComponent {
       this.geneFilterTerm.set('');
     }
   }
-
   openComparisonInNewTab() {
     const selected = this.selectedHeatmapProteins();
     if (selected.size === 0) return;
-
     const log2fcCut = this.log2fcCutoff();
     const confCut = this.confidenceCutoff();
     const queryParams = new URLSearchParams({
@@ -101,18 +86,15 @@ export class ComparisonComponent {
       cutoff: log2fcCut ? log2fcCut.toString() : '',
       conf: confCut ? confCut.toString() : ''
     });
-
     const url = `${window.location.origin}${window.location.pathname}?${queryParams.toString()}`;
     window.open(url, '_blank');
   }
-
   exportHighlightedProteins(format: 'csv' | 'tsv') {
     const selected = Array.from(this.selectedHeatmapProteins().values());
     if (selected.length === 0) return;
     const filename = `highlighted_proteins_comparison_${new Date().toISOString().slice(0, 10)}`;
     this.exportService.exportProteinList(selected, format, filename);
   }
-
   removeHeatmapSelection(uniprotId: string) {
     this.selectedHeatmapProteins.update(map => {
       const newMap = new Map(map);
@@ -120,19 +102,15 @@ export class ComparisonComponent {
       return newMap;
     });
   }
-
   private defaultGenes = [
     'TMEM175', 'OGA', 'NOD2', 'USP30', 'STING1', 'ATP13A2', 'MCOLN1', 'TLR2', 'GPNMB',
     'MAPT', 'PARP1', 'BECN1', 'TREM2', 'VPS35', 'CTSB', 'LRRK2', 'GBA'
   ];
-
   constructor() {
     this.loadBothDatasets();
   }
-
   private loadBothDatasets() {
     this.isLoading.set(true);
-
     forkJoin({
       lysoip: this.dataService.loadDataset('lysoip'),
       wcl: this.dataService.loadDataset('wcl')
@@ -143,7 +121,6 @@ export class ComparisonComponent {
       this.isLoading.set(false);
     });
   }
-
   private applyDefaultGenes(genes: GeneData[]) {
     const ids = new Set<string>();
     const lowerDefault = this.defaultGenes.map(g => g.toLowerCase());
@@ -154,24 +131,19 @@ export class ComparisonComponent {
     });
     this.selectedGeneIds.set(ids);
   }
-
   applyCurtainFilter(data: string) {
     const geneTerms = data.split(/[\n,]/).map((s: string) => s.trim().toLowerCase()).filter((s: string) => s);
     const matchedIds = new Set<string>();
     const allGenes = this.lysoipData()?.genes || [];
-
     allGenes.forEach((gene: GeneData) => {
       const gParts = gene.gene.toLowerCase().split(';').map(p => p.trim());
       const uParts = gene.uniprotId.toLowerCase().split(';').map(p => p.trim());
-
       const match = gParts.some(p => geneTerms.includes(p)) ||
                     uParts.some(p => geneTerms.includes(p));
-
       if (match) {
         matchedIds.add(gene.uniprotId);
       }
     });
-
     if (matchedIds.size === 1) {
       this.selectedGeneIds.update((set: Set<string>) => {
         const newSet = new Set(set);
@@ -182,7 +154,6 @@ export class ComparisonComponent {
       this.pendingBulkSelection.set(Array.from(matchedIds));
     }
   }
-
   confirmBulkAdd() {
     const ids = this.pendingBulkSelection();
     if (ids) {
@@ -194,7 +165,6 @@ export class ComparisonComponent {
     }
     this.pendingBulkSelection.set(null);
   }
-
   confirmBulkReplace() {
     const ids = this.pendingBulkSelection();
     if (ids) {
@@ -203,53 +173,42 @@ export class ComparisonComponent {
     }
     this.pendingBulkSelection.set(null);
   }
-
   cancelBulkSelection() {
     this.pendingBulkSelection.set(null);
     this.isBulkReplacing.set(false);
   }
-
   effectiveHighlightedIds = computed(() => {
     const selected = this.selectedGeneIds();
     const pending = this.pendingBulkSelection();
     if (!pending) return selected;
-    
     if (this.isBulkReplacing()) {
       return new Set(pending);
     }
-
     const combined = new Set(selected);
     pending.forEach(id => combined.add(id));
     return combined;
   });
-
   commonGenes = computed(() => {
     const lysoip = this.lysoipData();
     const wcl = this.wclData();
     if (!lysoip || !wcl) return [];
-
     const lysoipIds = new Set(lysoip.genes.map(g => g.uniprotId));
     return wcl.genes.filter(g => lysoipIds.has(g.uniprotId));
   });
-
   lysoipOnlyGenes = computed(() => {
     const lysoip = this.lysoipData();
     const wcl = this.wclData();
     if (!lysoip || !wcl) return [];
-
     const wclIds = new Set(wcl.genes.map(g => g.uniprotId));
     return lysoip.genes.filter(g => !wclIds.has(g.uniprotId));
   });
-
   wclOnlyGenes = computed(() => {
     const lysoip = this.lysoipData();
     const wcl = this.wclData();
     if (!lysoip || !wcl) return [];
-
     const lysoipIds = new Set(lysoip.genes.map(g => g.uniprotId));
     return wcl.genes.filter(g => !lysoipIds.has(g.uniprotId));
   });
-
   displayedLysoipGenes = computed(() => {
     const data = this.lysoipData();
     if (!data) return [];
@@ -265,7 +224,6 @@ export class ComparisonComponent {
       .filter(g => this.passesCutoffs(g, data.projects));
     return this.sortGenes(genes, data.projects, sortOrder);
   });
-
   displayedWclGenes = computed(() => {
     const data = this.wclData();
     if (!data) return [];
@@ -281,7 +239,6 @@ export class ComparisonComponent {
       .filter(g => this.passesCutoffs(g, data.projects));
     return this.sortGenes(genes, data.projects, sortOrder);
   });
-
   displayedLysoipOnlyGenes = computed(() => {
     const data = this.lysoipData();
     if (!data) return [];
@@ -292,7 +249,6 @@ export class ComparisonComponent {
       .filter(g => this.passesCutoffs(g, data.projects));
     return this.sortGenes(genes, data.projects, sortOrder);
   });
-
   displayedWclOnlyGenes = computed(() => {
     const data = this.wclData();
     if (!data) return [];
@@ -303,7 +259,6 @@ export class ComparisonComponent {
       .filter(g => this.passesCutoffs(g, data.projects));
     return this.sortGenes(genes, data.projects, sortOrder);
   });
-
   private sortGenes(
     genes: GeneData[],
     projects: ProjectMetadata[],
@@ -317,7 +272,6 @@ export class ComparisonComponent {
       return countB - countA;
     });
   }
-
   private countDirectionForGene(
     gene: GeneData,
     projIndices: Set<number>,
@@ -338,15 +292,12 @@ export class ComparisonComponent {
     });
     return count;
   }
-
   private passesCutoffs(gene: GeneData, projects: ProjectMetadata[]): boolean {
     const log2fcCut = this.log2fcCutoff();
     const confCut = this.confidenceCutoff();
     const hasLog2fcCutoff = log2fcCut !== null && log2fcCut > 0;
     const hasConfCutoff = confCut !== null && confCut > 0;
-
     if (!hasLog2fcCutoff && !hasConfCutoff) return true;
-
     return gene.log2fcs.some((val, idx) => {
       if (idx >= projects.length) return false;
       if (val === null) return false;
@@ -356,24 +307,20 @@ export class ComparisonComponent {
       return passesLog2fc && passesConf;
     });
   }
-
   lysoipProjects = computed(() => this.lysoipData()?.projects ?? []);
   wclProjects = computed(() => this.wclData()?.projects ?? []);
-
   lysoipLrrk2Projects = computed(() =>
     this.lysoipProjects().filter(p => !p.projectName.toUpperCase().includes('GBA'))
   );
   lysoipGbaProjects = computed(() =>
     this.lysoipProjects().filter(p => p.projectName.toUpperCase().includes('GBA'))
   );
-
   wclLrrk2Projects = computed(() =>
     this.wclProjects().filter(p => !p.projectName.toUpperCase().includes('GBA'))
   );
   wclGbaProjects = computed(() =>
     this.wclProjects().filter(p => p.projectName.toUpperCase().includes('GBA'))
   );
-
   lysoipLrrk2Summary = computed(() =>
     this.calculateSummary(this.displayedLysoipGenes(), this.lysoipLrrk2Projects(), this.lysoipProjects())
   );
@@ -392,7 +339,6 @@ export class ComparisonComponent {
   wclOnlySummary = computed(() =>
     this.calculateSummary(this.displayedWclOnlyGenes(), this.wclProjects(), this.wclProjects())
   );
-
   private calculateSummary(
     genes: GeneData[],
     projects: ProjectMetadata[],
@@ -401,19 +347,15 @@ export class ComparisonComponent {
     const log2fcCut = this.log2fcCutoff();
     const confCut = this.confidenceCutoff();
     const projIndices = new Set(projects.map(p => allProjects.indexOf(p)));
-
     let increase = 0;
     let decrease = 0;
     let total = 0;
-
     genes.forEach(g => {
       g.log2fcs.forEach((val, idx) => {
         if (!projIndices.has(idx) || val === null) return;
-
         const conf = g.confidences[idx];
         const passesConf = confCut === null || confCut <= 0 || (conf !== null && conf >= confCut);
         const passesLog2fc = log2fcCut === null || log2fcCut <= 0 || Math.abs(val) >= log2fcCut;
-
         if (passesConf && passesLog2fc) {
           total++;
           if (val > 0) increase++;
@@ -421,10 +363,8 @@ export class ComparisonComponent {
         }
       });
     });
-
     return { increase, decrease, total };
   }
-
   searchResults = computed(() => {
     const term = this.searchTerm().toLowerCase().trim();
     if (term.length < 2) return [];
@@ -432,7 +372,6 @@ export class ComparisonComponent {
       .filter(g => g.searchString.includes(term))
       .slice(0, 10);
   });
-
   lysoipOnlySearchResults = computed(() => {
     const term = this.lysoipOnlySearchTerm().toLowerCase().trim();
     if (term.length < 2) return [];
@@ -440,7 +379,6 @@ export class ComparisonComponent {
       .filter(g => g.searchString.includes(term))
       .slice(0, 10);
   });
-
   wclOnlySearchResults = computed(() => {
     const term = this.wclOnlySearchTerm().toLowerCase().trim();
     if (term.length < 2) return [];
@@ -448,7 +386,6 @@ export class ComparisonComponent {
       .filter(g => g.searchString.includes(term))
       .slice(0, 10);
   });
-
   addGene(gene: GeneData) {
     this.selectedGeneIds.update(set => {
       const newSet = new Set(set);
@@ -457,7 +394,6 @@ export class ComparisonComponent {
     });
     this.searchTerm.set('');
   }
-
   removeGene(uniprotId: string) {
     this.selectedGeneIds.update(set => {
       const newSet = new Set(set);
@@ -465,11 +401,9 @@ export class ComparisonComponent {
       return newSet;
     });
   }
-
   clearAllGenes() {
     this.selectedGeneIds.set(new Set());
   }
-
   addLysoipOnlyGene(gene: GeneData) {
     this.selectedLysoipOnlyIds.update(set => {
       const newSet = new Set(set);
@@ -478,7 +412,6 @@ export class ComparisonComponent {
     });
     this.lysoipOnlySearchTerm.set('');
   }
-
   removeLysoipOnlyGene(uniprotId: string) {
     this.selectedLysoipOnlyIds.update(set => {
       const newSet = new Set(set);
@@ -486,11 +419,9 @@ export class ComparisonComponent {
       return newSet;
     });
   }
-
   clearLysoipOnlyGenes() {
     this.selectedLysoipOnlyIds.set(new Set());
   }
-
   addWclOnlyGene(gene: GeneData) {
     this.selectedWclOnlyIds.update(set => {
       const newSet = new Set(set);
@@ -499,7 +430,6 @@ export class ComparisonComponent {
     });
     this.wclOnlySearchTerm.set('');
   }
-
   removeWclOnlyGene(uniprotId: string) {
     this.selectedWclOnlyIds.update(set => {
       const newSet = new Set(set);
@@ -507,11 +437,9 @@ export class ComparisonComponent {
       return newSet;
     });
   }
-
   clearWclOnlyGenes() {
     this.selectedWclOnlyIds.set(new Set());
   }
-
   setLog2fcCutoff(value: string) {
     const num = parseFloat(value);
     if (isNaN(num) || num <= 0) {
@@ -520,11 +448,9 @@ export class ComparisonComponent {
       this.log2fcCutoff.set(num);
     }
   }
-
   clearLog2fcCutoff() {
     this.log2fcCutoff.set(null);
   }
-
   setConfidenceCutoff(value: string) {
     const num = parseFloat(value);
     if (isNaN(num) || num <= 0) {
@@ -533,11 +459,9 @@ export class ComparisonComponent {
       this.confidenceCutoff.set(num);
     }
   }
-
   clearConfidenceCutoff() {
     this.confidenceCutoff.set(null);
   }
-
   setGeneSortOrder(order: 'none' | 'increase' | 'decrease') {
     this.geneSortOrder.set(order);
   }
