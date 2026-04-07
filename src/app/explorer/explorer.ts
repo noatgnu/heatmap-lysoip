@@ -455,7 +455,13 @@ export class ExplorerComponent implements OnInit {
       projects,
       summary: this.calculateHeatmapSummary(projects),
       rankData: this.calculateRankData(projects)
-    }));
+    })).sort((a, b) => {
+      const cat = config.categorization[0];
+      const priorities = cat.priorities || {};
+      const pA = priorities[a.name] || priorities[a.name.toUpperCase()] || 99;
+      const pB = priorities[b.name] || priorities[b.name.toUpperCase()] || 99;
+      return pA - pB;
+    });
   });
 
   private calculateRankData(projects: ProjectMetadata[]): RankItem[] {

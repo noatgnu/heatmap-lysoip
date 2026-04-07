@@ -28,7 +28,8 @@
       "rules": [
         { "pattern": "gba", "value": "GBA" }
       ],
-      "default": "LRRK2"
+      "default": "LRRK2",
+      "priorities": { "LRRK2": 1, "GBA": 2 }
     },
     {
       "key": "organ",
