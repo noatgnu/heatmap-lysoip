@@ -18,7 +18,7 @@ export interface DataFilterList {
 export class CurtainFilterComponent implements OnInit, OnDestroy {
   private http = inject(HttpClient);
   private el = inject(ElementRef);
-  private baseUrl = 'https://curtain.proteo.info/api';
+  private baseUrl = 'https://curtain-backend.omics.quest';
   categories = signal<string[]>([]);
   selectedCategory = signal<string>('');
   filters = signal<DataFilterList[]>([]);
