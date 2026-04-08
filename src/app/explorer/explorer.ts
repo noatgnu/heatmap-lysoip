@@ -31,6 +31,7 @@ export class ExplorerComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private location = inject(Location);
   protected readonly Math = Math;
+  protected readonly Array = Array;
   heatmapComponent = viewChild(HeatmapComponent);
   dataset = input.required<string>();
   currentDataset = signal<string>('');
