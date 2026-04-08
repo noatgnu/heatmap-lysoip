@@ -194,45 +194,31 @@
       </app-collapsible-section>
     }
   </div>
-  <div class="flex-1 flex flex-col gap-0 min-w-0 overflow-hidden bg-white shadow rounded-lg border border-gray-200">
-    <div class="px-4 py-4 border-b border-gray-200 flex justify-between items-center bg-white">
-      <div>
-        <h3 class="text-lg leading-6 font-medium text-gray-900 uppercase tracking-tight">
-          <span class="text-indigo-600 font-bold">{{ currentDataset() | titlecase }}</span> Log2FC Heatmap Explorer
-        </h3>
-      </div>
-      <div class="flex gap-2 flex-wrap">
-        <div class="flex items-center bg-white border border-gray-300 rounded-md px-2 mr-2">
-          <span class="text-[10px] font-bold text-gray-500 uppercase mr-2">Summary:</span>
-          <button (click)="summaryDisplayMode.set('number')" [class.text-indigo-600]="summaryDisplayMode() === 'number'" [class.font-bold]="summaryDisplayMode() === 'number'" class="text-[10px] px-1 hover:text-indigo-500 transition-colors">#</button>
-          <span class="text-gray-300 mx-1">|</span>
-          <button (click)="summaryDisplayMode.set('proportion')" [class.text-indigo-600]="summaryDisplayMode() === 'proportion'" [class.font-bold]="summaryDisplayMode() === 'proportion'" class="text-[10px] px-1 hover:text-indigo-500 transition-colors">%</button>
+  <div class="flex-1 flex flex-col gap-6 min-w-0 overflow-hidden">
+    <div class="w-full bg-white shadow rounded-lg flex flex-col border border-gray-200">
+      <div class="px-4 py-5 sm:px-6 border-b border-gray-200 flex justify-between items-center bg-white">
+        <div>
+          <h3 class="text-lg leading-6 font-medium text-gray-900 uppercase tracking-tight">
+            <span class="text-indigo-600 font-bold">{{ currentDataset() | titlecase }}</span> Log2FC Heatmap Explorer
+          </h3>
+          <p class="mt-1 max-w-2xl text-sm text-gray-500 italic">Multi-level grouping and filtering enabled.</p>
         </div>
-        <button (click)="resetToDefault()" class="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 transition-all active:scale-95">
-          <svg class="mr-1.5 h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg> Reset
-        </button>
-        <button (click)="copyUrl()" class="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 transition-all active:scale-95">
-          <svg class="mr-1.5 h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg> URL
-        </button>
-      </div>
-    </div>
-    <div class="bg-gray-100 px-2 pt-2 flex items-end gap-1 overflow-x-auto no-scrollbar">
-      @for (tab of tabs(); track tab.id) {
-        <div (click)="switchTab(tab.id)" [class.bg-white]="activeTabId() === tab.id" [class.text-indigo-600]="activeTabId() === tab.id" [class.bg-gray-200]="activeTabId() !== tab.id" [class.text-gray-500]="activeTabId() !== tab.id" class="px-4 py-2 rounded-t-lg text-xs font-bold uppercase tracking-wider cursor-pointer border-t border-x border-gray-300 flex items-center gap-2 transition-all min-w-[120px] max-w-[200px] group shadow-sm">
-          <span class="truncate">{{ tab.name }}</span>
-          @if (tabs().length > 1) {
-            <button (click)="removeTab(tab.id, $event)" class="opacity-0 group-hover:opacity-100 hover:text-red-500 transition-all p-0.5 rounded-full hover:bg-gray-300">
-              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-            </button>
-          }
+        <div class="flex gap-2 flex-wrap">
+          <div class="flex items-center bg-white border border-gray-300 rounded-md px-2 mr-2">
+            <span class="text-[10px] font-bold text-gray-500 uppercase mr-2">Summary:</span>
+            <button (click)="summaryDisplayMode.set('number')" [class.text-indigo-600]="summaryDisplayMode() === 'number'" [class.font-bold]="summaryDisplayMode() === 'number'" class="text-[10px] px-1 hover:text-indigo-500 transition-colors">#</button>
+            <span class="text-gray-300 mx-1">|</span>
+            <button (click)="summaryDisplayMode.set('proportion')" [class.text-indigo-600]="summaryDisplayMode() === 'proportion'" [class.font-bold]="summaryDisplayMode() === 'proportion'" class="text-[10px] px-1 hover:text-indigo-500 transition-colors">%</button>
+          </div>
+          <button (click)="resetToDefault()" class="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 transition-all active:scale-95">
+            <svg class="mr-1.5 h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg> Reset
+          </button>
+          <button (click)="copyUrl()" class="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 transition-all active:scale-95">
+            <svg class="mr-1.5 h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg> URL
+          </button>
         </div>
-      }
-      <button (click)="createTab(Array.from(selectedGeneIds()), 'New Tab')" class="mb-2 ml-2 p-1.5 rounded-full bg-gray-200 text-gray-500 hover:bg-indigo-600 hover:text-white transition-all shadow-sm">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
-      </button>
-    </div>
-    <div class="flex-1 overflow-y-auto p-4 bg-white">
-      <div class="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200 flex flex-col gap-6">
+      </div>
+      <div class="px-4 py-5 sm:p-6 bg-gray-50 flex flex-col gap-6 border-b border-gray-200">
         <app-filter-chips [chips]="activeFilterChips()" (removeFilter)="removeFilterChip($event)" (clearAll)="clearAllFilters()"></app-filter-chips>
         <div class="max-w-xl relative">
           <label for="search" class="block text-sm font-medium text-gray-700">Add Protein of Interest</label>
@@ -254,13 +240,13 @@
             <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Selected Proteins ({{ displayedGenes().length }})</span>
             <div class="flex gap-2">
               @if (displayedGenes().length > 0) {
-                <button (click)="exportProteinListCsv()" class="text-[10px] font-medium text-indigo-600 hover:text-indigo-800 transition-colors uppercase border border-indigo-200 px-1.5 py-0.5 rounded bg-white">CSV</button>
-                <button (click)="exportProteinListTsv()" class="text-[10px] font-medium text-emerald-600 hover:text-emerald-800 transition-colors uppercase border border-emerald-200 px-1.5 py-0.5 rounded bg-white">TSV</button>
-                <button (click)="clearAllProteins()" class="text-[10px] font-medium text-red-600 hover:text-red-800 transition-colors uppercase border border-red-200 px-1.5 py-0.5 rounded bg-white">Clear All</button>
+                <button (click)="exportProteinListCsv()" class="text-[10px] font-medium text-indigo-600 hover:text-indigo-800 transition-colors uppercase border border-indigo-200 px-1.5 py-0.5 rounded bg-white shadow-sm">CSV</button>
+                <button (click)="exportProteinListTsv()" class="text-[10px] font-medium text-emerald-600 hover:text-emerald-800 transition-colors uppercase border border-emerald-200 px-1.5 py-0.5 rounded bg-white shadow-sm">TSV</button>
+                <button (click)="clearAllProteins()" class="text-[10px] font-medium text-red-600 hover:text-red-800 transition-colors uppercase border border-red-200 px-1.5 py-0.5 rounded bg-white shadow-sm">Clear All</button>
               }
             </div>
           </div>
-          @if (displayedGenes().length === 0) { <span class="text-sm text-gray-400 italic">No proteins selected. Search or use filter lists above.</span> }
+          @if (displayedGenes().length === 0) { <div class="min-h-[32px] flex items-center"><span class="text-sm text-gray-400 italic">No proteins selected. Search or use filter lists above.</span></div> }
           @else if (displayedGenes().length <= 20) {
             <div class="flex flex-wrap gap-2 min-h-[32px]">
               @for (gene of displayedGenes(); track trackByUniprotId($index, gene)) {
@@ -286,61 +272,74 @@
           }
         </div>
       </div>
-      @if (isLoading()) { <app-skeleton-loader variant="heatmap"></app-skeleton-loader> }
-      @else {
-        <div class="space-y-8">
-          <div [class]="projectGroups().length > 1 ? 'grid grid-cols-2 gap-4' : 'flex flex-col gap-4'">
-            @for (group of projectGroups(); track group.name) {
-              <app-collapsible-section [title]="group.name + ' Dataset Rank Plot'" [defaultOpen]="false">
-                <div class="flex items-center justify-between mb-2 px-1">
-                  <div class="flex items-center gap-2">
-                    <label class="text-[10px] font-bold text-gray-500 uppercase">Min Data (%):</label>
-                    <input type="number" [ngModel]="rankCutoff()" (ngModelChange)="rankCutoff.set($event)" min="0" max="100" class="w-12 px-1 py-0.5 text-[10px] border border-gray-300 rounded"/>
+      <div class="flex-1 w-full bg-white p-4">
+        @if (isLoading()) { <app-skeleton-loader variant="heatmap"></app-skeleton-loader> }
+        @else {
+          <div class="space-y-8">
+            <div [class]="projectGroups().length > 1 ? 'grid grid-cols-2 gap-4' : 'flex flex-col gap-4'">
+              @for (group of projectGroups(); track group.name) {
+                <app-collapsible-section [title]="group.name + ' Dataset Rank Plot'" [defaultOpen]="false">
+                  <div class="flex items-center justify-between mb-2 px-1">
+                    <div class="flex items-center gap-2">
+                      <label class="text-[10px] font-bold text-gray-500 uppercase">Min Data (%):</label>
+                      <input type="number" [ngModel]="rankCutoff()" (ngModelChange)="rankCutoff.set($event)" min="0" max="100" class="w-12 px-1 py-0.5 text-[10px] border border-gray-300 rounded"/>
+                    </div>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" [checked]="showOnlySelectedInRankPlot()" (change)="showOnlySelectedInRankPlot.set($any($event.target).checked)" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                      <span class="text-[10px] font-bold text-gray-500 uppercase">Only Selected</span>
+                    </label>
                   </div>
-                  <label class="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" [checked]="showOnlySelectedInRankPlot()" (change)="showOnlySelectedInRankPlot.set($any($event.target).checked)" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-                    <span class="text-[10px] font-bold text-gray-500 uppercase">Only Selected</span>
-                  </label>
-                </div>
-                <app-rank-plot [data]="group.rankData" [selectedGeneIds]="effectiveHighlightedIds()" [uiRevision]="uiRevision()" [title]="'Proportion of Proteomic Datasets Showing Protein Abundance Changes Linked to ' + group.name" (genesSelected)="selectGenesFromPlot($event)"></app-rank-plot>
-              </app-collapsible-section>
-            }
-          </div>
-          <div class="flex justify-end px-1 items-center gap-4">
-            <span class="text-xs font-bold text-gray-500 uppercase">Heatmap Orientation:</span>
-            <div class="flex bg-gray-100 p-1 rounded-lg border border-gray-200">
-              <label class="flex items-center gap-1.5 px-3 py-1 rounded-md cursor-pointer transition-all" [class.bg-white]="!isHeatmapSwapped()" [class.shadow-sm]="!isHeatmapSwapped()" [class.text-indigo-600]="!isHeatmapSwapped()">
-                <input type="radio" class="hidden" [checked]="!isHeatmapSwapped()" (change)="isHeatmapSwapped.set(false)">
-                <span class="text-[11px] font-bold uppercase">Exp on Top</span>
-              </label>
-              <label class="flex items-center gap-1.5 px-3 py-1 rounded-md cursor-pointer transition-all" [class.bg-white]="isHeatmapSwapped()" [class.shadow-sm]="isHeatmapSwapped()" [class.text-indigo-600]="isHeatmapSwapped()">
-                <input type="radio" class="hidden" [checked]="isHeatmapSwapped()" (change)="isHeatmapSwapped.set(true)">
-                <span class="text-[11px] font-bold uppercase">Prot on Top</span>
-              </label>
+                  <app-rank-plot [data]="group.rankData" [selectedGeneIds]="effectiveHighlightedIds()" [uiRevision]="uiRevision()" [title]="'Proportion of Proteomic Datasets Showing Protein Abundance Changes Linked to ' + group.name" (genesSelected)="selectGenesFromPlot($event)"></app-rank-plot>
+                </app-collapsible-section>
+              }
             </div>
-          </div>
-          <div [class]="projectGroups().length > 1 ? 'grid grid-cols-2 gap-4' : 'flex flex-col gap-4'">
-            @for (group of projectGroups(); track group.name) {
-              <div class="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                <h3 class="text-md font-bold text-indigo-700 mb-3">{{ group.name }} Experiments ({{ group.projects.length }})</h3>
-                <app-heatmap [genes]="displayedGenes()" [projects]="group.projects" [allProjects]="projects()" [selectedGeneIds]="selectedHeatmapProteinIds()" [summaryDisplayMode]="summaryDisplayMode()" [isSwapped]="isHeatmapSwapped()" [labelIncrease]="currentDatasetConfig()?.labelIncrease || 'Increase activity'" [labelDecrease]="currentDatasetConfig()?.labelDecrease || 'Decrease activity'" (geneHovered)="onGeneHovered($event)" (geneSelected)="onHeatmapGeneSelected($event)"></app-heatmap>
-                <div class="mt-3 flex flex-col gap-3">
-                  <div class="flex gap-4 text-xs">
-                    <span class="px-2 py-1 rounded bg-red-100 text-red-800">
-                      ↑ Increase: @if (summaryDisplayMode() === 'number') { {{ group.summary.increase }} } @else { {{ group.summary.total > 0 ? Math.round((group.summary.increase / group.summary.total) * 100) : 0 }}% }
-                    </span>
-                    <span class="px-2 py-1 rounded bg-blue-100 text-blue-800">
-                      ↓ Decrease: @if (summaryDisplayMode() === 'number') { {{ group.summary.decrease }} } @else { {{ group.summary.total > 0 ? Math.round((group.summary.decrease / group.summary.total) * 100) : 0 }}% }
-                    </span>
-                    <span class="px-2 py-1 rounded bg-gray-100 text-gray-600">Total values: {{ group.summary.total }}</span>
+            <div class="bg-gray-100 px-2 pt-2 flex items-end gap-1 overflow-x-auto no-scrollbar border-b border-gray-300">
+              @for (tab of tabs(); track tab.id) {
+                <div (click)="switchTab(tab.id)" [class.bg-white]="activeTabId() === tab.id" [class.text-indigo-600]="activeTabId() === tab.id" [class.bg-gray-200]="activeTabId() !== tab.id" [class.text-gray-500]="activeTabId() !== tab.id" class="px-4 py-2 rounded-t-lg text-[10px] font-bold uppercase tracking-wider cursor-pointer border-t border-x border-gray-300 flex items-center gap-2 transition-all min-w-[120px] max-w-[200px] group shadow-sm">
+                  <span class="truncate">{{ tab.name }}</span>
+                  @if (tab.id !== 'default') {
+                    <button (click)="removeTab(tab.id, $event)" class="opacity-0 group-hover:opacity-100 hover:text-red-500 transition-all p-0.5 rounded-full hover:bg-gray-300">
+                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                  }
+                </div>
+              }
+              <button (click)="createTab(Array.from(selectedGeneIds()), 'New Tab')" class="mb-2 ml-2 p-1 rounded-full bg-gray-200 text-gray-500 hover:bg-indigo-600 hover:text-white transition-all shadow-sm">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+              </button>
+            </div>
+            <div class="flex justify-end px-1 items-center gap-4">
+              <span class="text-xs font-bold text-gray-500 uppercase">Heatmap Orientation:</span>
+              <div class="flex bg-gray-100 p-1 rounded-lg border border-gray-200">
+                <label class="flex items-center gap-1.5 px-3 py-1 rounded-md cursor-pointer transition-all" [class.bg-white]="!isHeatmapSwapped()" [class.shadow-sm]="!isHeatmapSwapped()" [class.text-indigo-600]="!isHeatmapSwapped()">
+                  <input type="radio" class="hidden" [checked]="!isHeatmapSwapped()" (change)="isHeatmapSwapped.set(false)">
+                  <span class="text-[11px] font-bold uppercase">Exp on Top</span>
+                </label>
+                <label class="flex items-center gap-1.5 px-3 py-1 rounded-md cursor-pointer transition-all" [class.bg-white]="isHeatmapSwapped()" [class.shadow-sm]="isHeatmapSwapped()" [class.text-indigo-600]="isHeatmapSwapped()">
+                  <input type="radio" class="hidden" [checked]="isHeatmapSwapped()" (change)="isHeatmapSwapped.set(true)">
+                  <span class="text-[11px] font-bold uppercase">Prot on Top</span>
+                </label>
+              </div>
+            </div>
+            <div [class]="projectGroups().length > 1 ? 'grid grid-cols-2 gap-4' : 'flex flex-col gap-4'">
+              @for (group of projectGroups(); track group.name) {
+                <div class="border border-gray-200 rounded-lg p-4 bg-gray-50 shadow-sm">
+                  <h3 class="text-md font-bold text-indigo-700 mb-3">{{ group.name }} Experiments ({{ group.projects.length }})</h3>
+                  <app-heatmap [genes]="displayedGenes()" [projects]="group.projects" [allProjects]="projects()" [selectedGeneIds]="selectedHeatmapProteinIds()" [summaryDisplayMode]="summaryDisplayMode()" [isSwapped]="isHeatmapSwapped()" [labelIncrease]="currentDatasetConfig()?.labelIncrease || 'Increase activity'" [labelDecrease]="currentDatasetConfig()?.labelDecrease || 'Decrease activity'" (geneHovered)="onGeneHovered($event)" (geneSelected)="onHeatmapGeneSelected($event)"></app-heatmap>
+                  <div class="mt-3 flex flex-col gap-3">
+                    <div class="flex gap-4 text-[10px] font-bold">
+                      <span class="px-2 py-1 rounded bg-red-100 text-red-800 uppercase shadow-sm">↑ Increase: @if (summaryDisplayMode() === 'number') { {{ group.summary.increase }} } @else { {{ group.summary.total > 0 ? Math.round((group.summary.increase / group.summary.total) * 100) : 0 }}% }</span>
+                      <span class="px-2 py-1 rounded bg-blue-100 text-blue-800 uppercase shadow-sm">↓ Decrease: @if (summaryDisplayMode() === 'number') { {{ group.summary.decrease }} } @else { {{ group.summary.total > 0 ? Math.round((group.summary.decrease / group.summary.total) * 100) : 0 }}% }</span>
+                      <span class="px-2 py-1 rounded bg-gray-100 text-gray-600 uppercase">Total values: {{ group.summary.total }}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            }
+              }
+            </div>
+            @if (filteredProjects().length === 0) { <div class="text-center text-gray-400 py-8">No experiments match the current filters.</div> }
           </div>
-          @if (filteredProjects().length === 0) { <div class="text-center text-gray-400 py-8">No experiments match the current filters.</div> }
-        </div>
-      }
+        }
+      </div>
     </div>
   </div>
 </div>

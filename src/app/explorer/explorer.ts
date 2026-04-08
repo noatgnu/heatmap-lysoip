@@ -52,7 +52,7 @@ export class ExplorerComponent implements OnInit {
   manualProjectOrder = signal<ProjectMetadata[]>([]);
   isInitialized = signal(false);
   tabs = signal<HeatmapTab[]>([]);
-  activeTabId = signal<string>('');
+  activeTabId = signal<string>('default');
   getFilterSet(key: string): Set<string> {
     return this.filterState().get(key) || new Set();
   }
@@ -61,27 +61,21 @@ export class ExplorerComponent implements OnInit {
     const tabName = name || `Subset (${geneIds.length})`;
     const newTab: HeatmapTab = { id, name: tabName, geneIds };
     this.tabs.update(t => [...t, newTab]);
-    this.switchTab(id);
+    this.activeTabId.set(id);
   }
   switchTab(tabId: string) {
-    const tab = this.tabs().find(t => t.id === tabId);
-    if (tab) {
-      untracked(() => {
-        this.activeTabId.set(tabId);
-        this.selectedGeneIds.set(new Set(tab.geneIds));
-      });
-    }
+    this.activeTabId.set(tabId);
   }
   removeTab(tabId: string, event?: Event) {
     if (event) event.stopPropagation();
-    if (this.tabs().length <= 1) return;
+    if (tabId === 'default') return;
     const currentTabs = this.tabs();
     const index = currentTabs.findIndex(t => t.id === tabId);
     const newTabs = currentTabs.filter(t => t.id !== tabId);
     this.tabs.set(newTabs);
     if (this.activeTabId() === tabId) {
       const nextIndex = Math.min(index, newTabs.length - 1);
-      this.switchTab(newTabs[nextIndex].id);
+      this.activeTabId.set(newTabs[nextIndex]?.id || 'default');
     }
   }
   dropExperiment(event: CdkDragDrop<ProjectMetadata[]>) {
@@ -150,6 +144,7 @@ export class ExplorerComponent implements OnInit {
       this.selectedGeneIds.set(new Set(selected.keys()));
       this.selectedHeatmapProteins.set(new Map());
       this.geneFilterTerm.set('');
+      this.activeTabId.set('default');
     }
   }
   openSelectionInInternalTab() {
@@ -224,18 +219,11 @@ export class ExplorerComponent implements OnInit {
         this.selectedProjectIds.set(new Set());
         this.flippedProjectIds.set(new Set());
         this.manualProjectOrder.set([]);
-        this.tabs.set([]);
-        this.activeTabId.set('');
+        this.tabs.set([{ id: 'default', name: 'Main Heatmap', geneIds: [] }]);
+        this.activeTabId.set('default');
         this.log2fcCutoff.set(null);
         this.confidenceCutoff.set(null);
         this.loadData(ds);
-      });
-    });
-    effect(() => {
-      const ids = Array.from(this.selectedGeneIds());
-      const activeId = this.activeTabId();
-      untracked(() => {
-        this.tabs.update(tabs => tabs.map(t => t.id === activeId ? { ...t, geneIds: ids } : t));
       });
     });
     effect(() => {
@@ -338,11 +326,6 @@ export class ExplorerComponent implements OnInit {
       if (!params['conf'] && dsConfig?.defaultConfidenceCutoff !== undefined) {
         this.confidenceCutoff.set(dsConfig.defaultConfidenceCutoff);
       }
-      if (this.tabs().length === 0) {
-        const initialGenes = Array.from(this.selectedGeneIds());
-        this.tabs.set([{ id: 'default', name: 'Main Explorer', geneIds: initialGenes }]);
-        this.activeTabId.set('default');
-      }
       this.isLoading.set(false);
     });
   }
@@ -402,7 +385,10 @@ export class ExplorerComponent implements OnInit {
       .slice(0, 10);
   });
   displayedGenes = computed(() => {
-    const selected = this.selectedGeneIds();
+    const globalSelected = this.selectedGeneIds();
+    const activeId = this.activeTabId();
+    const activeTab = this.tabs().find(t => t.id === activeId);
+    const sourceIds = (activeId === 'default' || !activeTab) ? globalSelected : new Set(activeTab.geneIds);
     const flipped = this.flippedProjectIds();
     const allProjs = this.projects();
     const log2fcCut = this.log2fcCutoff();
@@ -411,7 +397,7 @@ export class ExplorerComponent implements OnInit {
     const filterTerm = this.geneFilterTerm().toLowerCase().trim();
     const filteredProjIndices = new Set(this.filteredProjects().map(p => allProjs.indexOf(p)));
     const genes = this.allGenes()
-      .filter((g: GeneData) => selected.has(g.uniprotId))
+      .filter((g: GeneData) => sourceIds.has(g.uniprotId))
       .filter((g: GeneData) => {
         if (!filterTerm) return true;
         return g.gene.toLowerCase().includes(filterTerm) || g.uniprotId.toLowerCase().includes(filterTerm);
