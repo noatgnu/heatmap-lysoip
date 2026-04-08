@@ -8,7 +8,9 @@
       "nameRow": 1,
       "dataStartRow": 3,
       "experimentStartCol": 6,
-      "stride": 3
+      "stride": 3,
+      "defaultLog2fcCutoff": 0.58,
+      "defaultConfidenceCutoff": 1.3
     },
     {
       "id": "wcl",
@@ -18,7 +20,9 @@
       "nameRow": 1,
       "dataStartRow": 3,
       "experimentStartCol": 6,
-      "stride": 2
+      "stride": 2,
+      "defaultLog2fcCutoff": 0.58,
+      "defaultConfidenceCutoff": 1.3
     }
   ],
   "categorization": [

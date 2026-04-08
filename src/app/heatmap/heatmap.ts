@@ -16,6 +16,8 @@ export class HeatmapComponent {
   selectedGeneIds = input<Set<string>>(new Set());
   summaryDisplayMode = input<'number' | 'proportion'>('proportion');
   isSwapped = input<boolean>(false);
+  labelIncrease = input<string>('Increase activity');
+  labelDecrease = input<string>('Decrease activity');
   geneHovered = output<string | null>();
   geneSelected = output<string>();
   plotContainer = viewChild<ElementRef<HTMLElement>>('plotContainer');
@@ -254,28 +256,30 @@ export class HeatmapComponent {
     const plotHeight = yCoords.length * cellSize;
     const width = plotWidth + leftMargin + rightMargin;
     const height = plotHeight + topMargin + bottomMargin;
-    const colorbarXStart = 0.5 - (100 / width);
-    const colorbarXEnd = 0.5 + (100 / width);
+    const colorbarXStart = 0.5 - (120 / width);
+    const colorbarXEnd = 0.5 + (120 / width);
     const annotations: any[] = [
       {
         x: colorbarXStart,
         y: 0,
-        yshift: !swapped ? -60 : -150,
+        yshift: !swapped ? -65 : -155,
+        xshift: -10,
         xref: 'paper',
         yref: 'paper',
         xanchor: 'right',
-        text: 'Decrease activity',
+        text: this.labelDecrease(),
         showarrow: false,
         font: { size: 10, color: 'rgb(5, 48, 97)' }
       },
       {
         x: colorbarXEnd,
         y: 0,
-        yshift: !swapped ? -60 : -150,
+        yshift: !swapped ? -65 : -155,
+        xshift: 10,
         xref: 'paper',
         yref: 'paper',
         xanchor: 'left',
-        text: 'Increase activity',
+        text: this.labelIncrease(),
         showarrow: false,
         font: { size: 10, color: 'rgb(103, 0, 31)' }
       }

@@ -12,6 +12,11 @@ export interface DatasetConfig {
   dataStartRow: number;
   experimentStartCol: number;
   stride: number;
+  labelIncrease?: string;
+  labelDecrease?: string;
+  defaultGenes?: string[];
+  defaultLog2fcCutoff?: number;
+  defaultConfidenceCutoff?: number;
 }
 export interface CategorizationRule {
   pattern: string;
@@ -33,6 +38,8 @@ export interface AppConfig {
 export interface ParsedData {
   projects: ProjectMetadata[];
   genes: GeneData[];
+  labelIncrease?: string;
+  labelDecrease?: string;
 }
 @Injectable({ providedIn: 'root' })
 export class DataService {
@@ -59,7 +66,12 @@ export class DataService {
         this.isLoading.set(true);
         const fileName = dsConfig.file.replace(/^public\//, '');
         return this.http.get(fileName, { responseType: 'text' }).pipe(
-          map(content => this.parseData(content, dsConfig, config.categorization)),
+          map(content => {
+            const data = this.parseData(content, dsConfig, config.categorization);
+            data.labelIncrease = dsConfig.labelIncrease;
+            data.labelDecrease = dsConfig.labelDecrease;
+            return data;
+          }),
           tap(data => {
             this.cache.set(type, data);
             this.isLoading.set(false);
@@ -158,11 +170,6 @@ export class DataService {
     }
     return { projects, genes };
   }
-  /**
-   * Detects the column stride between projects (2 or 3 columns per project).
-   * LysoIP has 3 columns per project (Conf, Log2FC, IP enrich).
-   * WCL has 2 columns per project (Conf, Log2FC).
-   */
   private detectColumnStride(projectIdRow: string[]): number {
     if (projectIdRow.length > 8) {
       const col8 = (projectIdRow[8] || '').trim();
@@ -172,9 +179,6 @@ export class DataService {
     }
     return 3;
   }
-  /**
-   * Parses TSV content handling quoted cells and tabs.
-   */
   parseTSV(content: string): string[][] {
     if (!content || content.length === 0) {
       return [];

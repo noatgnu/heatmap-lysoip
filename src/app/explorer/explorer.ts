@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, signal, computed, effect, input, viewChild, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
+import { Location } from '@angular/common';
 import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { ScrollingModule } from '@angular/cdk/scrolling';
 import { TitleCasePipe } from '@angular/common';
@@ -28,6 +29,7 @@ export class ExplorerComponent implements OnInit {
   private preferencesService = inject(PreferencesService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+  private location = inject(Location);
   protected readonly Math = Math;
   heatmapComponent = viewChild(HeatmapComponent);
   dataset = input.required<string>();
@@ -47,6 +49,7 @@ export class ExplorerComponent implements OnInit {
   selectedProjectIds = signal<Set<string>>(new Set());
   flippedProjectIds = signal<Set<string>>(new Set());
   manualProjectOrder = signal<ProjectMetadata[]>([]);
+  isInitialized = signal(false);
   getFilterSet(key: string): Set<string> {
     return this.filterState().get(key) || new Set();
   }
@@ -131,7 +134,8 @@ export class ExplorerComponent implements OnInit {
       }
     });
     const serializedUrl = this.router.serializeUrl(urlTree);
-    window.open(`${window.location.origin}${window.location.pathname}${serializedUrl}`, '_blank');
+    const fullUrl = window.location.origin + window.location.pathname + this.location.prepareExternalUrl(serializedUrl);
+    window.open(fullUrl, '_blank');
   }
   exportHighlightedProteins(format: 'csv' | 'tsv') {
     const selected = Array.from(this.selectedHeatmapProteins().values());
@@ -151,7 +155,8 @@ export class ExplorerComponent implements OnInit {
   presetName = signal('');
   currentPresets = computed(() => this.preferencesService.getPresetsForDataset(this.currentDataset()));
   hasMultipleDatasets = computed(() => (this.config()?.datasets?.length || 0) > 1);
-  private defaultGenes = [
+  currentDatasetConfig = computed(() => this.config()?.datasets.find(d => d.id === this.currentDataset()));
+  private defaultGenesFallback = [
     'TMEM175', 'OGA', 'NOD2', 'USP30', 'STING1', 'ATP13A2', 'MCOLN1', 'TLR2', 'GPNMB', 'GCG',
     'MAPT', 'PARP1', 'BECN1', 'CACNA1D', 'TREM2', 'NFE2L2', 'GBAP1', 'TGM2', 'VPS35', 'CTSB',
     'CDK5', 'GRN', 'FYN', 'NR4A2', 'PSAP', 'SYNJ1', 'FBXO7', 'VPS13C', 'GALC', 'SCARB2',
@@ -173,14 +178,17 @@ export class ExplorerComponent implements OnInit {
   constructor() {
     effect(() => {
       const ds = this.dataset();
-      this.currentDataset.set(ds);
-      this.filterState.set(new Map());
-      this.selectedProjectIds.set(new Set());
-      this.flippedProjectIds.set(new Set());
-      this.manualProjectOrder.set([]);
-      this.log2fcCutoff.set(null);
-      this.confidenceCutoff.set(null);
-      this.loadData(ds);
+      untracked(() => {
+        this.isInitialized.set(false);
+        this.currentDataset.set(ds);
+        this.filterState.set(new Map());
+        this.selectedProjectIds.set(new Set());
+        this.flippedProjectIds.set(new Set());
+        this.manualProjectOrder.set([]);
+        this.log2fcCutoff.set(null);
+        this.confidenceCutoff.set(null);
+        this.loadData(ds);
+      });
     });
     effect(() => {
       const projs = this.projects();
@@ -225,6 +233,7 @@ export class ExplorerComponent implements OnInit {
       });
     });
     effect(() => {
+      if (!this.isInitialized()) return;
       const log2fcCut = this.log2fcCutoff();
       const confCut = this.confidenceCutoff();
       const queryParams: any = {
@@ -260,6 +269,7 @@ export class ExplorerComponent implements OnInit {
       this.projects.set(projects);
       this.allGenes.set(genes);
       const params = this.route.snapshot.queryParams;
+      const dsConfig = this.currentDatasetConfig();
       if (!params['flipped']) {
         const idsToFlip = new Set<string>();
         projects.forEach(p => {
@@ -272,14 +282,21 @@ export class ExplorerComponent implements OnInit {
         }
       }
       if (!params['genes'] && this.selectedGeneIds().size === 0) {
-        this.applyDefaultGenes();
+        this.applyDefaultGenes(dsConfig?.defaultGenes);
+      }
+      if (!params['cutoff'] && dsConfig?.defaultLog2fcCutoff !== undefined) {
+        this.log2fcCutoff.set(dsConfig.defaultLog2fcCutoff);
+      }
+      if (!params['conf'] && dsConfig?.defaultConfidenceCutoff !== undefined) {
+        this.confidenceCutoff.set(dsConfig.defaultConfidenceCutoff);
       }
       this.isLoading.set(false);
     });
   }
-  private applyDefaultGenes() {
+  private applyDefaultGenes(genesFromConfig?: string[]) {
     const ids = new Set<string>();
-    const lowerDefault = this.defaultGenes.map(g => g.toLowerCase());
+    const defaultList = genesFromConfig || this.defaultGenesFallback;
+    const lowerDefault = defaultList.map(g => g.toLowerCase());
     this.allGenes().forEach((gene: GeneData) => {
       const geneParts = gene.gene.toLowerCase().split(';').map(p => p.trim());
       if (geneParts.some(p => lowerDefault.includes(p))) {
@@ -460,6 +477,8 @@ export class ExplorerComponent implements OnInit {
     const flipped = this.flippedProjectIds();
     const selectedIds = this.selectedGeneIds();
     const showOnlySelected = this.showOnlySelectedInRankPlot();
+    const log2fcCut = this.log2fcCutoff();
+    const confCut = this.confidenceCutoff();
     const projIndices = projects.map(p => allProjs.indexOf(p));
     if (projIndices.length === 0) return [];
     const minTotal = Math.ceil(projIndices.length * (this.rankCutoff() / 100));
@@ -472,11 +491,16 @@ export class ExplorerComponent implements OnInit {
         projIndices.forEach(idx => {
           let val = g.log2fcs[idx];
           if (val !== null) {
-            total++;
-            const projId = allProjs[idx].projectId;
-            if (flipped.has(projId)) val *= -1;
-            if (val > 0) increase++;
-            else if (val < 0) decrease++;
+            const conf = g.confidences[idx];
+            const passesConf = confCut === null || confCut <= 0 || (conf !== null && conf >= confCut);
+            const passesLog2fc = log2fcCut === null || log2fcCut <= 0 || Math.abs(val) >= log2fcCut;
+            if (passesConf && passesLog2fc) {
+              total++;
+              const projId = allProjs[idx].projectId;
+              if (flipped.has(projId)) val *= -1;
+              if (val > 0) increase++;
+              else if (val < 0) decrease++;
+            }
           }
         });
         const score = total > 0 ? (increase - decrease) / total : 0;
@@ -609,10 +633,11 @@ export class ExplorerComponent implements OnInit {
     this.selectedGeneIds.set(new Set());
   }
   resetToDefault() {
+    const dsConfig = this.currentDatasetConfig();
     this.filterState.set(new Map());
     this.selectedProjectIds.set(new Set());
-    this.log2fcCutoff.set(null);
-    this.confidenceCutoff.set(null);
+    this.log2fcCutoff.set(dsConfig?.defaultLog2fcCutoff ?? null);
+    this.confidenceCutoff.set(dsConfig?.defaultConfidenceCutoff ?? null);
     this.geneSortOrder.set('none');
     const idsToFlip = new Set<string>();
     this.projects().forEach(p => {
@@ -623,21 +648,23 @@ export class ExplorerComponent implements OnInit {
     this.flippedProjectIds.set(idsToFlip);
     this.sortStack.set(['organ', 'protein', 'mutation', 'knockout', 'treatment']);
     this.searchTerm.set('');
-    this.applyDefaultGenes();
+    this.applyDefaultGenes(dsConfig?.defaultGenes);
   }
   ngOnInit() {
     this.dataService.loadConfig().subscribe(config => {
       this.config.set(config);
       this.initializeFromUrl();
+      this.isInitialized.set(true);
     });
   }
   private initializeFromUrl() {
     const params = this.route.snapshot.queryParams;
     const config = this.config();
+    const dsConfig = this.currentDatasetConfig();
     if (params['genes']) {
       this.selectedGeneIds.set(new Set(params['genes'].split(',')));
     } else {
-      this.applyDefaultGenes();
+      this.applyDefaultGenes(dsConfig?.defaultGenes);
     }
     if (config) {
       config.categorization.forEach(cat => {
@@ -667,12 +694,16 @@ export class ExplorerComponent implements OnInit {
       if (!isNaN(val) && val > 0) {
         this.log2fcCutoff.set(val);
       }
+    } else if (dsConfig?.defaultLog2fcCutoff !== undefined) {
+      this.log2fcCutoff.set(dsConfig.defaultLog2fcCutoff);
     }
     if (params['conf']) {
       const val = parseFloat(params['conf']);
       if (!isNaN(val) && val > 0) {
         this.confidenceCutoff.set(val);
       }
+    } else if (dsConfig?.defaultConfidenceCutoff !== undefined) {
+      this.confidenceCutoff.set(dsConfig.defaultConfidenceCutoff);
     }
   }
   addGene(gene: GeneData) {
