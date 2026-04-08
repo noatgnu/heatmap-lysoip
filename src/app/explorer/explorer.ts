@@ -12,7 +12,7 @@ import { SkeletonLoaderComponent } from '../components/skeleton-loader/skeleton-
 import { FilterChipsComponent, FilterChip } from '../components/filter-chips/filter-chips';
 import { CollapsibleSectionComponent } from '../components/collapsible-section/collapsible-section';
 import { FindGenePipe } from '../pipes/find-gene.pipe';
-import { GeneData, ProjectMetadata, RankItem } from '../models';
+import { GeneData, ProjectMetadata, RankItem, HeatmapTab } from '../models';
 import { DataService, AppConfig } from '../services/data.service';
 import { ExportService } from '../services/export.service';
 import { PreferencesService, FilterPreset, SortCriterion } from '../services/preferences';
@@ -50,8 +50,38 @@ export class ExplorerComponent implements OnInit {
   flippedProjectIds = signal<Set<string>>(new Set());
   manualProjectOrder = signal<ProjectMetadata[]>([]);
   isInitialized = signal(false);
+  tabs = signal<HeatmapTab[]>([]);
+  activeTabId = signal<string>('');
   getFilterSet(key: string): Set<string> {
     return this.filterState().get(key) || new Set();
+  }
+  createTab(geneIds: string[], name?: string) {
+    const id = Math.random().toString(36).substring(2, 9);
+    const tabName = name || `Subset (${geneIds.length})`;
+    const newTab: HeatmapTab = { id, name: tabName, geneIds };
+    this.tabs.update(t => [...t, newTab]);
+    this.switchTab(id);
+  }
+  switchTab(tabId: string) {
+    const tab = this.tabs().find(t => t.id === tabId);
+    if (tab) {
+      untracked(() => {
+        this.activeTabId.set(tabId);
+        this.selectedGeneIds.set(new Set(tab.geneIds));
+      });
+    }
+  }
+  removeTab(tabId: string, event?: Event) {
+    if (event) event.stopPropagation();
+    if (this.tabs().length <= 1) return;
+    const currentTabs = this.tabs();
+    const index = currentTabs.findIndex(t => t.id === tabId);
+    const newTabs = currentTabs.filter(t => t.id !== tabId);
+    this.tabs.set(newTabs);
+    if (this.activeTabId() === tabId) {
+      const nextIndex = Math.min(index, newTabs.length - 1);
+      this.switchTab(newTabs[nextIndex].id);
+    }
   }
   dropExperiment(event: CdkDragDrop<ProjectMetadata[]>) {
     this.manualProjectOrder.update(projects => {
@@ -121,6 +151,14 @@ export class ExplorerComponent implements OnInit {
       this.geneFilterTerm.set('');
     }
   }
+  openSelectionInInternalTab() {
+    const selected = this.selectedHeatmapProteins();
+    if (selected.size > 0) {
+      this.createTab(Array.from(selected.keys()));
+      this.selectedHeatmapProteins.set(new Map());
+      this.geneFilterTerm.set('');
+    }
+  }
   openComparisonInNewTab() {
     const selected = this.selectedHeatmapProteins();
     if (selected.size === 0) return;
@@ -185,9 +223,18 @@ export class ExplorerComponent implements OnInit {
         this.selectedProjectIds.set(new Set());
         this.flippedProjectIds.set(new Set());
         this.manualProjectOrder.set([]);
+        this.tabs.set([]);
+        this.activeTabId.set('');
         this.log2fcCutoff.set(null);
         this.confidenceCutoff.set(null);
         this.loadData(ds);
+      });
+    });
+    effect(() => {
+      const ids = Array.from(this.selectedGeneIds());
+      const activeId = this.activeTabId();
+      untracked(() => {
+        this.tabs.update(tabs => tabs.map(t => t.id === activeId ? { ...t, geneIds: ids } : t));
       });
     });
     effect(() => {
@@ -289,6 +336,11 @@ export class ExplorerComponent implements OnInit {
       }
       if (!params['conf'] && dsConfig?.defaultConfidenceCutoff !== undefined) {
         this.confidenceCutoff.set(dsConfig.defaultConfidenceCutoff);
+      }
+      if (this.tabs().length === 0) {
+        const initialGenes = Array.from(this.selectedGeneIds());
+        this.tabs.set([{ id: 'default', name: 'Main Explorer', geneIds: initialGenes }]);
+        this.activeTabId.set('default');
       }
       this.isLoading.set(false);
     });

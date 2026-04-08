@@ -26,3 +26,8 @@ export interface RankItem {
   decrease: number;
   total: number;
 }
+export interface HeatmapTab {
+  id: string;
+  name: string;
+  geneIds: string[];
+}
