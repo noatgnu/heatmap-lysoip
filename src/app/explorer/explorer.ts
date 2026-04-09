@@ -145,10 +145,16 @@ export class ExplorerComponent implements OnInit {
   isolateSelectedHeatmapProteins() {
     const selected = this.selectedHeatmapProteins();
     if (selected.size > 0) {
-      this.selectedGeneIds.set(new Set(selected.keys()));
+      const activeId = this.activeTabId();
+      if (activeId === 'default') {
+        this.selectedGeneIds.set(new Set(selected.keys()));
+      } else {
+        this.tabs.update(tabs => tabs.map(t => 
+          t.id === activeId ? { ...t, geneIds: Array.from(selected.keys()) } : t
+        ));
+      }
       this.selectedHeatmapProteins.set(new Map());
       this.geneFilterTerm.set('');
-      this.activeTabId.set('default');
     }
   }
   openSelectionInInternalTab() {
@@ -238,6 +244,34 @@ export class ExplorerComponent implements OnInit {
     });
     if (subset.length > 0) {
       this.createTab(subset.map(g => g.uniprotId), `Unique ${direction === 'increase' ? '↑' : '↓'} to ${target.projectName} (${subset.length})`);
+    }
+  }
+  createSharedTab(target: ProjectMetadata, groupProjects: ProjectMetadata[], direction: 'increase' | 'decrease') {
+    const log2fcCut = this.log2fcCutoff() || 0;
+    const confCut = this.confidenceCutoff() || 0;
+    const allProjs = this.projects();
+    const flipped = this.flippedProjectIds();
+    const targetIdx = allProjs.indexOf(target);
+    const otherIndices = groupProjects.filter(p => p !== target).map(p => allProjs.indexOf(p));
+    const subset = this.allGenes().filter(g => {
+      let targetVal = g.log2fcs[targetIdx];
+      const targetConf = g.confidences[targetIdx];
+      if (targetVal === null || targetConf === null) return false;
+      if (flipped.has(target.projectId)) targetVal *= -1;
+      const targetPasses = Math.abs(targetVal) >= log2fcCut && targetConf >= confCut && (direction === 'increase' ? targetVal > 0 : targetVal < 0);
+      if (!targetPasses) return false;
+      return otherIndices.some(idx => {
+        let v = g.log2fcs[idx];
+        const c = g.confidences[idx];
+        if (v === null || c === null) return false;
+        const projId = allProjs[idx].projectId;
+        if (flipped.has(projId)) v *= -1;
+        const passes = Math.abs(v) >= log2fcCut && c >= confCut && (direction === 'increase' ? v > 0 : v < 0);
+        return passes;
+      });
+    });
+    if (subset.length > 0) {
+      this.createTab(subset.map(g => g.uniprotId), `${target.projectName} Shared ${direction === 'increase' ? '↑' : '↓'} (${subset.length})`);
     }
   }
   sortStack = signal<SortCriterion[]>(['organ', 'protein', 'mutation', 'knockout', 'treatment']);
@@ -419,11 +453,19 @@ export class ExplorerComponent implements OnInit {
       }
     });
     if (matchedIds.size === 1) {
-      this.selectedGeneIds.update((set: Set<string>) => {
-        const newSet = new Set(set);
-        newSet.add(Array.from(matchedIds)[0]);
-        return newSet;
-      });
+      const id = Array.from(matchedIds)[0];
+      const activeId = this.activeTabId();
+      if (activeId === 'default') {
+        this.selectedGeneIds.update((set: Set<string>) => {
+          const newSet = new Set(set);
+          newSet.add(id);
+          return newSet;
+        });
+      } else {
+        this.tabs.update(tabs => tabs.map(t => 
+          t.id === activeId ? { ...t, geneIds: Array.from(new Set([...t.geneIds, id])) } : t
+        ));
+      }
     } else if (matchedIds.size > 1) {
       this.pendingBulkSelection.set(Array.from(matchedIds));
     }
@@ -620,11 +662,19 @@ export class ExplorerComponent implements OnInit {
   }
   selectGenesFromPlot(uniprotIds: string[]) {
     if (uniprotIds.length === 1) {
-      this.selectedGeneIds.update(set => {
-        const newSet = new Set(set);
-        newSet.add(uniprotIds[0]);
-        return newSet;
-      });
+      const id = uniprotIds[0];
+      const activeId = this.activeTabId();
+      if (activeId === 'default') {
+        this.selectedGeneIds.update(set => {
+          const newSet = new Set(set);
+          newSet.add(id);
+          return newSet;
+        });
+      } else {
+        this.tabs.update(tabs => tabs.map(t => 
+          t.id === activeId ? { ...t, geneIds: Array.from(new Set([...t.geneIds, id])) } : t
+        ));
+      }
     } else if (uniprotIds.length > 1) {
       this.pendingBulkSelection.set(uniprotIds);
     }
@@ -632,18 +682,32 @@ export class ExplorerComponent implements OnInit {
   confirmBulkAdd() {
     const ids = this.pendingBulkSelection();
     if (ids) {
-      this.selectedGeneIds.update(set => {
-        const newSet = new Set(set);
-        ids.forEach(id => newSet.add(id));
-        return newSet;
-      });
+      const activeId = this.activeTabId();
+      if (activeId === 'default') {
+        this.selectedGeneIds.update(set => {
+          const newSet = new Set(set);
+          ids.forEach(id => newSet.add(id));
+          return newSet;
+        });
+      } else {
+        this.tabs.update(tabs => tabs.map(t => 
+          t.id === activeId ? { ...t, geneIds: Array.from(new Set([...t.geneIds, ...ids])) } : t
+        ));
+      }
     }
     this.pendingBulkSelection.set(null);
   }
   confirmBulkReplace() {
     const ids = this.pendingBulkSelection();
     if (ids) {
-      this.selectedGeneIds.set(new Set([...ids]));
+      const activeId = this.activeTabId();
+      if (activeId === 'default') {
+        this.selectedGeneIds.set(new Set([...ids]));
+      } else {
+        this.tabs.update(tabs => tabs.map(t => 
+          t.id === activeId ? { ...t, geneIds: [...ids] } : t
+        ));
+      }
       this.geneFilterTerm.set('');
     }
     this.pendingBulkSelection.set(null);
@@ -734,7 +798,14 @@ export class ExplorerComponent implements OnInit {
     await this.exportService.copyGeneListToClipboard(this.displayedGenes(), 'genes');
   }
   clearAllProteins() {
-    this.selectedGeneIds.set(new Set());
+    const activeId = this.activeTabId();
+    if (activeId === 'default') {
+      this.selectedGeneIds.set(new Set());
+    } else {
+      this.tabs.update(tabs => tabs.map(t => 
+        t.id === activeId ? { ...t, geneIds: [] } : t
+      ));
+    }
   }
   resetToDefault() {
     const dsConfig = this.currentDatasetConfig();
@@ -811,20 +882,34 @@ export class ExplorerComponent implements OnInit {
     }
   }
   addGene(gene: GeneData) {
-    this.selectedGeneIds.update((set: Set<string>) => {
-      const newSet = new Set(set);
-      newSet.add(gene.uniprotId);
-      return newSet;
-    });
+    const activeId = this.activeTabId();
+    if (activeId === 'default') {
+      this.selectedGeneIds.update((set: Set<string>) => {
+        const newSet = new Set(set);
+        newSet.add(gene.uniprotId);
+        return newSet;
+      });
+    } else {
+      this.tabs.update(tabs => tabs.map(t => 
+        t.id === activeId ? { ...t, geneIds: Array.from(new Set([...t.geneIds, gene.uniprotId])) } : t
+      ));
+    }
     this.searchTerm.set('');
     this.highlightedIndex.set(-1);
   }
   removeGene(uniprotId: string) {
-    this.selectedGeneIds.update((set: Set<string>) => {
-      const newSet = new Set(set);
-      newSet.delete(uniprotId);
-      return newSet;
-    });
+    const activeId = this.activeTabId();
+    if (activeId === 'default') {
+      this.selectedGeneIds.update((set: Set<string>) => {
+        const newSet = new Set(set);
+        newSet.delete(uniprotId);
+        return newSet;
+      });
+    } else {
+      this.tabs.update(tabs => tabs.map(t => 
+        t.id === activeId ? { ...t, geneIds: t.geneIds.filter(id => id !== uniprotId) } : t
+      ));
+    }
   }
   trackByUniprotId(_index: number, gene: GeneData): string {
     return gene.uniprotId;
