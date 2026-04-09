@@ -214,7 +214,7 @@
             <svg class="mr-1.5 h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg> Reset
           </button>
           <button (click)="copyUrl()" class="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 transition-all active:scale-95">
-            <svg class="mr-1.5 h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg> URL
+            <svg class="mr-1.5 h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg> URL
           </button>
         </div>
       </div>
@@ -236,8 +236,35 @@
           }
         </div>
         <div class="flex flex-col gap-3">
-          <div class="flex justify-between items-center">
-            <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Selected Proteins ({{ displayedGenes().length }})</span>
+          <div class="flex justify-between items-center relative">
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Selected Proteins ({{ displayedGenes().length }})</span>
+              <div class="relative">
+                <button (click)="showHistoryDropdown.set(!showHistoryDropdown())" class="flex items-center gap-1.5 px-2 py-1 bg-white border border-gray-200 text-gray-600 text-[10px] font-bold rounded hover:bg-gray-50 transition-all uppercase shadow-sm">
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                  History
+                </button>
+                @if (showHistoryDropdown()) {
+                  <div class="absolute left-0 top-full mt-1 w-64 bg-white shadow-2xl border border-gray-200 rounded-md z-[120] py-1 max-h-80 overflow-y-auto">
+                    <div class="px-3 py-2 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                      <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Recent Selections</span>
+                      <button (click)="historyService.clearHistory()" class="text-[9px] font-bold text-red-500 hover:text-red-700 uppercase">Clear</button>
+                    </div>
+                    @for (entry of selectionHistory(); track entry.id) {
+                      <div (click)="loadHistoryEntry(entry)" class="px-3 py-2 border-b border-gray-50 last:border-0 hover:bg-indigo-50 cursor-pointer transition-colors">
+                        <div class="flex justify-between items-start mb-1">
+                          <span class="text-[10px] font-bold text-indigo-600">{{ entry.geneIds.length }} Proteins</span>
+                          <span class="text-[9px] text-gray-400 tabular-nums">{{ entry.timestamp | date:'MMM d, HH:mm' }}</span>
+                        </div>
+                        <p class="text-[9px] text-gray-500 truncate leading-tight">{{ entry.geneIds.join(', ') }}</p>
+                      </div>
+                    } @empty {
+                      <div class="px-3 py-4 text-center text-gray-400 text-[10px] italic">No selection history yet.</div>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
             <div class="flex gap-2">
               @if (displayedGenes().length > 0) {
                 <button (click)="exportProteinListCsv()" class="text-[10px] font-medium text-indigo-600 hover:text-indigo-800 transition-colors uppercase border border-indigo-200 px-1.5 py-0.5 rounded bg-white shadow-sm">CSV</button>
@@ -253,7 +280,7 @@
                 <span [class.bg-indigo-100]="hoveredGeneId() !== gene.uniprotId" [class.bg-indigo-500]="hoveredGeneId() === gene.uniprotId" [class.text-indigo-800]="hoveredGeneId() !== gene.uniprotId" [class.text-white]="hoveredGeneId() === gene.uniprotId" class="inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium border border-indigo-200 shadow-sm transition-all hover:bg-indigo-200">
                   &lt;{{ gene.uniprotId }}&gt;&lt;{{ gene.gene }}&gt;
                   <button type="button" (click)="removeGene(gene.uniprotId)" class="flex-shrink-0 ml-1.5 h-4 w-4 rounded-full inline-flex items-center justify-center text-indigo-400 hover:bg-indigo-200 hover:text-indigo-500 transition-colors">
-                    <svg class="h-2 w-2" stroke="currentColor" fill="none" viewBox="0 0 8 8"><path stroke-linecap="round" stroke-width="1.5" d="M1 1l6 6m0-6L1 7" /></svg>
+                    <svg class="h-2 w-2" stroke="currentColor" fill="none" viewBox="0 0 8 8"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 1l6 6m0-6L1 7" /></svg>
                   </button>
                 </span>
               }
@@ -264,7 +291,7 @@
                 <span [class.bg-indigo-100]="hoveredGeneId() !== gene.uniprotId" [class.bg-indigo-500]="hoveredGeneId() === gene.uniprotId" [class.text-indigo-800]="hoveredGeneId() !== gene.uniprotId" [class.text-white]="hoveredGeneId() === gene.uniprotId" class="inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium border border-indigo-200 shadow-sm transition-all hover:bg-indigo-200">
                   &lt;{{ gene.uniprotId }}&gt;&lt;{{ gene.gene }}&gt;
                   <button type="button" (click)="removeGene(gene.uniprotId)" class="flex-shrink-0 ml-1.5 h-4 w-4 rounded-full inline-flex items-center justify-center text-indigo-400 hover:bg-indigo-200 hover:text-indigo-500 transition-colors">
-                    <svg class="h-2 w-2" stroke="currentColor" fill="none" viewBox="0 0 8 8"><path stroke-linecap="round" stroke-width="1.5" d="M1 1l6 6m0-6L1 7" /></svg>
+                    <svg class="h-2 w-2" stroke="currentColor" fill="none" viewBox="0 0 8 8"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 1l6 6m0-6L1 7" /></svg>
                   </button>
                 </span>
               </div>
@@ -308,17 +335,50 @@
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
               </button>
             </div>
-            <div class="flex justify-end px-1 items-center gap-4">
-              <span class="text-xs font-bold text-gray-500 uppercase">Heatmap Orientation:</span>
-              <div class="flex bg-gray-100 p-1 rounded-lg border border-gray-200">
-                <label class="flex items-center gap-1.5 px-3 py-1 rounded-md cursor-pointer transition-all" [class.bg-white]="!isHeatmapSwapped()" [class.shadow-sm]="!isHeatmapSwapped()" [class.text-indigo-600]="!isHeatmapSwapped()">
-                  <input type="radio" class="hidden" [checked]="!isHeatmapSwapped()" (change)="isHeatmapSwapped.set(false)">
-                  <span class="text-[11px] font-bold uppercase">Exp on Top</span>
-                </label>
-                <label class="flex items-center gap-1.5 px-3 py-1 rounded-md cursor-pointer transition-all" [class.bg-white]="isHeatmapSwapped()" [class.shadow-sm]="isHeatmapSwapped()" [class.text-indigo-600]="isHeatmapSwapped()">
-                  <input type="radio" class="hidden" [checked]="isHeatmapSwapped()" (change)="isHeatmapSwapped.set(true)">
-                  <span class="text-[11px] font-bold uppercase">Prot on Top</span>
-                </label>
+            <div class="flex justify-between items-center gap-4 px-1">
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Quick Subsets:</span>
+                @for (group of projectGroups(); track group.name) {
+                  <div class="flex items-center gap-1 p-1 bg-gray-50 rounded border border-gray-200">
+                    <span class="text-[9px] font-bold text-indigo-600 mr-1">{{ group.name }}:</span>
+                    <button (click)="createConsistentTab(group.projects, 'increase')" title="Consistently ↑ across all experiments in this group" class="p-1 rounded bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 transition-colors">
+                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
+                    </button>
+                    <button (click)="createConsistentTab(group.projects, 'decrease')" title="Consistently ↓ across all experiments in this group" class="p-1 rounded bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 transition-colors">
+                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div class="relative group/unique ml-1">
+                      <button class="flex items-center gap-1 p-1 rounded bg-white text-gray-600 hover:bg-gray-100 border border-gray-200 transition-colors text-[9px] font-bold uppercase">
+                        Unique To...
+                        <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                      </button>
+                      <div class="hidden group-hover/unique:block absolute left-0 top-full mt-1 w-64 bg-white shadow-xl border border-gray-200 rounded-md z-[120] py-1 max-h-60 overflow-y-auto shadow-2xl">
+                        @for (p of group.projects; track p.projectId) {
+                          <div class="px-3 py-2 border-b border-gray-50 last:border-0 hover:bg-gray-50">
+                            <p class="text-[9px] font-bold text-gray-900 mb-1 truncate">{{ p.projectName }}</p>
+                            <div class="flex gap-2">
+                              <button (click)="createUniqueTab(p, group.projects, 'increase')" class="flex-1 text-[8px] font-bold text-red-600 hover:bg-red-50 border border-red-100 py-1 rounded uppercase tracking-tighter">Only ↑</button>
+                              <button (click)="createUniqueTab(p, group.projects, 'decrease')" class="flex-1 text-[8px] font-bold text-blue-600 hover:bg-blue-50 border border-blue-100 py-1 rounded uppercase tracking-tighter">Only ↓</button>
+                            </div>
+                          </div>
+                        }
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+              <div class="flex items-center gap-4">
+                <span class="text-xs font-bold text-gray-500 uppercase">Heatmap Orientation:</span>
+                <div class="flex bg-gray-100 p-1 rounded-lg border border-gray-200">
+                  <label class="flex items-center gap-1.5 px-3 py-1 rounded-md cursor-pointer transition-all" [class.bg-white]="!isHeatmapSwapped()" [class.shadow-sm]="!isHeatmapSwapped()" [class.text-indigo-600]="!isHeatmapSwapped()">
+                    <input type="radio" class="hidden" [checked]="!isHeatmapSwapped()" (change)="isHeatmapSwapped.set(false)">
+                    <span class="text-[11px] font-bold uppercase">Exp on Top</span>
+                  </label>
+                  <label class="flex items-center gap-1.5 px-3 py-1 rounded-md cursor-pointer transition-all" [class.bg-white]="isHeatmapSwapped()" [class.shadow-sm]="isHeatmapSwapped()" [class.text-indigo-600]="isHeatmapSwapped()">
+                    <input type="radio" class="hidden" [checked]="isHeatmapSwapped()" (change)="isHeatmapSwapped.set(true)">
+                    <span class="text-[11px] font-bold uppercase">Prot on Top</span>
+                  </label>
+                </div>
               </div>
             </div>
             <div [class]="projectGroups().length > 1 ? 'grid grid-cols-2 gap-4' : 'flex flex-col gap-4'">
