@@ -239,28 +239,30 @@
           <div class="flex justify-between items-center relative">
             <div class="flex items-center gap-2">
               <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Selected Proteins ({{ displayedGenes().length }})</span>
-              <div class="relative">
+              <div class="relative" (mouseleave)="showHistoryDropdown.set(false)">
                 <button (click)="showHistoryDropdown.set(!showHistoryDropdown())" class="flex items-center gap-1.5 px-2 py-1 bg-white border border-gray-200 text-gray-600 text-[10px] font-bold rounded hover:bg-gray-50 transition-all uppercase shadow-sm">
                   <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                   History
                 </button>
                 @if (showHistoryDropdown()) {
-                  <div class="absolute left-0 top-full mt-1 w-64 bg-white shadow-2xl border border-gray-200 rounded-md z-[120] py-1 max-h-80 overflow-y-auto">
-                    <div class="px-3 py-2 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-                      <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Recent Selections</span>
-                      <button (click)="historyService.clearHistory()" class="text-[9px] font-bold text-red-500 hover:text-red-700 uppercase">Clear</button>
-                    </div>
-                    @for (entry of selectionHistory(); track entry.id) {
-                      <div (click)="loadHistoryEntry(entry)" class="px-3 py-2 border-b border-gray-50 last:border-0 hover:bg-indigo-50 cursor-pointer transition-colors">
-                        <div class="flex justify-between items-start mb-1">
-                          <span class="text-[10px] font-bold text-indigo-600">{{ entry.geneIds.length }} Proteins</span>
-                          <span class="text-[9px] text-gray-400 tabular-nums">{{ entry.timestamp | date:'MMM d, HH:mm' }}</span>
-                        </div>
-                        <p class="text-[9px] text-gray-500 truncate leading-tight">{{ entry.geneIds.join(', ') }}</p>
+                  <div class="absolute left-0 top-full pt-1 z-[120]">
+                    <div class="w-64 bg-white shadow-2xl border border-gray-200 rounded-md py-1 max-h-80 overflow-y-auto">
+                      <div class="px-3 py-2 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Recent Selections</span>
+                        <button (click)="historyService.clearHistory()" class="text-[9px] font-bold text-red-500 hover:text-red-700 uppercase">Clear</button>
                       </div>
-                    } @empty {
-                      <div class="px-3 py-4 text-center text-gray-400 text-[10px] italic">No selection history yet.</div>
-                    }
+                      @for (entry of selectionHistory(); track entry.id) {
+                        <div (click)="loadHistoryEntry(entry)" class="px-3 py-2 border-b border-gray-50 last:border-0 hover:bg-indigo-50 cursor-pointer transition-colors">
+                          <div class="flex justify-between items-start mb-1">
+                            <span class="text-[10px] font-bold text-indigo-600">{{ entry.geneIds.length }} Proteins</span>
+                            <span class="text-[9px] text-gray-400 tabular-nums">{{ entry.timestamp | date:'MMM d, HH:mm' }}</span>
+                          </div>
+                          <p class="text-[9px] text-gray-500 truncate leading-tight">{{ entry.geneIds.join(', ') }}</p>
+                        </div>
+                      } @empty {
+                        <div class="px-3 py-4 text-center text-gray-400 text-[10px] italic">No selection history yet.</div>
+                      }
+                    </div>
                   </div>
                 }
               </div>
@@ -352,16 +354,18 @@
                         Unique To...
                         <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                       </button>
-                      <div class="hidden group-hover/unique:block absolute left-0 top-full mt-1 w-64 bg-white shadow-xl border border-gray-200 rounded-md z-[120] py-1 max-h-60 overflow-y-auto shadow-2xl">
-                        @for (p of group.projects; track p.projectId) {
-                          <div class="px-3 py-2 border-b border-gray-50 last:border-0 hover:bg-gray-50">
-                            <p class="text-[9px] font-bold text-gray-900 mb-1 truncate">{{ p.projectName }}</p>
-                            <div class="flex gap-2">
-                              <button (click)="createUniqueTab(p, group.projects, 'increase')" class="flex-1 text-[8px] font-bold text-red-600 hover:bg-red-50 border border-red-100 py-1 rounded uppercase tracking-tighter">Only ↑</button>
-                              <button (click)="createUniqueTab(p, group.projects, 'decrease')" class="flex-1 text-[8px] font-bold text-blue-600 hover:bg-blue-50 border border-blue-100 py-1 rounded uppercase tracking-tighter">Only ↓</button>
+                      <div class="hidden group-hover/unique:block absolute left-0 top-full pt-1 z-[120]">
+                        <div class="w-64 bg-white shadow-xl border border-gray-200 rounded-md py-1 max-h-60 overflow-y-auto shadow-2xl">
+                          @for (p of group.projects; track p.projectId) {
+                            <div class="px-3 py-2 border-b border-gray-50 last:border-0 hover:bg-gray-50">
+                              <p class="text-[9px] font-bold text-gray-900 mb-1 truncate">{{ p.projectName }}</p>
+                              <div class="flex gap-2">
+                                <button (click)="createUniqueTab(p, group.projects, 'increase')" class="flex-1 text-[8px] font-bold text-red-600 hover:bg-red-50 border border-red-100 py-1 rounded uppercase tracking-tighter">Only ↑</button>
+                                <button (click)="createUniqueTab(p, group.projects, 'decrease')" class="flex-1 text-[8px] font-bold text-blue-600 hover:bg-blue-50 border border-blue-100 py-1 rounded uppercase tracking-tighter">Only ↓</button>
+                              </div>
                             </div>
-                          </div>
-                        }
+                          }
+                        </div>
                       </div>
                     </div>
                   </div>
