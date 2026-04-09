@@ -1,7 +1,7 @@
 import { Component, OnInit, inject, signal, computed, effect, input, viewChild, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
-import { Location } from '@angular/common';
+import { Location, DatePipe } from '@angular/common';
 import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { ScrollingModule } from '@angular/cdk/scrolling';
 import { TitleCasePipe } from '@angular/common';
@@ -16,10 +16,11 @@ import { GeneData, ProjectMetadata, RankItem, HeatmapTab } from '../models';
 import { DataService, AppConfig } from '../services/data.service';
 import { ExportService } from '../services/export.service';
 import { PreferencesService, FilterPreset, SortCriterion } from '../services/preferences';
+import { HistoryService, SelectionHistoryEntry } from '../services/history.service';
 @Component({
   selector: 'app-explorer',
   standalone: true,
-  imports: [FormsModule, DragDropModule, ScrollingModule, CurtainFilterComponent, HeatmapComponent, RankPlotComponent, SkeletonLoaderComponent, FilterChipsComponent, CollapsibleSectionComponent, RouterLink, FindGenePipe, TitleCasePipe],
+  imports: [FormsModule, DragDropModule, ScrollingModule, CurtainFilterComponent, HeatmapComponent, RankPlotComponent, SkeletonLoaderComponent, FilterChipsComponent, CollapsibleSectionComponent, RouterLink, FindGenePipe, TitleCasePipe, DatePipe],
   templateUrl: './explorer.html',
   styleUrl: './explorer.scss'
 })
@@ -27,6 +28,7 @@ export class ExplorerComponent implements OnInit {
   private dataService = inject(DataService);
   private exportService = inject(ExportService);
   private preferencesService = inject(PreferencesService);
+  protected historyService = inject(HistoryService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private location = inject(Location);
@@ -53,32 +55,10 @@ export class ExplorerComponent implements OnInit {
   isInitialized = signal(false);
   tabs = signal<HeatmapTab[]>([]);
   activeTabId = signal<string>('default');
-  tabs = signal<HeatmapTab[]>([]);
-  activeTabId = signal<string>('default');
+  showHistoryDropdown = signal(false);
+  selectionHistory = computed(() => this.historyService.getHistoryForDataset(this.currentDataset()));
   getFilterSet(key: string): Set<string> {
     return this.filterState().get(key) || new Set();
-  }
-  createTab(geneIds: string[], name?: string) {
-    const id = Math.random().toString(36).substring(2, 9);
-    const tabName = name || `Subset (${geneIds.length})`;
-    const newTab: HeatmapTab = { id, name: tabName, geneIds };
-    this.tabs.update(t => [...t, newTab]);
-    this.activeTabId.set(id);
-  }
-  switchTab(tabId: string) {
-    this.activeTabId.set(tabId);
-  }
-  removeTab(tabId: string, event?: Event) {
-    if (event) event.stopPropagation();
-    if (tabId === 'default') return;
-    const currentTabs = this.tabs();
-    const index = currentTabs.findIndex(t => t.id === tabId);
-    const newTabs = currentTabs.filter(t => t.id !== tabId);
-    this.tabs.set(newTabs);
-    if (this.activeTabId() === tabId) {
-      const nextIndex = Math.min(index, newTabs.length - 1);
-      this.activeTabId.set(newTabs[nextIndex]?.id || 'default');
-    }
   }
   createTab(geneIds: string[], name?: string) {
     const id = Math.random().toString(36).substring(2, 9);
@@ -301,6 +281,15 @@ export class ExplorerComponent implements OnInit {
         this.confidenceCutoff.set(null);
         this.loadData(ds);
       });
+    });
+    effect(() => {
+      const ids = Array.from(this.selectedGeneIds());
+      const dataset = this.currentDataset();
+      if (this.isInitialized() && ids.length > 0) {
+        untracked(() => {
+          this.historyService.addToHistory(dataset, ids);
+        });
+      }
     });
     effect(() => {
       const projs = this.projects();
@@ -922,6 +911,10 @@ export class ExplorerComponent implements OnInit {
     });
     this.sortStack.set([...preset.sortStack]);
     this.flippedProjectIds.set(new Set(preset.flippedProjectIds));
+  }
+  loadHistoryEntry(entry: SelectionHistoryEntry) {
+    this.selectedGeneIds.set(new Set(entry.geneIds));
+    this.showHistoryDropdown.set(false);
   }
   deletePreset(preset: FilterPreset) {
     this.preferencesService.deletePreset(preset.id);
