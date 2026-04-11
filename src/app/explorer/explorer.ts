@@ -18,6 +18,7 @@ import { DataService, AppConfig } from '../services/data.service';
 import { ExportService } from '../services/export.service';
 import { PreferencesService, FilterPreset, SortCriterion } from '../services/preferences';
 import { HistoryService, SelectionHistoryEntry } from '../services/history.service';
+
 @Component({
   selector: 'app-explorer',
   standalone: true,
@@ -33,9 +34,12 @@ export class ExplorerComponent implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private location = inject(Location);
+
   protected readonly Math = Math;
   protected readonly Array = Array;
+
   heatmapComponent = viewChild(HeatmapComponent);
+
   dataset = input.required<string>();
   currentDataset = signal<string>('');
   config = signal<AppConfig | null>(null);
@@ -44,24 +48,30 @@ export class ExplorerComponent implements OnInit {
   geneFilterTerm = signal('');
   highlightedIndex = signal(-1);
   hoveredGeneId = signal<string | null>(null);
+
   projects = signal<ProjectMetadata[]>([]);
   allGenes = signal<GeneData[]>([]);
   selectedGeneIds = signal<Set<string>>(new Set());
   pendingBulkSelection = signal<string[] | null>(null);
   isBulkReplacing = signal<boolean>(false);
+
   filterState = signal<Map<string, Set<string>>>(new Map());
   selectedProjectIds = signal<Set<string>>(new Set());
   flippedProjectIds = signal<Set<string>>(new Set());
   manualProjectOrder = signal<ProjectMetadata[]>([]);
   isInitialized = signal(false);
+
   tabs = signal<HeatmapTab[]>([]);
   activeTabId = signal<string>('default');
   showHistoryDropdown = signal(false);
   subsetCriteria = signal<Map<string, 'up' | 'down' | 'none'>>(new Map());
+
   selectionHistory = computed(() => this.historyService.getHistoryForDataset(this.currentDataset()));
+
   getFilterSet(key: string): Set<string> {
     return this.filterState().get(key) || new Set();
   }
+
   toggleSubsetCriterion(projectId: string, direction: 'up' | 'down') {
     this.subsetCriteria.update(map => {
       const newMap = new Map(map);
@@ -74,9 +84,11 @@ export class ExplorerComponent implements OnInit {
       return newMap;
     });
   }
+
   clearSubsetCriteria() {
     this.subsetCriteria.set(new Map());
   }
+
   createCustomSubset(groupProjects: ProjectMetadata[], mode: 'intersection' | 'union') {
     const criteria = this.subsetCriteria();
     const activeProjects = groupProjects.filter(p => {
@@ -84,10 +96,12 @@ export class ExplorerComponent implements OnInit {
       return val && val !== 'none';
     });
     if (activeProjects.length === 0) return;
+
     const log2fcCut = this.log2fcCutoff() || 0;
     const confCut = this.confidenceCutoff() || 0;
     const allProjs = this.projects();
     const flipped = this.flippedProjectIds();
+
     const subset = this.allGenes().filter(g => {
       const matchResults = activeProjects.map(p => {
         const idx = allProjs.indexOf(p);
@@ -95,6 +109,7 @@ export class ExplorerComponent implements OnInit {
         const conf = g.confidences[idx];
         if (val === null || conf === null) return false;
         if (flipped.has(p.projectId)) val *= -1;
+        
         const targetDir = criteria.get(p.projectId);
         const passesLog2fc = Math.abs(val) >= log2fcCut;
         const passesConf = conf >= confCut;
@@ -103,6 +118,7 @@ export class ExplorerComponent implements OnInit {
       });
       return mode === 'intersection' ? matchResults.every(r => r) : matchResults.some(r => r);
     });
+
     if (subset.length > 0) {
       const names = activeProjects.map(p => {
         const dir = criteria.get(p.projectId) === 'up' ? '↑' : '↓';
@@ -111,6 +127,7 @@ export class ExplorerComponent implements OnInit {
       this.createTab(subset.map(g => g.uniprotId), `${mode === 'intersection' ? '∩' : '∪'} ${names} (${subset.length})`);
     }
   }
+
   createTab(geneIds: string[], name?: string) {
     const id = Math.random().toString(36).substring(2, 9);
     const tabName = name || `Subset (${geneIds.length})`;
@@ -118,9 +135,11 @@ export class ExplorerComponent implements OnInit {
     this.tabs.update(t => [...t, newTab]);
     this.activeTabId.set(id);
   }
+
   switchTab(tabId: string) {
     this.activeTabId.set(tabId);
   }
+
   removeTab(tabId: string, event?: Event) {
     if (event) event.stopPropagation();
     if (tabId === 'default') return;
@@ -133,6 +152,7 @@ export class ExplorerComponent implements OnInit {
       this.activeTabId.set(newTabs[nextIndex]?.id || 'default');
     }
   }
+
   dropExperiment(event: CdkDragDrop<ProjectMetadata[]>) {
     this.manualProjectOrder.update(projects => {
       const newOrder = [...projects];
@@ -140,9 +160,11 @@ export class ExplorerComponent implements OnInit {
       return newOrder;
     });
   }
+
   clearManualSort() {
     this.manualProjectOrder.set([]);
   }
+
   toggleFilter(type: string, value: string) {
     if (type === 'project') {
       this.selectedProjectIds.update(set => {
@@ -162,6 +184,7 @@ export class ExplorerComponent implements OnInit {
       return newMap;
     });
   }
+
   summaryDisplayMode = signal<'number' | 'proportion'>('proportion');
   isHeatmapSwapped = signal<boolean>(false);
   log2fcCutoff = signal<number | null>(null);
@@ -169,13 +192,16 @@ export class ExplorerComponent implements OnInit {
   rankCutoff = signal<number>(10);
   geneSortOrder = signal<'none' | 'increase' | 'decrease'>('none');
   showOnlySelectedInRankPlot = signal<boolean>(false);
+
   selectedHeatmapProteins = signal<Map<string, GeneData>>(new Map());
   uiRevision = signal<number>(0);
+
   selectedHeatmapProteinIds = computed(() => new Set(this.selectedHeatmapProteins().keys()));
   firstSelectedGene = computed(() => {
     const values = this.selectedHeatmapProteins().values();
     return values.next().value;
   });
+
   onHeatmapGeneSelected(uniprotId: string) {
     const gene = this.allGenes().find(g => g.uniprotId === uniprotId);
     if (gene) {
@@ -190,9 +216,11 @@ export class ExplorerComponent implements OnInit {
       });
     }
   }
+
   clearHeatmapSelection() {
     this.selectedHeatmapProteins.set(new Map());
   }
+
   isolateSelectedHeatmapProteins() {
     const selected = this.selectedHeatmapProteins();
     if (selected.size > 0) {
@@ -208,6 +236,7 @@ export class ExplorerComponent implements OnInit {
       this.geneFilterTerm.set('');
     }
   }
+
   openSelectionInInternalTab() {
     const selected = this.selectedHeatmapProteins();
     if (selected.size > 0) {
@@ -216,6 +245,7 @@ export class ExplorerComponent implements OnInit {
       this.geneFilterTerm.set('');
     }
   }
+
   openComparisonInNewTab() {
     const selected = this.selectedHeatmapProteins();
     if (selected.size === 0) return;
@@ -232,12 +262,14 @@ export class ExplorerComponent implements OnInit {
     const fullUrl = window.location.origin + window.location.pathname + this.location.prepareExternalUrl(serializedUrl);
     window.open(fullUrl, '_blank');
   }
+
   exportHighlightedProteins(format: 'csv' | 'tsv') {
     const selected = Array.from(this.selectedHeatmapProteins().values());
     if (selected.length === 0) return;
     const filename = `highlighted_proteins_${this.currentDataset()}_${new Date().toISOString().slice(0, 10)}`;
     this.exportService.exportProteinList(selected, format, filename);
   }
+
   removeHeatmapSelection(uniprotId: string) {
     this.selectedHeatmapProteins.update(map => {
       const newMap = new Map(map);
@@ -245,12 +277,14 @@ export class ExplorerComponent implements OnInit {
       return newMap;
     });
   }
+
   createConsistentTab(groupProjects: ProjectMetadata[], direction: 'increase' | 'decrease') {
     const log2fcCut = this.log2fcCutoff() || 0;
     const confCut = this.confidenceCutoff() || 0;
     const allProjs = this.projects();
     const flipped = this.flippedProjectIds();
     const projIndices = groupProjects.map(p => allProjs.indexOf(p));
+
     const subset = this.allGenes().filter(g => {
       if (projIndices.length === 0) return false;
       return projIndices.every(idx => {
@@ -265,10 +299,12 @@ export class ExplorerComponent implements OnInit {
         return passesLog2fc && passesConf && correctDirection;
       });
     });
+
     if (subset.length > 0) {
       this.createTab(subset.map(g => g.uniprotId), `Consistently ${direction === 'increase' ? '↑' : '↓'} (${subset.length})`);
     }
   }
+
   createUniqueTab(target: ProjectMetadata, groupProjects: ProjectMetadata[], direction: 'increase' | 'decrease') {
     const log2fcCut = this.log2fcCutoff() || 0;
     const confCut = this.confidenceCutoff() || 0;
@@ -276,13 +312,16 @@ export class ExplorerComponent implements OnInit {
     const flipped = this.flippedProjectIds();
     const targetIdx = allProjs.indexOf(target);
     const otherIndices = groupProjects.filter(p => p !== target).map(p => allProjs.indexOf(p));
+
     const subset = this.allGenes().filter(g => {
       let targetVal = g.log2fcs[targetIdx];
       const targetConf = g.confidences[targetIdx];
       if (targetVal === null || targetConf === null) return false;
       if (flipped.has(target.projectId)) targetVal *= -1;
+      
       const targetPasses = Math.abs(targetVal) >= log2fcCut && targetConf >= confCut && (direction === 'increase' ? targetVal > 0 : targetVal < 0);
       if (!targetPasses) return false;
+
       return otherIndices.every(idx => {
         let v = g.log2fcs[idx];
         const c = g.confidences[idx];
@@ -293,10 +332,12 @@ export class ExplorerComponent implements OnInit {
         return !passes;
       });
     });
+
     if (subset.length > 0) {
       this.createTab(subset.map(g => g.uniprotId), `Unique ${direction === 'increase' ? '↑' : '↓'} to ${target.projectName} (${subset.length})`);
     }
   }
+
   createSharedTab(target: ProjectMetadata, groupProjects: ProjectMetadata[], direction: 'increase' | 'decrease') {
     const log2fcCut = this.log2fcCutoff() || 0;
     const confCut = this.confidenceCutoff() || 0;
@@ -304,13 +345,16 @@ export class ExplorerComponent implements OnInit {
     const flipped = this.flippedProjectIds();
     const targetIdx = allProjs.indexOf(target);
     const otherIndices = groupProjects.filter(p => p !== target).map(p => allProjs.indexOf(p));
+
     const subset = this.allGenes().filter(g => {
       let targetVal = g.log2fcs[targetIdx];
       const targetConf = g.confidences[targetIdx];
       if (targetVal === null || targetConf === null) return false;
       if (flipped.has(target.projectId)) targetVal *= -1;
+      
       const targetPasses = Math.abs(targetVal) >= log2fcCut && targetConf >= confCut && (direction === 'increase' ? targetVal > 0 : targetVal < 0);
       if (!targetPasses) return false;
+
       return otherIndices.some(idx => {
         let v = g.log2fcs[idx];
         const c = g.confidences[idx];
@@ -321,10 +365,12 @@ export class ExplorerComponent implements OnInit {
         return passes;
       });
     });
+
     if (subset.length > 0) {
       this.createTab(subset.map(g => g.uniprotId), `${target.projectName} Shared ${direction === 'increase' ? '↑' : '↓'} (${subset.length})`);
     }
   }
+
   groupingPresets = computed(() => {
     const categorization = this.config()?.categorization || [];
     if (categorization.length === 0) return [];
@@ -336,12 +382,14 @@ export class ExplorerComponent implements OnInit {
       return { label, stack };
     });
   });
+
   sortStack = signal<SortCriterion[]>([]);
   showPresetInput = signal(false);
   presetName = signal('');
   currentPresets = computed(() => this.preferencesService.getPresetsForDataset(this.currentDataset()));
   hasMultipleDatasets = computed(() => (this.config()?.datasets?.length || 0) > 1);
   currentDatasetConfig = computed(() => this.config()?.datasets.find(d => d.id === this.currentDataset()));
+
   private defaultGenesFallback = [
     'TMEM175', 'OGA', 'NOD2', 'USP30', 'STING1', 'ATP13A2', 'MCOLN1', 'TLR2', 'GPNMB', 'GCG',
     'MAPT', 'PARP1', 'BECN1', 'CACNA1D', 'TREM2', 'NFE2L2', 'GBAP1', 'TGM2', 'VPS35', 'CTSB',
@@ -350,6 +398,7 @@ export class ExplorerComponent implements OnInit {
     'RILPL1', 'HLA-DRB5', 'SOD1', 'AIMP2', 'CSNK2B', 'RIT2', 'DYRK1A', 'TRAP1', 'SPTLC2', 'NPC1',
     'GPR37', 'TMEM230', 'KANSL1', 'DNAJC13', 'EIF2AK1', 'PAM', 'MPTP', 'CD84', 'NLRP12', 'LUZP1'
   ];
+
   effectiveHighlightedIds = computed(() => {
     const selected = this.selectedGeneIds();
     const pending = this.pendingBulkSelection();
@@ -361,6 +410,7 @@ export class ExplorerComponent implements OnInit {
     pending.forEach(id => combined.add(id));
     return combined;
   });
+
   constructor() {
     effect(() => {
       const ds = this.dataset();
@@ -378,6 +428,7 @@ export class ExplorerComponent implements OnInit {
         this.loadData(ds);
       });
     });
+
     effect(() => {
       const ids = Array.from(this.selectedGeneIds());
       const dataset = this.currentDataset();
@@ -387,11 +438,13 @@ export class ExplorerComponent implements OnInit {
         });
       }
     });
+
     effect(() => {
       const projs = this.projects();
       const fState = this.filterState();
       const sProjectIds = this.selectedProjectIds();
       const stack = this.sortStack();
+      
       const filtered = projs.filter((p: any) => {
         const projectMatch = sProjectIds.size === 0 || sProjectIds.has(p.projectId);
         let categorizationMatch = true;
@@ -414,6 +467,7 @@ export class ExplorerComponent implements OnInit {
         }
         return (a.date || '').localeCompare(b.date || '');
       });
+
       untracked(() => {
         const currentManual = this.manualProjectOrder();
         if (currentManual.length === 0) {
@@ -429,6 +483,7 @@ export class ExplorerComponent implements OnInit {
         }
       });
     });
+
     effect(() => {
       if (!this.isInitialized()) return;
       const log2fcCut = this.log2fcCutoff();
@@ -453,16 +508,20 @@ export class ExplorerComponent implements OnInit {
       });
     });
   }
+
   setPreset(stack: SortCriterion[]) {
     this.sortStack.set([...stack]);
   }
+
   loadData(type: string) {
     this.isLoading.set(true);
     this.dataService.loadDataset(type).subscribe(({ projects, genes }) => {
       this.projects.set(projects);
       this.allGenes.set(genes);
+      
       const params = this.route.snapshot.queryParams;
       const dsConfig = this.currentDatasetConfig();
+
       if (!params['flipped']) {
         const idsToFlip = new Set<string>();
         projects.forEach(p => {
@@ -474,22 +533,27 @@ export class ExplorerComponent implements OnInit {
           this.flippedProjectIds.set(idsToFlip);
         }
       }
+
       if (!params['genes'] && this.selectedGeneIds().size === 0) {
         this.applyDefaultGenes(dsConfig?.defaultGenes);
       }
+
       if (!params['cutoff'] && dsConfig?.defaultLog2fcCutoff !== undefined) {
         this.log2fcCutoff.set(dsConfig.defaultLog2fcCutoff);
       }
       if (!params['conf'] && dsConfig?.defaultConfidenceCutoff !== undefined) {
         this.confidenceCutoff.set(dsConfig.defaultConfidenceCutoff);
       }
+
       if (!params['sort']) {
         const categorization = this.config()?.categorization || [];
         this.sortStack.set(categorization.map(c => c.key) as SortCriterion[]);
       }
+
       this.isLoading.set(false);
     });
   }
+
   private applyDefaultGenes(genesFromConfig?: string[]) {
     const ids = new Set<string>();
     const defaultList = genesFromConfig || this.defaultGenesFallback;
@@ -502,6 +566,7 @@ export class ExplorerComponent implements OnInit {
     });
     this.selectedGeneIds.set(ids);
   }
+
   applyCurtainFilter(data: string) {
     const geneTerms = data.split(/[\n,]/).map((s: string) => s.trim().toLowerCase()).filter((s: string) => s);
     const matchedIds = new Set<string>();
@@ -514,6 +579,7 @@ export class ExplorerComponent implements OnInit {
         matchedIds.add(gene.uniprotId);
       }
     });
+
     if (matchedIds.size === 1) {
       const id = Array.from(matchedIds)[0];
       const activeId = this.activeTabId();
@@ -532,9 +598,11 @@ export class ExplorerComponent implements OnInit {
       this.pendingBulkSelection.set(Array.from(matchedIds));
     }
   }
+
   getUniqueValues(key: string): string[] {
     return Array.from(new Set(this.projects().map((p: any) => p[key]))).sort();
   }
+
   activeFilterChips = computed((): FilterChip[] => {
     const chips: FilterChip[] = [];
     this.filterState().forEach((set, key) => {
@@ -546,6 +614,7 @@ export class ExplorerComponent implements OnInit {
     });
     return chips;
   });
+
   searchResults = computed(() => {
     const term = this.searchTerm().toLowerCase().trim();
     if (term.length < 2) return [];
@@ -553,11 +622,13 @@ export class ExplorerComponent implements OnInit {
       .filter((g: GeneData) => g.searchString.includes(term))
       .slice(0, 10);
   });
+
   displayedGenes = computed(() => {
     const globalSelected = this.selectedGeneIds();
     const activeId = this.activeTabId();
     const activeTab = this.tabs().find(t => t.id === activeId);
     const sourceIds = (activeId === 'default' || !activeTab) ? globalSelected : new Set(activeTab.geneIds);
+    
     const flipped = this.flippedProjectIds();
     const allProjs = this.projects();
     const log2fcCut = this.log2fcCutoff();
@@ -565,6 +636,7 @@ export class ExplorerComponent implements OnInit {
     const sortOrder = this.geneSortOrder();
     const filterTerm = this.geneFilterTerm().toLowerCase().trim();
     const filteredProjIndices = new Set(this.filteredProjects().map(p => allProjs.indexOf(p)));
+
     const genes = this.allGenes()
       .filter((g: GeneData) => sourceIds.has(g.uniprotId))
       .filter((g: GeneData) => {
@@ -583,6 +655,7 @@ export class ExplorerComponent implements OnInit {
         const hasLog2fcCutoff = log2fcCut !== null && log2fcCut > 0;
         const hasConfCutoff = confCut !== null && confCut > 0;
         if (!hasLog2fcCutoff && !hasConfCutoff) return true;
+
         return g.log2fcs.some((val, idx) => {
           if (!filteredProjIndices.has(idx)) return false;
           if (val === null) return false;
@@ -592,6 +665,7 @@ export class ExplorerComponent implements OnInit {
           return passesLog2fc && passesConf;
         });
       });
+
     if (sortOrder === 'none') return genes;
     return [...genes].sort((a, b) => {
       const countA = this.countDirectionForGene(a, filteredProjIndices, log2fcCut, confCut, sortOrder);
@@ -599,6 +673,7 @@ export class ExplorerComponent implements OnInit {
       return countB - countA;
     });
   });
+
   private countDirectionForGene(
     gene: GeneData,
     projIndices: Set<number>,
@@ -619,12 +694,14 @@ export class ExplorerComponent implements OnInit {
     });
     return count;
   }
+
   filteredProjects = computed(() => {
     const projs = this.projects();
     const fState = this.filterState();
     const sProjectIds = this.selectedProjectIds();
     const stack = this.sortStack();
     const manualOrder = this.manualProjectOrder();
+    
     let filtered = projs.filter((p: any) => {
       const projectMatch = sProjectIds.size === 0 || sProjectIds.has(p.projectId);
       let categorizationMatch = true;
@@ -635,10 +712,12 @@ export class ExplorerComponent implements OnInit {
       });
       return projectMatch && categorizationMatch;
     });
+
     if (manualOrder.length > 0) {
       const filteredIds = new Set(filtered.map(p => p.projectId));
       return manualOrder.filter(p => filteredIds.has(p.projectId));
     }
+
     return [...filtered].sort((a: any, b: any) => {
       const categorization = this.config()?.categorization || [];
       for (const criterion of stack) {
@@ -655,6 +734,7 @@ export class ExplorerComponent implements OnInit {
       return (a.date || '').localeCompare(b.date || '');
     });
   });
+
   projectGroups = computed(() => {
     const projs = this.filteredProjects();
     const config = this.config();
@@ -668,9 +748,7 @@ export class ExplorerComponent implements OnInit {
     });
     return Array.from(groups.entries()).map(([name, projects]) => ({
       name,
-      projects,
-      summary: this.calculateHeatmapSummary(projects),
-      rankData: this.calculateRankData(projects)
+      projects
     })).sort((a, b) => {
       const cat = config.categorization[0];
       const priorities = cat.priorities || {};
@@ -679,6 +757,26 @@ export class ExplorerComponent implements OnInit {
       return pA - pB;
     });
   });
+
+  groupRankData = computed(() => {
+    const groups = this.projectGroups();
+    const dataMap = new Map<string, RankItem[]>();
+    groups.forEach(group => {
+      dataMap.set(group.name, this.calculateRankData(group.projects));
+    });
+    return dataMap;
+  });
+
+  groupSummaries = computed(() => {
+    const groups = this.projectGroups();
+    const genes = this.displayedGenes();
+    const dataMap = new Map<string, { increase: number; decrease: number; total: number }>();
+    groups.forEach(group => {
+      dataMap.set(group.name, this.calculateHeatmapSummary(group.projects, genes));
+    });
+    return dataMap;
+  });
+
   private calculateRankData(projects: ProjectMetadata[]): RankItem[] {
     const allGenes = this.allGenes();
     const allProjs = this.projects();
@@ -689,7 +787,9 @@ export class ExplorerComponent implements OnInit {
     const confCut = this.confidenceCutoff();
     const projIndices = projects.map(p => allProjs.indexOf(p));
     if (projIndices.length === 0) return [];
+
     const minTotal = Math.ceil(projIndices.length * (this.rankCutoff() / 100));
+
     return allGenes
       .filter(g => !showOnlySelected || selectedIds.has(g.uniprotId))
       .map(g => {
@@ -722,64 +822,8 @@ export class ExplorerComponent implements OnInit {
         };
       }).filter(item => item.total > minTotal);
   }
-  selectGenesFromPlot(uniprotIds: string[]) {
-    if (uniprotIds.length === 1) {
-      const id = uniprotIds[0];
-      const activeId = this.activeTabId();
-      if (activeId === 'default') {
-        this.selectedGeneIds.update(set => {
-          const newSet = new Set(set);
-          newSet.add(id);
-          return newSet;
-        });
-      } else {
-        this.tabs.update(tabs => tabs.map(t => 
-          t.id === activeId ? { ...t, geneIds: Array.from(new Set([...t.geneIds, id])) } : t
-        ));
-      }
-    } else if (uniprotIds.length > 1) {
-      this.pendingBulkSelection.set(uniprotIds);
-    }
-  }
-  confirmBulkAdd() {
-    const ids = this.pendingBulkSelection();
-    if (ids) {
-      const activeId = this.activeTabId();
-      if (activeId === 'default') {
-        this.selectedGeneIds.update(set => {
-          const newSet = new Set(set);
-          ids.forEach(id => newSet.add(id));
-          return newSet;
-        });
-      } else {
-        this.tabs.update(tabs => tabs.map(t => 
-          t.id === activeId ? { ...t, geneIds: Array.from(new Set([...t.geneIds, ...ids])) } : t
-        ));
-      }
-    }
-    this.pendingBulkSelection.set(null);
-  }
-  confirmBulkReplace() {
-    const ids = this.pendingBulkSelection();
-    if (ids) {
-      const activeId = this.activeTabId();
-      if (activeId === 'default') {
-        this.selectedGeneIds.set(new Set([...ids]));
-      } else {
-        this.tabs.update(tabs => tabs.map(t => 
-          t.id === activeId ? { ...t, geneIds: [...ids] } : t
-        ));
-      }
-      this.geneFilterTerm.set('');
-    }
-    this.pendingBulkSelection.set(null);
-  }
-  cancelBulkSelection() {
-    this.pendingBulkSelection.set(null);
-    this.isBulkReplacing.set(false);
-  }
-  private calculateHeatmapSummary(projects: ProjectMetadata[]): { increase: number; decrease: number; total: number } {
-    const genes = this.displayedGenes();
+
+  private calculateHeatmapSummary(projects: ProjectMetadata[], genes: GeneData[]): { increase: number; decrease: number; total: number } {
     const allProjs = this.projects();
     const log2fcCut = this.log2fcCutoff();
     const confCut = this.confidenceCutoff();
@@ -802,6 +846,67 @@ export class ExplorerComponent implements OnInit {
     });
     return { increase, decrease, total };
   }
+
+  selectGenesFromPlot(uniprotIds: string[]) {
+    if (uniprotIds.length === 1) {
+      const id = uniprotIds[0];
+      const activeId = this.activeTabId();
+      if (activeId === 'default') {
+        this.selectedGeneIds.update(set => {
+          const newSet = new Set(set);
+          newSet.add(id);
+          return newSet;
+        });
+      } else {
+        this.tabs.update(tabs => tabs.map(t => 
+          t.id === activeId ? { ...t, geneIds: Array.from(new Set([...t.geneIds, id])) } : t
+        ));
+      }
+    } else if (uniprotIds.length > 1) {
+      this.pendingBulkSelection.set(uniprotIds);
+    }
+  }
+
+  confirmBulkAdd() {
+    const ids = this.pendingBulkSelection();
+    if (ids) {
+      const activeId = this.activeTabId();
+      if (activeId === 'default') {
+        this.selectedGeneIds.update(set => {
+          const newSet = new Set(set);
+          ids.forEach(id => newSet.add(id));
+          return newSet;
+        });
+      } else {
+        this.tabs.update(tabs => tabs.map(t => 
+          t.id === activeId ? { ...t, geneIds: Array.from(new Set([...t.geneIds, ...ids])) } : t
+        ));
+      }
+    }
+    this.pendingBulkSelection.set(null);
+  }
+
+  confirmBulkReplace() {
+    const ids = this.pendingBulkSelection();
+    if (ids) {
+      const activeId = this.activeTabId();
+      if (activeId === 'default') {
+        this.selectedGeneIds.set(new Set([...ids]));
+      } else {
+        this.tabs.update(tabs => tabs.map(t => 
+          t.id === activeId ? { ...t, geneIds: [...ids] } : t
+        ));
+      }
+      this.geneFilterTerm.set('');
+    }
+    this.pendingBulkSelection.set(null);
+  }
+
+  cancelBulkSelection() {
+    this.pendingBulkSelection.set(null);
+    this.isBulkReplacing.set(false);
+  }
+
   toggleFlip(projectId: string) {
     this.flippedProjectIds.update(set => {
       const newSet = new Set(set);
@@ -810,6 +915,7 @@ export class ExplorerComponent implements OnInit {
       return newSet;
     });
   }
+
   isDefaultFlip(p: ProjectMetadata): boolean {
     const name = p.projectName.toLowerCase();
     const isMli2 = name.includes('dmso vs mli2') || name.includes('mli2 vs dmso') ||
@@ -818,6 +924,7 @@ export class ExplorerComponent implements OnInit {
                  name.includes('ko-wt') || name.includes('wt-ko');
     return isMli2 || isKo;
   }
+
   drop(event: CdkDragDrop<string[]>) {
     this.sortStack.update((stack: SortCriterion[]) => {
       const newStack = [...stack];
@@ -825,6 +932,7 @@ export class ExplorerComponent implements OnInit {
       return newStack;
     });
   }
+
   copyUrl() {
     const url = window.location.href;
     const maxLength = 2000;
@@ -834,6 +942,7 @@ export class ExplorerComponent implements OnInit {
       }
     });
   }
+
   async exportAsPng() {
     const heatmap = this.heatmapComponent();
     if (heatmap) {
@@ -844,21 +953,26 @@ export class ExplorerComponent implements OnInit {
       }
     }
   }
+
   exportAsCsv() {
     const filename = `heatmap_${this.currentDataset()}_${new Date().toISOString().slice(0, 10)}.csv`;
     this.exportService.exportAsCsv(this.displayedGenes(), this.filteredProjects(), filename);
   }
+
   exportProteinListCsv() {
     const filename = `protein_list_${this.currentDataset()}_${new Date().toISOString().slice(0, 10)}`;
     this.exportService.exportProteinList(this.displayedGenes(), 'csv', filename);
   }
+
   exportProteinListTsv() {
     const filename = `protein_list_${this.currentDataset()}_${new Date().toISOString().slice(0, 10)}`;
     this.exportService.exportProteinList(this.displayedGenes(), 'tsv', filename);
   }
+
   async copyGeneList() {
     await this.exportService.copyGeneListToClipboard(this.displayedGenes(), 'genes');
   }
+
   clearAllProteins() {
     const activeId = this.activeTabId();
     if (activeId === 'default') {
@@ -869,6 +983,7 @@ export class ExplorerComponent implements OnInit {
       ));
     }
   }
+
   resetToDefault() {
     const dsConfig = this.currentDatasetConfig();
     this.filterState.set(new Map());
@@ -887,6 +1002,7 @@ export class ExplorerComponent implements OnInit {
     this.searchTerm.set('');
     this.applyDefaultGenes(dsConfig?.defaultGenes);
   }
+
   ngOnInit() {
     this.dataService.loadConfig().subscribe(config => {
       this.config.set(config);
@@ -894,15 +1010,18 @@ export class ExplorerComponent implements OnInit {
       this.isInitialized.set(true);
     });
   }
+
   private initializeFromUrl() {
     const params = this.route.snapshot.queryParams;
     const config = this.config();
     const dsConfig = this.currentDatasetConfig();
+
     if (params['genes']) {
       this.selectedGeneIds.set(new Set(params['genes'].split(',')));
     } else {
       this.applyDefaultGenes(dsConfig?.defaultGenes);
     }
+
     if (config) {
       config.categorization.forEach(cat => {
         if (params[cat.key]) {
@@ -914,18 +1033,23 @@ export class ExplorerComponent implements OnInit {
         }
       });
     }
+
     if (params['projects']) {
       this.selectedProjectIds.set(new Set(params['projects'].split(',')));
     }
+
     if (params['flipped']) {
       this.flippedProjectIds.set(new Set(params['flipped'].split(',')));
     }
+
     if (params['swapped'] === 'true') {
       this.isHeatmapSwapped.set(true);
     }
+
     if (params['sort']) {
       this.sortStack.set(params['sort'].split(',') as any);
     }
+
     if (params['cutoff']) {
       const val = parseFloat(params['cutoff']);
       if (!isNaN(val) && val > 0) {
@@ -934,6 +1058,7 @@ export class ExplorerComponent implements OnInit {
     } else if (dsConfig?.defaultLog2fcCutoff !== undefined) {
       this.log2fcCutoff.set(dsConfig.defaultLog2fcCutoff);
     }
+
     if (params['conf']) {
       const val = parseFloat(params['conf']);
       if (!isNaN(val) && val > 0) {
@@ -943,6 +1068,7 @@ export class ExplorerComponent implements OnInit {
       this.confidenceCutoff.set(dsConfig.defaultConfidenceCutoff);
     }
   }
+
   addGene(gene: GeneData) {
     const activeId = this.activeTabId();
     if (activeId === 'default') {
@@ -959,6 +1085,7 @@ export class ExplorerComponent implements OnInit {
     this.searchTerm.set('');
     this.highlightedIndex.set(-1);
   }
+
   removeGene(uniprotId: string) {
     const activeId = this.activeTabId();
     if (activeId === 'default') {
@@ -973,19 +1100,24 @@ export class ExplorerComponent implements OnInit {
       ));
     }
   }
+
   trackByUniprotId(_index: number, gene: GeneData): string {
     return gene.uniprotId;
   }
+
   onGeneHovered(uniprotId: string | null) {
     this.hoveredGeneId.set(uniprotId);
   }
+
   removeFilterChip(chip: FilterChip) {
     this.toggleFilter(chip.type, chip.value);
   }
+
   clearAllFilters() {
     this.filterState.set(new Map());
     this.selectedProjectIds.set(new Set());
   }
+
   onSearchKeydown(event: KeyboardEvent) {
     const results = this.searchResults();
     const currentIndex = this.highlightedIndex();
@@ -1019,12 +1151,14 @@ export class ExplorerComponent implements OnInit {
         break;
     }
   }
+
   togglePresetInput() {
     this.showPresetInput.update(v => !v);
     if (!this.showPresetInput()) {
       this.presetName.set('');
     }
   }
+
   saveCurrentPreset() {
     const name = this.presetName().trim();
     if (!name) return;
@@ -1039,6 +1173,7 @@ export class ExplorerComponent implements OnInit {
     this.presetName.set('');
     this.showPresetInput.set(false);
   }
+
   loadPreset(preset: FilterPreset) {
     this.selectedGeneIds.set(new Set(preset.geneIds));
     this.filterState.set(new Map(
@@ -1047,13 +1182,16 @@ export class ExplorerComponent implements OnInit {
     this.sortStack.set([...preset.sortStack]);
     this.flippedProjectIds.set(new Set(preset.flippedProjectIds));
   }
+
   loadHistoryEntry(entry: SelectionHistoryEntry) {
     this.selectedGeneIds.set(new Set(entry.geneIds));
     this.showHistoryDropdown.set(false);
   }
+
   deletePreset(preset: FilterPreset) {
     this.preferencesService.deletePreset(preset.id);
   }
+
   setLog2fcCutoff(value: string) {
     const num = parseFloat(value);
     if (isNaN(num) || num <= 0) {
@@ -1062,9 +1200,11 @@ export class ExplorerComponent implements OnInit {
       this.log2fcCutoff.set(num);
     }
   }
+
   clearLog2fcCutoff() {
     this.log2fcCutoff.set(null);
   }
+
   setConfidenceCutoff(value: string) {
     const num = parseFloat(value);
     if (isNaN(num) || num <= 0) {
@@ -1073,9 +1213,11 @@ export class ExplorerComponent implements OnInit {
       this.confidenceCutoff.set(num);
     }
   }
+
   clearConfidenceCutoff() {
     this.confidenceCutoff.set(null);
   }
+
   setGeneSortOrder(order: 'none' | 'increase' | 'decrease') {
     this.geneSortOrder.set(order);
   }
