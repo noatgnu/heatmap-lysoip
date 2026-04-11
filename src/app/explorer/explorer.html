@@ -320,7 +320,7 @@
                 </app-collapsible-section>
               }
             </div>
-            <app-tabs [tabs]="tabs()" [activeId]="activeId()" (tabChange)="switchTab($event)" (tabRemove)="removeTab($event)" (tabAdd)="createTab(Array.from(selectedGeneIds()), 'New Tab')">
+            <app-tabs [tabs]="tabs()" [activeId]="activeTabId()" (tabChange)="switchTab($event)" (tabRemove)="removeTab($event)" (tabAdd)="createTab(Array.from(selectedGeneIds()), 'New Tab')">
               <div class="flex justify-between items-center gap-4 px-1 mb-6">
                 <div class="flex items-center gap-2 flex-wrap">
                   <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Quick Subsets:</span>
