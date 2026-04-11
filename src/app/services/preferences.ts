@@ -5,13 +5,7 @@ export interface FilterPreset {
   name: string;
   dataset: string;
   geneIds: string[];
-  filterState?: Record<string, string[]>; 
-  organs?: string[];
-  proteins?: string[];
-  mutations?: string[];
-  knockouts?: string[];
-  treatments?: string[];
-  fractions?: string[];
+  filterState: Record<string, string[]>;
   sortStack: SortCriterion[];
   flippedProjectIds: string[];
   createdAt: number;
@@ -51,26 +45,20 @@ export class PreferencesService {
     name: string,
     dataset: string,
     geneIds: Set<string>,
-    organs: Set<string>,
-    proteins: Set<string>,
-    mutations: Set<string>,
-    knockouts: Set<string>,
-    treatments: Set<string>,
-    fractions: Set<string>,
+    filterState: Map<string, Set<string>>,
     sortStack: SortCriterion[],
     flippedProjectIds: Set<string>
   ): FilterPreset {
+    const filterStateRecord: Record<string, string[]> = {};
+    filterState.forEach((values, key) => {
+      filterStateRecord[key] = Array.from(values);
+    });
     const preset: FilterPreset = {
       id: crypto.randomUUID(),
       name,
       dataset,
       geneIds: Array.from(geneIds),
-      organs: Array.from(organs),
-      proteins: Array.from(proteins),
-      mutations: Array.from(mutations),
-      knockouts: Array.from(knockouts),
-      treatments: Array.from(treatments),
-      fractions: Array.from(fractions),
+      filterState: filterStateRecord,
       sortStack: [...sortStack],
       flippedProjectIds: Array.from(flippedProjectIds),
       createdAt: Date.now()

@@ -95,15 +95,6 @@
       ],
       "default": "None",
       "priorities": { "NONE": 1, "MLI2": 2 }
-    },
-    {
-      "key": "fraction",
-      "label": "Fraction",
-      "rules": [
-        { "pattern": "mito", "value": "Mito" }
-      ],
-      "default": "Auto",
-      "priorities": { "LYSO": 1, "MITO": 2, "WCL": 3 }
     }
   ]
 }

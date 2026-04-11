@@ -132,12 +132,6 @@ export class DataService {
         projectId: (projectId || '').trim() || `proj-${i}`,
         projectName,
         log2fcIndex: i + 1,
-        organ: categorization['organ'] || 'Other',
-        protein: categorization['protein'] || 'Other',
-        mutation: categorization['mutation'] || 'None',
-        knockout: categorization['knockout'] || 'None',
-        treatment: categorization['treatment'] || 'None',
-        fraction: categorization['fraction'] || (content.includes('LysoIP') ? 'Lyso' : 'WCL'),
         date,
         ...categorization
       });

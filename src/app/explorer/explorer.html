@@ -148,11 +148,9 @@
     </app-collapsible-section>
     <app-collapsible-section title="Grouping Presets">
       <div class="flex flex-col gap-2 p-1">
-        <button (click)="setPreset('organ')" class="text-left text-[11px] font-medium px-3 py-2 bg-white hover:bg-gray-50 rounded border border-gray-200 transition-colors shadow-sm">Organ > Protein > Mutation > Knockout > Treatment</button>
-        <button (click)="setPreset('protein')" class="text-left text-[11px] font-medium px-3 py-2 bg-white hover:bg-gray-50 rounded border border-gray-200 transition-colors shadow-sm">Protein > Mutation > Knockout > Treatment > Organ</button>
-        <button (click)="setPreset('mutation')" class="text-left text-[11px] font-medium px-3 py-2 bg-white hover:bg-gray-50 rounded border border-gray-200 transition-colors shadow-sm">Mutation > Knockout > Treatment > Organ > Protein</button>
-        <button (click)="setPreset('knockout')" class="text-left text-[11px] font-medium px-3 py-2 bg-white hover:bg-gray-50 rounded border border-gray-200 transition-colors shadow-sm">Knockout > Mutation > Treatment > Organ > Protein</button>
-        <button (click)="setPreset('treatment')" class="text-left text-[11px] font-medium px-3 py-2 bg-white hover:bg-gray-50 rounded border border-gray-200 transition-colors shadow-sm">Treatment > Mutation > Organ > Protein > Knockout</button>
+        @for (preset of groupingPresets(); track preset.label) {
+          <button (click)="setPreset(preset.stack)" class="text-left text-[11px] font-medium px-3 py-2 bg-white hover:bg-gray-50 rounded border border-gray-200 transition-colors shadow-sm">{{ preset.label }}</button>
+        }
       </div>
     </app-collapsible-section>
     <app-collapsible-section title="Group By Hierarchy">
@@ -322,97 +320,104 @@
                 </app-collapsible-section>
               }
             </div>
-            <div class="bg-gray-100 px-2 pt-2 flex items-end gap-1 overflow-x-auto no-scrollbar border-b border-gray-300">
-              @for (tab of tabs(); track tab.id) {
-                <div (click)="switchTab(tab.id)" [class.bg-white]="activeTabId() === tab.id" [class.text-indigo-600]="activeTabId() === tab.id" [class.bg-gray-200]="activeTabId() !== tab.id" [class.text-gray-500]="activeTabId() !== tab.id" class="px-4 py-2 rounded-t-lg text-[10px] font-bold uppercase tracking-wider cursor-pointer border-t border-x border-gray-300 flex items-center gap-2 transition-all min-w-[120px] max-w-[200px] group shadow-sm">
-                  <span class="truncate">{{ tab.name }}</span>
-                  @if (tab.id !== 'default') {
-                    <button (click)="removeTab(tab.id, $event)" class="opacity-0 group-hover:opacity-100 hover:text-red-500 transition-all p-0.5 rounded-full hover:bg-gray-300">
-                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                    </button>
+            <app-tabs [tabs]="tabs()" [activeId]="activeId()" (tabChange)="switchTab($event)" (tabRemove)="removeTab($event)" (tabAdd)="createTab(Array.from(selectedGeneIds()), 'New Tab')">
+              <div class="flex justify-between items-center gap-4 px-1 mb-6">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Quick Subsets:</span>
+                  @if (selectedProjectIds().size > 1) {
+                    <div class="flex items-center gap-1 p-1 bg-indigo-50 rounded border border-indigo-100 mr-2">
+                      <span class="text-[9px] font-bold text-indigo-600 mr-1">All Selected:</span>
+                      <button (click)="createConsistentTab(filteredProjects(), 'increase')" title="Common ↑ to ALL selected experiments" class="p-1 rounded bg-red-100 text-red-600 hover:bg-red-200 border border-red-200 transition-colors">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
+                      </button>
+                      <button (click)="createConsistentTab(filteredProjects(), 'decrease')" title="Common ↓ to ALL selected experiments" class="p-1 rounded bg-blue-100 text-blue-600 hover:bg-blue-200 border border-blue-200 transition-colors">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                      </button>
+                    </div>
+                  }
+                  @for (group of projectGroups(); track group.name) {
+                    <div class="flex items-center gap-1 p-1 bg-gray-50 rounded border border-gray-200">
+                      <span class="text-[9px] font-bold text-indigo-600 mr-1">{{ group.name }}:</span>
+                      <button (click)="createConsistentTab(group.projects, 'increase')" title="Consistently ↑ across all experiments in this group" class="p-1 rounded bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 transition-colors">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
+                      </button>
+                      <button (click)="createConsistentTab(group.projects, 'decrease')" title="Consistently ↓ across all experiments in this group" class="p-1 rounded bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 transition-colors">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                      </button>
+                      <div class="relative group/unique ml-1">
+                        <button class="flex items-center gap-1 p-1 rounded bg-white text-gray-600 hover:bg-gray-100 border border-gray-200 transition-colors text-[9px] font-bold uppercase">
+                          Subset By...
+                          <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </button>
+                        <div class="hidden group-hover/unique:block absolute left-0 top-[calc(100%-12px)] pt-3 z-[120]">
+                          <div class="w-80 bg-white shadow-2xl border border-gray-200 rounded-md p-3 max-h-96 overflow-y-auto shadow-2xl">
+                            <div class="flex justify-between items-center mb-3 pb-2 border-b border-gray-100">
+                              <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Subset Builder</span>
+                              <button (click)="clearSubsetCriteria()" class="text-[9px] font-bold text-red-500 hover:text-red-700 uppercase">Clear</button>
+                            </div>
+
+                            <div class="space-y-2 mb-4">
+                              @for (p of group.projects; track p.projectId) {
+                                <div class="flex items-center justify-between group/item py-1">
+                                  <span class="text-[10px] text-gray-700 truncate flex-1 mr-2" [title]="p.projectName">{{ p.projectName }}</span>
+                                  <div class="flex gap-1">
+                                    <button (click)="toggleSubsetCriterion(p.projectId, 'up')" 
+                                            [class.bg-red-500]="subsetCriteria().get(p.projectId) === 'up'"
+                                            [class.text-white]="subsetCriteria().get(p.projectId) === 'up'"
+                                            [class.bg-gray-100]="subsetCriteria().get(p.projectId) !== 'up'"
+                                            class="w-6 h-6 flex items-center justify-center rounded text-[10px] font-bold transition-all shadow-sm">↑</button>
+                                    <button (click)="toggleSubsetCriterion(p.projectId, 'down')"
+                                            [class.bg-blue-500]="subsetCriteria().get(p.projectId) === 'down'"
+                                            [class.text-white]="subsetCriteria().get(p.projectId) === 'down'"
+                                            [class.bg-gray-100]="subsetCriteria().get(p.projectId) !== 'down'"
+                                            class="w-6 h-6 flex items-center justify-center rounded text-[10px] font-bold transition-all shadow-sm">↓</button>
+                                  </div>
+                                </div>
+                              }
+                            </div>
+
+                            <div class="flex gap-2">
+                              <button (click)="createCustomSubset(group.projects, 'intersection')" 
+                                      class="flex-1 px-2 py-1.5 bg-indigo-600 text-white text-[9px] font-bold rounded hover:bg-indigo-700 transition-all uppercase shadow-sm active:scale-95">Intersect (AND)</button>
+                              <button (click)="createCustomSubset(group.projects, 'union')"
+                                      class="flex-1 px-2 py-1.5 bg-gray-600 text-white text-[9px] font-bold rounded hover:bg-gray-600 transition-all uppercase shadow-sm active:scale-95">Union (ANY)</button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>                    </div>
                   }
                 </div>
-              }
-              <button (click)="createTab(Array.from(selectedGeneIds()), 'New Tab')" class="mb-2 ml-2 p-1 rounded-full bg-gray-200 text-gray-500 hover:bg-indigo-600 hover:text-white transition-all shadow-sm">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
-              </button>
-            </div>
-            <div class="flex justify-between items-center gap-4 px-1">
-              <div class="flex items-center gap-2">
-                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Quick Subsets:</span>
-                @if (selectedProjectIds().size > 1) {
-                  <div class="flex items-center gap-1 p-1 bg-indigo-50 rounded border border-indigo-100 mr-2">
-                    <span class="text-[9px] font-bold text-indigo-600 mr-1">All Selected:</span>
-                    <button (click)="createConsistentTab(filteredProjects(), 'increase')" title="Common ↑ to ALL selected experiments" class="p-1 rounded bg-red-100 text-red-600 hover:bg-red-200 border border-red-200 transition-colors">
-                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
-                    </button>
-                    <button (click)="createConsistentTab(filteredProjects(), 'decrease')" title="Common ↓ to ALL selected experiments" class="p-1 rounded bg-blue-100 text-blue-600 hover:bg-blue-200 border border-blue-200 transition-colors">
-                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                    </button>
+                <div class="flex items-center gap-4 flex-shrink-0">
+                  <span class="text-xs font-bold text-gray-500 uppercase">Orientation:</span>
+                  <div class="flex bg-gray-100 p-1 rounded-lg border border-gray-200">
+                    <label class="flex items-center gap-1.5 px-3 py-1 rounded-md cursor-pointer transition-all" [class.bg-white]="!isHeatmapSwapped()" [class.shadow-sm]="!isHeatmapSwapped()" [class.text-indigo-600]="!isHeatmapSwapped()">
+                      <input type="radio" class="hidden" [checked]="!isHeatmapSwapped()" (change)="isHeatmapSwapped.set(false)">
+                      <span class="text-[11px] font-bold uppercase">Exp on Top</span>
+                    </label>
+                    <label class="flex items-center gap-1.5 px-3 py-1 rounded-md cursor-pointer transition-all" [class.bg-white]="isHeatmapSwapped()" [class.shadow-sm]="isHeatmapSwapped()" [class.text-indigo-600]="isHeatmapSwapped()">
+                      <input type="radio" class="hidden" [checked]="isHeatmapSwapped()" (change)="isHeatmapSwapped.set(true)">
+                      <span class="text-[11px] font-bold uppercase">Prot on Top</span>
+                    </label>
                   </div>
-                }
+                </div>
+              </div>
+
+              <div [class]="projectGroups().length > 1 ? 'grid grid-cols-2 gap-4' : 'flex flex-col gap-4'">
                 @for (group of projectGroups(); track group.name) {
-                  <div class="flex items-center gap-1 p-1 bg-gray-50 rounded border border-gray-200">
-                    <span class="text-[9px] font-bold text-indigo-600 mr-1">{{ group.name }}:</span>
-                    <button (click)="createConsistentTab(group.projects, 'increase')" title="Consistently ↑ across all experiments in this group" class="p-1 rounded bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 transition-colors">
-                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
-                    </button>
-                    <button (click)="createConsistentTab(group.projects, 'decrease')" title="Consistently ↓ across all experiments in this group" class="p-1 rounded bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 transition-colors">
-                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                    </button>
-                    <div class="relative group/unique ml-1">
-                      <button class="flex items-center gap-1 p-1 rounded bg-white text-gray-600 hover:bg-gray-100 border border-gray-200 transition-colors text-[9px] font-bold uppercase">
-                        Subset By...
-                        <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                      </button>
-                      <div class="hidden group-hover/unique:block absolute left-0 top-[calc(100%-12px)] pt-3 z-[120]">
-                        <div class="w-64 bg-white shadow-xl border border-gray-200 rounded-md py-1 max-h-60 overflow-y-auto shadow-2xl">
-                          @for (p of group.projects; track p.projectId) {
-                            <div class="px-3 py-2 border-b border-gray-50 last:border-0 hover:bg-gray-50">
-                              <p class="text-[9px] font-bold text-gray-900 mb-1 truncate">{{ p.projectName }}</p>
-                              <div class="grid grid-cols-2 gap-1">
-                                <button (click)="createUniqueTab(p, group.projects, 'increase')" class="text-[8px] font-bold text-red-600 hover:bg-red-50 border border-red-100 py-1 rounded uppercase tracking-tighter">Only ↑</button>
-                                <button (click)="createSharedTab(p, group.projects, 'increase')" class="text-[8px] font-bold text-red-600 hover:bg-red-50 border border-red-100 py-1 rounded uppercase tracking-tighter">Shared ↑</button>
-                                <button (click)="createUniqueTab(p, group.projects, 'decrease')" class="text-[8px] font-bold text-blue-600 hover:bg-blue-50 border border-blue-100 py-1 rounded uppercase tracking-tighter">Only ↓</button>
-                                <button (click)="createSharedTab(p, group.projects, 'decrease')" class="text-[8px] font-bold text-blue-600 hover:bg-blue-50 border border-blue-100 py-1 rounded uppercase tracking-tighter">Shared ↓</button>
-                              </div>
-                            </div>
-                          }
-                        </div>
+                  <div class="border border-gray-200 rounded-lg p-4 bg-gray-50 shadow-sm">
+                    <h3 class="text-md font-bold text-indigo-700 mb-3">{{ group.name }} Experiments ({{ group.projects.length }})</h3>
+                    <app-heatmap [genes]="displayedGenes()" [projects]="group.projects" [allProjects]="projects()" [selectedGeneIds]="selectedHeatmapProteinIds()" [summaryDisplayMode]="summaryDisplayMode()" [isSwapped]="isHeatmapSwapped()" [labelIncrease]="currentDatasetConfig()?.labelIncrease || 'Increase activity'" [labelDecrease]="currentDatasetConfig()?.labelDecrease || 'Decrease activity'" (geneHovered)="onGeneHovered($event)" (geneSelected)="onHeatmapGeneSelected($event)"></app-heatmap>
+                    <div class="mt-3 flex flex-col gap-3">
+                      <div class="flex gap-4 text-[10px] font-bold">
+                        <span class="px-2 py-1 rounded bg-red-100 text-red-800 uppercase shadow-sm">↑ Increase: @if (summaryDisplayMode() === 'number') { {{ group.summary.increase }} } @else { {{ group.summary.total > 0 ? Math.round((group.summary.increase / group.summary.total) * 100) : 0 }}% }</span>
+                        <span class="px-2 py-1 rounded bg-blue-100 text-blue-800 uppercase shadow-sm">↓ Decrease: @if (summaryDisplayMode() === 'number') { {{ group.summary.decrease }} } @else { {{ group.summary.total > 0 ? Math.round((group.summary.decrease / group.summary.total) * 100) : 0 }}% }</span>
+                        <span class="px-2 py-1 rounded bg-gray-100 text-gray-600 uppercase">Total values: {{ group.summary.total }}</span>
                       </div>
                     </div>
                   </div>
                 }
               </div>
-              <div class="flex items-center gap-4">
-                <span class="text-xs font-bold text-gray-500 uppercase">Heatmap Orientation:</span>
-                <div class="flex bg-gray-100 p-1 rounded-lg border border-gray-200">
-                  <label class="flex items-center gap-1.5 px-3 py-1 rounded-md cursor-pointer transition-all" [class.bg-white]="!isHeatmapSwapped()" [class.shadow-sm]="!isHeatmapSwapped()" [class.text-indigo-600]="!isHeatmapSwapped()">
-                    <input type="radio" class="hidden" [checked]="!isHeatmapSwapped()" (change)="isHeatmapSwapped.set(false)">
-                    <span class="text-[11px] font-bold uppercase">Exp on Top</span>
-                  </label>
-                  <label class="flex items-center gap-1.5 px-3 py-1 rounded-md cursor-pointer transition-all" [class.bg-white]="isHeatmapSwapped()" [class.shadow-sm]="isHeatmapSwapped()" [class.text-indigo-600]="isHeatmapSwapped()">
-                    <input type="radio" class="hidden" [checked]="isHeatmapSwapped()" (change)="isHeatmapSwapped.set(true)">
-                    <span class="text-[11px] font-bold uppercase">Prot on Top</span>
-                  </label>
-                </div>
-              </div>
-            </div>
-            <div [class]="projectGroups().length > 1 ? 'grid grid-cols-2 gap-4' : 'flex flex-col gap-4'">
-              @for (group of projectGroups(); track group.name) {
-                <div class="border border-gray-200 rounded-lg p-4 bg-gray-50 shadow-sm">
-                  <h3 class="text-md font-bold text-indigo-700 mb-3">{{ group.name }} Experiments ({{ group.projects.length }})</h3>
-                  <app-heatmap [genes]="displayedGenes()" [projects]="group.projects" [allProjects]="projects()" [selectedGeneIds]="selectedHeatmapProteinIds()" [summaryDisplayMode]="summaryDisplayMode()" [isSwapped]="isHeatmapSwapped()" [labelIncrease]="currentDatasetConfig()?.labelIncrease || 'Increase activity'" [labelDecrease]="currentDatasetConfig()?.labelDecrease || 'Decrease activity'" (geneHovered)="onGeneHovered($event)" (geneSelected)="onHeatmapGeneSelected($event)"></app-heatmap>
-                  <div class="mt-3 flex flex-col gap-3">
-                    <div class="flex gap-4 text-[10px] font-bold">
-                      <span class="px-2 py-1 rounded bg-red-100 text-red-800 uppercase shadow-sm">↑ Increase: @if (summaryDisplayMode() === 'number') { {{ group.summary.increase }} } @else { {{ group.summary.total > 0 ? Math.round((group.summary.increase / group.summary.total) * 100) : 0 }}% }</span>
-                      <span class="px-2 py-1 rounded bg-blue-100 text-blue-800 uppercase shadow-sm">↓ Decrease: @if (summaryDisplayMode() === 'number') { {{ group.summary.decrease }} } @else { {{ group.summary.total > 0 ? Math.round((group.summary.decrease / group.summary.total) * 100) : 0 }}% }</span>
-                      <span class="px-2 py-1 rounded bg-gray-100 text-gray-600 uppercase">Total values: {{ group.summary.total }}</span>
-                    </div>
-                  </div>
-                </div>
-              }
-            </div>
+            </app-tabs>
             @if (filteredProjects().length === 0) { <div class="text-center text-gray-400 py-8">No experiments match the current filters.</div> }
           </div>
         }

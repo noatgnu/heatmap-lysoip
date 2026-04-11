@@ -9,6 +9,7 @@ import { CurtainFilterComponent } from '../curtain-filter/curtain-filter';
 import { HeatmapComponent } from '../heatmap/heatmap';
 import { RankPlotComponent } from '../components/rank-plot/rank-plot';
 import { SkeletonLoaderComponent } from '../components/skeleton-loader/skeleton-loader';
+import { TabsComponent } from '../components/tabs/tabs';
 import { FilterChipsComponent, FilterChip } from '../components/filter-chips/filter-chips';
 import { CollapsibleSectionComponent } from '../components/collapsible-section/collapsible-section';
 import { FindGenePipe } from '../pipes/find-gene.pipe';
@@ -20,7 +21,7 @@ import { HistoryService, SelectionHistoryEntry } from '../services/history.servi
 @Component({
   selector: 'app-explorer',
   standalone: true,
-  imports: [FormsModule, DragDropModule, ScrollingModule, CurtainFilterComponent, HeatmapComponent, RankPlotComponent, SkeletonLoaderComponent, FilterChipsComponent, CollapsibleSectionComponent, RouterLink, FindGenePipe, TitleCasePipe, DatePipe],
+  imports: [FormsModule, DragDropModule, ScrollingModule, CurtainFilterComponent, HeatmapComponent, RankPlotComponent, SkeletonLoaderComponent, TabsComponent, FilterChipsComponent, CollapsibleSectionComponent, RouterLink, FindGenePipe, TitleCasePipe, DatePipe],
   templateUrl: './explorer.html',
   styleUrl: './explorer.scss'
 })
@@ -56,9 +57,59 @@ export class ExplorerComponent implements OnInit {
   tabs = signal<HeatmapTab[]>([]);
   activeTabId = signal<string>('default');
   showHistoryDropdown = signal(false);
+  subsetCriteria = signal<Map<string, 'up' | 'down' | 'none'>>(new Map());
   selectionHistory = computed(() => this.historyService.getHistoryForDataset(this.currentDataset()));
   getFilterSet(key: string): Set<string> {
     return this.filterState().get(key) || new Set();
+  }
+  toggleSubsetCriterion(projectId: string, direction: 'up' | 'down') {
+    this.subsetCriteria.update(map => {
+      const newMap = new Map(map);
+      const current = newMap.get(projectId) || 'none';
+      if (current === direction) {
+        newMap.set(projectId, 'none');
+      } else {
+        newMap.set(projectId, direction);
+      }
+      return newMap;
+    });
+  }
+  clearSubsetCriteria() {
+    this.subsetCriteria.set(new Map());
+  }
+  createCustomSubset(groupProjects: ProjectMetadata[], mode: 'intersection' | 'union') {
+    const criteria = this.subsetCriteria();
+    const activeProjects = groupProjects.filter(p => {
+      const val = criteria.get(p.projectId);
+      return val && val !== 'none';
+    });
+    if (activeProjects.length === 0) return;
+    const log2fcCut = this.log2fcCutoff() || 0;
+    const confCut = this.confidenceCutoff() || 0;
+    const allProjs = this.projects();
+    const flipped = this.flippedProjectIds();
+    const subset = this.allGenes().filter(g => {
+      const matchResults = activeProjects.map(p => {
+        const idx = allProjs.indexOf(p);
+        let val = g.log2fcs[idx];
+        const conf = g.confidences[idx];
+        if (val === null || conf === null) return false;
+        if (flipped.has(p.projectId)) val *= -1;
+        const targetDir = criteria.get(p.projectId);
+        const passesLog2fc = Math.abs(val) >= log2fcCut;
+        const passesConf = conf >= confCut;
+        const correctDirection = targetDir === 'up' ? val > 0 : val < 0;
+        return passesLog2fc && passesConf && correctDirection;
+      });
+      return mode === 'intersection' ? matchResults.every(r => r) : matchResults.some(r => r);
+    });
+    if (subset.length > 0) {
+      const names = activeProjects.map(p => {
+        const dir = criteria.get(p.projectId) === 'up' ? '↑' : '↓';
+        return `${p.projectName}${dir}`;
+      }).join(mode === 'intersection' ? ' & ' : ' | ');
+      this.createTab(subset.map(g => g.uniprotId), `${mode === 'intersection' ? '∩' : '∪'} ${names} (${subset.length})`);
+    }
   }
   createTab(geneIds: string[], name?: string) {
     const id = Math.random().toString(36).substring(2, 9);
@@ -274,7 +325,18 @@ export class ExplorerComponent implements OnInit {
       this.createTab(subset.map(g => g.uniprotId), `${target.projectName} Shared ${direction === 'increase' ? '↑' : '↓'} (${subset.length})`);
     }
   }
-  sortStack = signal<SortCriterion[]>(['organ', 'protein', 'mutation', 'knockout', 'treatment']);
+  groupingPresets = computed(() => {
+    const categorization = this.config()?.categorization || [];
+    if (categorization.length === 0) return [];
+    return categorization.map(cat => {
+      const primaryKey = cat.key;
+      const others = categorization.filter(c => c.key !== primaryKey).map(c => c.key);
+      const stack = [primaryKey, ...others] as SortCriterion[];
+      const label = [cat.label, ...categorization.filter(c => c.key !== primaryKey).map(c => c.label)].join(' > ');
+      return { label, stack };
+    });
+  });
+  sortStack = signal<SortCriterion[]>([]);
   showPresetInput = signal(false);
   presetName = signal('');
   currentPresets = computed(() => this.preferencesService.getPresetsForDataset(this.currentDataset()));
@@ -391,12 +453,8 @@ export class ExplorerComponent implements OnInit {
       });
     });
   }
-  setPreset(preset: string) {
-    if (preset === 'organ') this.sortStack.set(['organ', 'protein', 'mutation', 'knockout', 'treatment']);
-    else if (preset === 'mutation') this.sortStack.set(['mutation', 'treatment', 'organ', 'protein', 'knockout']);
-    else if (preset === 'protein') this.sortStack.set(['protein', 'mutation', 'knockout', 'treatment', 'organ']);
-    else if (preset === 'treatment') this.sortStack.set(['treatment', 'mutation', 'organ', 'protein', 'knockout']);
-    else if (preset === 'knockout') this.sortStack.set(['knockout', 'mutation', 'treatment', 'organ', 'protein']);
+  setPreset(stack: SortCriterion[]) {
+    this.sortStack.set([...stack]);
   }
   loadData(type: string) {
     this.isLoading.set(true);
@@ -424,6 +482,10 @@ export class ExplorerComponent implements OnInit {
       }
       if (!params['conf'] && dsConfig?.defaultConfidenceCutoff !== undefined) {
         this.confidenceCutoff.set(dsConfig.defaultConfidenceCutoff);
+      }
+      if (!params['sort']) {
+        const categorization = this.config()?.categorization || [];
+        this.sortStack.set(categorization.map(c => c.key) as SortCriterion[]);
       }
       this.isLoading.set(false);
     });
@@ -970,12 +1032,7 @@ export class ExplorerComponent implements OnInit {
       name,
       this.currentDataset(),
       this.selectedGeneIds(),
-      this.getFilterSet('organ'),
-      this.getFilterSet('protein'),
-      this.getFilterSet('mutation'),
-      this.getFilterSet('knockout'),
-      this.getFilterSet('treatment'),
-      this.getFilterSet('fraction'),
+      this.filterState(),
       this.sortStack(),
       this.flippedProjectIds()
     );
@@ -984,16 +1041,9 @@ export class ExplorerComponent implements OnInit {
   }
   loadPreset(preset: FilterPreset) {
     this.selectedGeneIds.set(new Set(preset.geneIds));
-    this.filterState.update(map => {
-      const newMap = new Map(map);
-      if (preset.organs) newMap.set('organ', new Set(preset.organs));
-      if (preset.proteins) newMap.set('protein', new Set(preset.proteins));
-      if (preset.mutations) newMap.set('mutation', new Set(preset.mutations));
-      if (preset.knockouts) newMap.set('knockout', new Set(preset.knockouts));
-      if (preset.treatments) newMap.set('treatment', new Set(preset.treatments));
-      if (preset.fractions) newMap.set('fraction', new Set(preset.fractions));
-      return newMap;
-    });
+    this.filterState.set(new Map(
+      Object.entries(preset.filterState).map(([key, val]) => [key, new Set(val)])
+    ));
     this.sortStack.set([...preset.sortStack]);
     this.flippedProjectIds.set(new Set(preset.flippedProjectIds));
   }
