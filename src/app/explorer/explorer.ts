@@ -65,6 +65,7 @@ export class ExplorerComponent implements OnInit {
   activeTabId = signal<string>('default');
   showHistoryDropdown = signal(false);
   subsetCriteria = signal<Map<string, 'up' | 'down' | 'none'>>(new Map());
+  isSwitching = signal(false);
 
   selectionHistory = computed(() => this.historyService.getHistoryForDataset(this.currentDataset()));
 
@@ -629,45 +630,46 @@ export class ExplorerComponent implements OnInit {
     const activeTab = this.tabs().find(t => t.id === activeId);
     const sourceIds = (activeId === 'default' || !activeTab) ? globalSelected : new Set(activeTab.geneIds);
     
-    const flipped = this.flippedProjectIds();
+    if (sourceIds.size === 0) return [];
+
     const allProjs = this.projects();
     const log2fcCut = this.log2fcCutoff();
     const confCut = this.confidenceCutoff();
     const sortOrder = this.geneSortOrder();
     const filterTerm = this.geneFilterTerm().toLowerCase().trim();
     const filteredProjIndices = new Set(this.filteredProjects().map(p => allProjs.indexOf(p)));
+    const flippedIds = this.flippedProjectIds();
 
-    const genes = this.allGenes()
-      .filter((g: GeneData) => sourceIds.has(g.uniprotId))
-      .filter((g: GeneData) => {
-        if (!filterTerm) return true;
-        return g.gene.toLowerCase().includes(filterTerm) || g.uniprotId.toLowerCase().includes(filterTerm);
-      })
-      .map(g => {
-        const log2fcs = g.log2fcs.map((val, idx) => {
-          if (val === null) return null;
-          const projId = allProjs[idx].projectId;
-          return flipped.has(projId) ? val * -1 : val;
-        });
-        return { ...g, log2fcs };
-      })
-      .filter(g => {
-        const hasLog2fcCutoff = log2fcCut !== null && log2fcCut > 0;
-        const hasConfCutoff = confCut !== null && confCut > 0;
-        if (!hasLog2fcCutoff && !hasConfCutoff) return true;
+    // 1. Get base genes from stable source (no mapping to keep objects stable)
+    const genes = this.allGenes().filter(g => sourceIds.has(g.uniprotId));
 
-        return g.log2fcs.some((val, idx) => {
-          if (!filteredProjIndices.has(idx)) return false;
-          if (val === null) return false;
-          const passesLog2fc = !hasLog2fcCutoff || Math.abs(val) >= log2fcCut!;
-          const conf = g.confidences[idx];
-          const passesConf = !hasConfCutoff || (conf !== null && conf >= confCut!);
-          return passesLog2fc && passesConf;
-        });
+    // 2. Apply search filter
+    const termFiltered = filterTerm 
+      ? genes.filter(g => g.gene.toLowerCase().includes(filterTerm) || g.uniprotId.toLowerCase().includes(filterTerm))
+      : genes;
+
+    // 3. Apply significance filter (NON-DESTRUCTIVE - just for display)
+    const filtered = termFiltered.filter(g => {
+      const hasLog2fcCutoff = log2fcCut !== null && log2fcCut > 0;
+      const hasConfCutoff = confCut !== null && confCut > 0;
+      if (!hasLog2fcCutoff && !hasConfCutoff) return true;
+
+      return g.log2fcs.some((val, idx) => {
+        if (!filteredProjIndices.has(idx) || val === null) return false;
+        
+        let v = val;
+        if (flippedIds.has(allProjs[idx].projectId)) v *= -1;
+        
+        const passesLog2fc = !hasLog2fcCutoff || Math.abs(v) >= log2fcCut!;
+        const conf = g.confidences[idx];
+        const passesConf = !hasConfCutoff || (conf !== null && conf >= confCut!);
+        return passesLog2fc && passesConf;
       });
+    });
 
-    if (sortOrder === 'none') return genes;
-    return [...genes].sort((a, b) => {
+    // 4. Sort
+    if (sortOrder === 'none') return filtered;
+    return [...filtered].sort((a, b) => {
       const countA = this.countDirectionForGene(a, filteredProjIndices, log2fcCut, confCut, sortOrder);
       const countB = this.countDirectionForGene(b, filteredProjIndices, log2fcCut, confCut, sortOrder);
       return countB - countA;
@@ -682,14 +684,20 @@ export class ExplorerComponent implements OnInit {
     direction: 'increase' | 'decrease'
   ): number {
     let count = 0;
+    const flippedIds = this.flippedProjectIds();
+    const projs = this.projects();
+
     gene.log2fcs.forEach((val, idx) => {
       if (!projIndices.has(idx) || val === null) return;
       const conf = gene.confidences[idx];
       const passesConf = confCut === null || confCut <= 0 || (conf !== null && conf >= confCut);
       const passesLog2fc = log2fcCut === null || log2fcCut <= 0 || Math.abs(val) >= log2fcCut;
+      
       if (passesConf && passesLog2fc) {
-        if (direction === 'increase' && val > 0) count++;
-        else if (direction === 'decrease' && val < 0) count++;
+        let v = val;
+        if (flippedIds.has(projs[idx].projectId)) v *= -1;
+        if (direction === 'increase' && v > 0) count++;
+        else if (direction === 'decrease' && v < 0) count++;
       }
     });
     return count;

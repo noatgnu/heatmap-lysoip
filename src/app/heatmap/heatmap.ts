@@ -13,6 +13,7 @@ export class HeatmapComponent {
   genes = input.required<GeneData[]>();
   projects = input.required<ProjectMetadata[]>();
   allProjects = input.required<ProjectMetadata[]>();
+  flippedProjectIds = input<Set<string>>(new Set());
   selectedGeneIds = input<Set<string>>(new Set());
   summaryDisplayMode = input<'number' | 'proportion'>('proportion');
   isSwapped = input<boolean>(false);
@@ -190,7 +191,13 @@ export class HeatmapComponent {
       xCoords = projCoords;
       yCoords = geneCoords;
       z = genes.map((g: GeneData) =>
-        projs.map((_, projIdx: number) => g.log2fcs[projIndices[projIdx]])
+        projs.map((p: ProjectMetadata, projIdx: number) => {
+          let val = g.log2fcs[projIndices[projIdx]];
+          if (val !== null && this.flippedProjectIds().has(p.projectId)) {
+            val *= -1;
+          }
+          return val;
+        })
       );
       customdata = genes.map((g: GeneData) =>
         projs.map((_, projIdx: number) => ({
@@ -204,8 +211,14 @@ export class HeatmapComponent {
       yLabels = projLabels;
       xCoords = geneCoords;
       yCoords = projCoords;
-      z = projs.map((_, projIdx: number) =>
-        genes.map((g: GeneData) => g.log2fcs[projIndices[projIdx]])
+      z = projs.map((p: ProjectMetadata, projIdx: number) =>
+        genes.map((g: GeneData) => {
+          let val = g.log2fcs[projIndices[projIdx]];
+          if (val !== null && this.flippedProjectIds().has(p.projectId)) {
+            val *= -1;
+          }
+          return val;
+        })
       );
       customdata = projs.map((_, projIdx: number) =>
         genes.map((g: GeneData) => ({
@@ -219,10 +232,14 @@ export class HeatmapComponent {
       let increase = 0;
       let decrease = 0;
       let total = 0;
-      projIndices.forEach(projIdx => {
-        const val = g.log2fcs[projIdx];
+      projIndices.forEach((allProjIdx, projIdx) => {
+        let val = g.log2fcs[allProjIdx];
         if (val !== null) {
           total++;
+          const projId = projs[projIdx].projectId;
+          if (this.flippedProjectIds().has(projId)) {
+            val *= -1;
+          }
           if (val > 0) increase++;
           else if (val < 0) decrease++;
         }

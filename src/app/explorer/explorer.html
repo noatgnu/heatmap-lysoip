@@ -402,24 +402,41 @@
                 </div>
               </div>
 
-              <div [class]="projectGroups().length > 1 ? 'grid grid-cols-2 gap-4' : 'flex flex-col gap-4'">
-                @for (group of projectGroups(); track group.name) {
-                  <div class="border border-gray-200 rounded-lg p-4 bg-gray-50 shadow-sm">
-                    <h3 class="text-md font-bold text-indigo-700 mb-3">{{ group.name }} Experiments ({{ group.projects.length }})</h3>
-                    <app-heatmap [genes]="displayedGenes()" [projects]="group.projects" [allProjects]="projects()" [selectedGeneIds]="selectedHeatmapProteinIds()" [summaryDisplayMode]="summaryDisplayMode()" [isSwapped]="isHeatmapSwapped()" [labelIncrease]="currentDatasetConfig()?.labelIncrease || 'Increase activity'" [labelDecrease]="currentDatasetConfig()?.labelDecrease || 'Decrease activity'" (geneHovered)="onGeneHovered($event)" (geneSelected)="onHeatmapGeneSelected($event)"></app-heatmap>
-                    <div class="mt-3 flex flex-col gap-3">
-                      @let summary = groupSummaries().get(group.name);
-                      @if (summary) {
-                        <div class="flex gap-4 text-[10px] font-bold">
-                          <span class="px-2 py-1 rounded bg-red-100 text-red-800 uppercase shadow-sm">↑ Increase: @if (summaryDisplayMode() === 'number') { {{ summary.increase }} } @else { {{ summary.total > 0 ? Math.round((summary.increase / summary.total) * 100) : 0 }}% }</span>
-                          <span class="px-2 py-1 rounded bg-blue-100 text-blue-800 uppercase shadow-sm">↓ Decrease: @if (summaryDisplayMode() === 'number') { {{ summary.decrease }} } @else { {{ summary.total > 0 ? Math.round((summary.decrease / summary.total) * 100) : 0 }}% }</span>
-                          <span class="px-2 py-1 rounded bg-gray-100 text-gray-600 uppercase">Total values: {{ summary.total }}</span>
-                        </div>
-                      }
+              @if (!isSwitching()) {
+                <div [class]="projectGroups().length > 1 ? 'grid grid-cols-2 gap-4' : 'flex flex-col gap-4'">
+                  @for (group of projectGroups(); track group.name) {
+                    <div class="border border-gray-200 rounded-lg p-4 bg-gray-50 shadow-sm">
+                      <h3 class="text-md font-bold text-indigo-700 mb-3">{{ group.name }} Experiments ({{ group.projects.length }})</h3>
+                      <app-heatmap [genes]="displayedGenes()" 
+                                   [projects]="group.projects" 
+                                   [allProjects]="projects()" 
+                                   [flippedProjectIds]="flippedProjectIds()"
+                                   [selectedGeneIds]="selectedHeatmapProteinIds()" 
+                                   [summaryDisplayMode]="summaryDisplayMode()" 
+                                   [isSwapped]="isHeatmapSwapped()" 
+                                   [labelIncrease]="currentDatasetConfig()?.labelIncrease || 'Increase activity'" 
+                                   [labelDecrease]="currentDatasetConfig()?.labelDecrease || 'Decrease activity'" 
+                                   (geneHovered)="onGeneHovered($event)" 
+                                   (geneSelected)="onHeatmapGeneSelected($event)"></app-heatmap>
+                      <div class="mt-3 flex flex-col gap-3">
+                        @let summary = groupSummaries().get(group.name);
+                        @if (summary) {
+                          <div class="flex gap-4 text-[10px] font-bold">
+                            <span class="px-2 py-1 rounded bg-red-100 text-red-800 uppercase shadow-sm">↑ Increase: @if (summaryDisplayMode() === 'number') { {{ summary.increase }} } @else { {{ summary.total > 0 ? Math.round((summary.increase / summary.total) * 100) : 0 }}% }</span>
+                            <span class="px-2 py-1 rounded bg-blue-100 text-blue-800 uppercase shadow-sm">↓ Decrease: @if (summaryDisplayMode() === 'number') { {{ summary.decrease }} } @else { {{ summary.total > 0 ? Math.round((summary.decrease / summary.total) * 100) : 0 }}% }</span>
+                            <span class="px-2 py-1 rounded bg-gray-100 text-gray-600 uppercase">Total values: {{ summary.total }}</span>
+                          </div>
+                        }
+                      </div>
                     </div>
-                  </div>
-                }
-              </div>
+                  }
+                </div>
+              } @else {
+                <div class="flex flex-col items-center justify-center py-20 opacity-50">
+                  <app-skeleton-loader variant="heatmap"></app-skeleton-loader>
+                  <p class="text-sm font-medium text-gray-500 mt-4 animate-pulse uppercase tracking-widest">Switching Subset...</p>
+                </div>
+              }
             </app-tabs>
             @if (filteredProjects().length === 0) { <div class="text-center text-gray-400 py-8">No experiments match the current filters.</div> }
           </div>
