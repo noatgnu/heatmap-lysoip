@@ -95,7 +95,7 @@
         @if (hasMultipleDatasets()) {
           <div class="border-t border-gray-100 my-1"></div>
           <a routerLink="/comparison" class="px-4 py-2 text-sm font-medium rounded-md transition-colors text-left flex items-center gap-2 no-underline bg-indigo-50 text-indigo-700 border border-indigo-100 shadow-sm hover:bg-indigo-100">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2(0 00-2-2H5a2 2-0 00-2 2v6a2 2(0 002 2h2a2 2-0 002-2m0 0V5a2 2-0 012-2h2a2 2-0 012 2v10m-6 0a2 2-0 002 2h2a2 2-0 002-2m0 0V5a2 2-0 012-2h2a2 2-0 012 2v14a2 2-0 01-2 2h-2a2 2-0 01-2-2z"/></svg> Dataset Comparison
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2(0 00-2-2H5a2 2-0 00-2 2v6a2 2(0 002 2h2a2 2(0 002-2m0 0V5a2 2-0 012-2h2a2 2-0 002-2M8 5a2 2-0 012-2h2a2 2-0 012 2v10m-6 0a2 2(0 002 2h2a2 2(0 002-2m0 0V5a2 2-0 012-2h2a2 2-0 012 2v14a2 2-0 01-2 2h-2a2 2-0 01-2-2z"/></svg> Dataset Comparison
           </a>
         }
       </div>
@@ -212,7 +212,7 @@
             <svg class="mr-1.5 h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg> Reset
           </button>
           <button (click)="copyUrl()" class="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 transition-all active:scale-95">
-            <svg class="mr-1.5 h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg> URL
+            <svg class="mr-1.5 h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2(0 00-2 2v12a2 2(0 002 2h10a2 2(0 002-2v-1M8 5a2 2(0 002 2h2a2 2(0 002-2M8 5a2 2(0 012-2h2a2 2(0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg> URL
           </button>
         </div>
       </div>
@@ -351,59 +351,49 @@
                         </button>
                         <div class="hidden group-hover/unique:block absolute left-0 top-[calc(100%-12px)] pt-3 z-[120]">
                           <div class="w-80 bg-white shadow-2xl border border-gray-200 rounded-md p-3 max-h-96 overflow-y-auto shadow-2xl">
-                            <div class="flex justify-between items-center mb-3 pb-2 border-b border-gray-100">
-                              <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Subset Builder</span>
-                              <button (click)="clearSubsetCriteria()" class="text-[9px] font-bold text-red-500 hover:text-red-700 uppercase">Clear</button>
+                          <div class="flex justify-between items-center mb-3 pb-2 border-b border-gray-100">
+                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Subset Builder</span>
+                            <button (click)="clearSubsetCriteria()" class="text-[9px] font-bold text-red-500 hover:text-red-700 uppercase">Clear</button>
+                          </div>
+                          
+                          <div class="grid grid-cols-2 gap-2 mb-4 p-2 bg-gray-50 rounded border border-gray-100">
+                            <div class="flex flex-col gap-1">
+                              <label class="text-[9px] font-bold text-gray-500 uppercase">Min Log2FC</label>
+                              <input type="number" [ngModel]="subsetLog2fc()" (ngModelChange)="subsetLog2fc.set()" step="0.1" min="0" placeholder="Global" class="w-full px-2 py-1 text-[10px] border border-gray-300 rounded focus:ring-1 focus:ring-indigo-500 outline-none transition-all shadow-sm"/>
                             </div>
-
-                            <div class="grid grid-cols-2 gap-2 mb-4 p-2 bg-gray-50 rounded border border-gray-100">
-                              <div class="flex flex-col gap-1">
-                                <label class="text-[9px] font-bold text-gray-500 uppercase">Min Log2FC</label>
-                                <input type="number" [ngModel]="subsetLog2fc()" (ngModelChange)="subsetLog2fc.set($event)" step="0.1" min="0" placeholder="Global" class="w-full px-2 py-1 text-[10px] border border-gray-300 rounded focus:ring-1 focus:ring-indigo-500 outline-none transition-all shadow-sm"/>
-                              </div>
-                              <div class="flex flex-col gap-1">
-                                <label class="text-[9px] font-bold text-gray-500 uppercase">Min Conf.</label>
-                                <input type="number" [ngModel]="subsetConfidence()" (ngModelChange)="subsetConfidence.set($event)" step="0.1" min="0" placeholder="Global" class="w-full px-2 py-1 text-[10px] border border-gray-300 rounded focus:ring-1 focus:ring-indigo-500 outline-none transition-all shadow-sm"/>
-                              </div>
-                            </div>
-
-                            <div class="space-y-2 mb-4">
-                              <div class="flex flex-col gap-1">
-                                <label class="text-[9px] font-bold text-gray-500 uppercase">Min Log2FC</label>
-                                <input type="number" [ngModel]="subsetLog2fc()" (ngModelChange)="subsetLog2fc.set($event)" step="0.1" min="0" placeholder="Global" class="w-full px-2 py-1 text-[10px] border border-gray-300 rounded focus:ring-1 focus:ring-indigo-500 outline-none transition-all shadow-sm"/>
-                              </div>
-                              <div class="flex flex-col gap-1">
-                                <label class="text-[9px] font-bold text-gray-500 uppercase">Min Conf.</label>
-                                <input type="number" [ngModel]="subsetConfidence()" (ngModelChange)="subsetConfidence.set($event)" step="0.1" min="0" placeholder="Global" class="w-full px-2 py-1 text-[10px] border border-gray-300 rounded focus:ring-1 focus:ring-indigo-500 outline-none transition-all shadow-sm"/>
-                              </div>
-                            </div>
-
-                            <div class="space-y-2 mb-4">                              @for (p of group.projects; track p.projectId) {
-                                <div class="flex items-center justify-between group/item py-1">
-                                  <span class="text-[10px] text-gray-700 truncate flex-1 mr-2" [title]="p.projectName">{{ p.projectName }}</span>
-                                  <div class="flex gap-1">
-                                    <button (click)="toggleSubsetCriterion(p.projectId, 'up')" 
-                                            [class.bg-red-500]="subsetCriteria().get(p.projectId) === 'up'"
-                                            [class.text-white]="subsetCriteria().get(p.projectId) === 'up'"
-                                            [class.bg-gray-100]="subsetCriteria().get(p.projectId) !== 'up'"
-                                            class="w-6 h-6 flex items-center justify-center rounded text-[10px] font-bold transition-all shadow-sm">↑</button>
-                                    <button (click)="toggleSubsetCriterion(p.projectId, 'down')"
-                                            [class.bg-blue-500]="subsetCriteria().get(p.projectId) === 'down'"
-                                            [class.text-white]="subsetCriteria().get(p.projectId) === 'down'"
-                                            [class.bg-gray-100]="subsetCriteria().get(p.projectId) !== 'down'"
-                                            class="w-6 h-6 flex items-center justify-center rounded text-[10px] font-bold transition-all shadow-sm">↓</button>
-                                  </div>
-                                </div>
-                              }
-                            </div>
-
-                            <div class="flex gap-2">
-                              <button (click)="createCustomSubset(group.projects, 'intersection')" 
-                                      class="flex-1 px-2 py-1.5 bg-indigo-600 text-white text-[9px] font-bold rounded hover:bg-indigo-700 transition-all uppercase shadow-sm active:scale-95">Intersect (AND)</button>
-                              <button (click)="createCustomSubset(group.projects, 'union')"
-                                      class="flex-1 px-2 py-1.5 bg-gray-600 text-white text-[9px] font-bold rounded hover:bg-gray-600 transition-all uppercase shadow-sm active:scale-95">Union (ANY)</button>
+                            <div class="flex flex-col gap-1">
+                              <label class="text-[9px] font-bold text-gray-500 uppercase">Min Conf.</label>
+                              <input type="number" [ngModel]="subsetConfidence()" (ngModelChange)="subsetConfidence.set()" step="0.1" min="0" placeholder="Global" class="w-full px-2 py-1 text-[10px] border border-gray-300 rounded focus:ring-1 focus:ring-indigo-500 outline-none transition-all shadow-sm"/>
                             </div>
                           </div>
+
+                          <div class="space-y-2 mb-4">
+                            @for (p of group.projects; track p.projectId) {
+                              <div class="flex items-center justify-between group/item py-1">
+                                <span class="text-[10px] text-gray-700 truncate flex-1 mr-2" [title]="p.projectName">{{ p.projectName }}</span>
+                                <div class="flex gap-1">
+                                  <button (click)="toggleSubsetCriterion(p.projectId, 'up')" 
+                                          [class.bg-red-500]="subsetCriteria().get(p.projectId) === 'up'"
+                                          [class.text-white]="subsetCriteria().get(p.projectId) === 'up'"
+                                          [class.bg-gray-100]="subsetCriteria().get(p.projectId) !== 'up'"
+                                          class="w-6 h-6 flex items-center justify-center rounded text-[10px] font-bold transition-all shadow-sm">↑</button>
+                                  <button (click)="toggleSubsetCriterion(p.projectId, 'down')"
+                                          [class.bg-blue-500]="subsetCriteria().get(p.projectId) === 'down'"
+                                          [class.text-white]="subsetCriteria().get(p.projectId) === 'down'"
+                                          [class.bg-gray-100]="subsetCriteria().get(p.projectId) !== 'down'"
+                                          class="w-6 h-6 flex items-center justify-center rounded text-[10px] font-bold transition-all shadow-sm">↓</button>
+                                </div>
+                              </div>
+                            }
+                          </div>
+                          
+                          <div class="flex gap-2">
+                            <button (click)="createCustomSubset(group.projects, 'intersection')" 
+                                    class="flex-1 px-2 py-1.5 bg-indigo-600 text-white text-[9px] font-bold rounded hover:bg-indigo-700 transition-all uppercase shadow-sm active:scale-95">Intersect (AND)</button>
+                            <button (click)="createCustomSubset(group.projects, 'union')"
+                                    class="flex-1 px-2 py-1.5 bg-gray-600 text-white text-[9px] font-bold rounded hover:bg-gray-600 transition-all uppercase shadow-sm active:scale-95">Union (ANY)</button>
+                          </div>
+                        </div>
                         </div>
                       </div>                    </div>
                   }
