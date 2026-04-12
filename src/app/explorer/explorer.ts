@@ -65,6 +65,8 @@ export class ExplorerComponent implements OnInit {
   activeTabId = signal<string>('default');
   showHistoryDropdown = signal(false);
   subsetCriteria = signal<Map<string, 'up' | 'down' | 'none'>>(new Map());
+  subsetLog2fc = signal<number | null>(null);
+  subsetConfidence = signal<number | null>(null);
   isSwitching = signal(false);
 
   selectionHistory = computed(() => this.historyService.getHistoryForDataset(this.currentDataset()));
@@ -88,6 +90,8 @@ export class ExplorerComponent implements OnInit {
 
   clearSubsetCriteria() {
     this.subsetCriteria.set(new Map());
+    this.subsetLog2fc.set(null);
+    this.subsetConfidence.set(null);
   }
 
   createCustomSubset(groupProjects: ProjectMetadata[], mode: 'intersection' | 'union') {
@@ -98,8 +102,10 @@ export class ExplorerComponent implements OnInit {
     });
     if (activeProjects.length === 0) return;
 
-    const log2fcCut = this.log2fcCutoff() || 0;
-    const confCut = this.confidenceCutoff() || 0;
+    // Use builder-specific cutoffs if set, otherwise fallback to 0
+    const log2fcCut = this.subsetLog2fc() ?? this.log2fcCutoff() ?? 0;
+    const confCut = this.subsetConfidence() ?? this.confidenceCutoff() ?? 0;
+    
     const allProjs = this.projects();
     const flipped = this.flippedProjectIds();
 
@@ -125,7 +131,8 @@ export class ExplorerComponent implements OnInit {
         const dir = criteria.get(p.projectId) === 'up' ? '↑' : '↓';
         return `${p.projectName}${dir}`;
       }).join(mode === 'intersection' ? ' & ' : ' | ');
-      this.createTab(subset.map(g => g.uniprotId), `${mode === 'intersection' ? '∩' : '∪'} ${names} (${subset.length})`);
+      const cutInfo = (this.subsetLog2fc() || this.subsetConfidence()) ? ` [FC:${log2fcCut}, C:${confCut}]` : '';
+      this.createTab(subset.map(g => g.uniprotId), `${mode === 'intersection' ? '∩' : '∪'} ${names}${cutInfo} (${subset.length})`);
     }
   }
 
