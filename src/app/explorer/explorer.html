@@ -95,7 +95,7 @@
         @if (hasMultipleDatasets()) {
           <div class="border-t border-gray-100 my-1"></div>
           <a routerLink="/comparison" class="px-4 py-2 text-sm font-medium rounded-md transition-colors text-left flex items-center gap-2 no-underline bg-indigo-50 text-indigo-700 border border-indigo-100 shadow-sm hover:bg-indigo-100">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2(0 00-2-2H5a2 2-0 00-2 2v6a2 2(0 002 2h2a2 2(0 002-2m0 0V5a2 2-0 012-2h2a2 2-0 002-2M8 5a2 2-0 012-2h2a2 2-0 012 2v10m-6 0a2 2(0 002 2h2a2 2(0 002-2m0 0V5a2 2-0 012-2h2a2 2-0 012 2v14a2 2-0 01-2 2h-2a2 2-0 01-2-2z"/></svg> Dataset Comparison
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2(0 00-2-2H5a2 2-0 00-2 2v6a2 2(0 002 2h2a2 2(0 002-2m0 0V5a2 2-0 012-2h2a2 2(0 002-2M8 5a2 2-0 012-2h2a2 2(0 012 2v10m-6 0a2 2(0 002 2h2a2 2(0 002-2m0 0V5a2 2-0 012-2h2a2 2(0 012 2v14a2 2(0 01-2 2h-2a2 2(0 01-2-2z"/></svg> Dataset Comparison
           </a>
         }
       </div>
@@ -236,7 +236,7 @@
         <div class="flex flex-col gap-3">
           <div class="flex justify-between items-center relative">
             <div class="flex items-center gap-2">
-              <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Selected Proteins ({{ displayedGenes().length }})</span>
+              <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Selected Proteins ({{ globalSelectedGenes().length }})</span>
               <div class="relative" (mouseleave)="showHistoryDropdown.set(false)">
                 <button (click)="showHistoryDropdown.set(!showHistoryDropdown())" class="flex items-center gap-1.5 px-2 py-1 bg-white border border-gray-200 text-gray-600 text-[10px] font-bold rounded hover:bg-gray-50 transition-all uppercase shadow-sm">
                   <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -266,17 +266,17 @@
               </div>
             </div>
             <div class="flex gap-2">
-              @if (displayedGenes().length > 0) {
+              @if (globalSelectedGenes().length > 0) {
                 <button (click)="exportProteinListCsv()" class="text-[10px] font-medium text-indigo-600 hover:text-indigo-800 transition-colors uppercase border border-indigo-200 px-1.5 py-0.5 rounded bg-white shadow-sm">CSV</button>
                 <button (click)="exportProteinListTsv()" class="text-[10px] font-medium text-emerald-600 hover:text-emerald-800 transition-colors uppercase border border-emerald-200 px-1.5 py-0.5 rounded bg-white shadow-sm">TSV</button>
                 <button (click)="clearAllProteins()" class="text-[10px] font-medium text-red-600 hover:text-red-800 transition-colors uppercase border border-red-200 px-1.5 py-0.5 rounded bg-white shadow-sm">Clear All</button>
               }
             </div>
           </div>
-          @if (displayedGenes().length === 0) { <div class="min-h-[32px] flex items-center"><span class="text-sm text-gray-400 italic">No proteins selected. Search or use filter lists above.</span></div> }
-          @else if (displayedGenes().length <= 20) {
+          @if (globalSelectedGenes().length === 0) { <div class="min-h-[32px] flex items-center"><span class="text-sm text-gray-400 italic">No proteins selected. Search or use filter lists above.</span></div> }
+          @else if (globalSelectedGenes().length <= 20) {
             <div class="flex flex-wrap gap-2 min-h-[32px]">
-              @for (gene of displayedGenes(); track trackByUniprotId($index, gene)) {
+              @for (gene of globalSelectedGenes(); track trackByUniprotId($index, gene)) {
                 <span [class.bg-indigo-100]="hoveredGeneId() !== gene.uniprotId" [class.bg-indigo-500]="hoveredGeneId() === gene.uniprotId" [class.text-indigo-800]="hoveredGeneId() !== gene.uniprotId" [class.text-white]="hoveredGeneId() === gene.uniprotId" class="inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium border border-indigo-200 shadow-sm transition-all hover:bg-indigo-200">
                   &lt;{{ gene.uniprotId }}&gt;&lt;{{ gene.gene }}&gt;
                   <button type="button" (click)="removeGene(gene.uniprotId)" class="flex-shrink-0 ml-1.5 h-4 w-4 rounded-full inline-flex items-center justify-center text-indigo-400 hover:bg-indigo-200 hover:text-indigo-500 transition-colors">
@@ -287,7 +287,7 @@
             </div>
           } @else {
             <cdk-virtual-scroll-viewport itemSize="32" class="h-[128px] border border-gray-200 rounded bg-white">
-              <div *cdkVirtualFor="let gene of displayedGenes(); trackBy: trackByUniprotId" class="h-8 flex items-center px-2">
+              <div *cdkVirtualFor="let gene of globalSelectedGenes(); trackBy: trackByUniprotId" class="h-8 flex items-center px-2">
                 <span [class.bg-indigo-100]="hoveredGeneId() !== gene.uniprotId" [class.bg-indigo-500]="hoveredGeneId() === gene.uniprotId" [class.text-indigo-800]="hoveredGeneId() !== gene.uniprotId" [class.text-white]="hoveredGeneId() === gene.uniprotId" class="inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium border border-indigo-200 shadow-sm transition-all hover:bg-indigo-200">
                   &lt;{{ gene.uniprotId }}&gt;&lt;{{ gene.gene }}&gt;
                   <button type="button" (click)="removeGene(gene.uniprotId)" class="flex-shrink-0 ml-1.5 h-4 w-4 rounded-full inline-flex items-center justify-center text-indigo-400 hover:bg-indigo-200 hover:text-indigo-500 transition-colors">
@@ -350,52 +350,62 @@
                           <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </button>
                         <div class="hidden group-hover/unique:block absolute left-0 top-[calc(100%-12px)] pt-3 z-[120]">
-                          <div class="w-80 bg-white shadow-2xl border border-gray-200 rounded-md p-3 max-h-96 overflow-y-auto shadow-2xl">
-                          <div class="flex justify-between items-center mb-3 pb-2 border-b border-gray-100">
-                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Subset Builder</span>
-                            <button (click)="clearSubsetCriteria()" class="text-[9px] font-bold text-red-500 hover:text-red-700 uppercase">Clear</button>
-                          </div>
-                          
-                          <div class="grid grid-cols-2 gap-2 mb-4 p-2 bg-gray-50 rounded border border-gray-100">
-                            <div class="flex flex-col gap-1">
-                              <label class="text-[9px] font-bold text-gray-500 uppercase">Min Log2FC</label>
-                              <input type="number" [ngModel]="subsetLog2fc()" (ngModelChange)="subsetLog2fc.set($event)" step="0.1" min="0" placeholder="Global" class="w-full px-2 py-1 text-[10px] border border-gray-300 rounded focus:ring-1 focus:ring-indigo-500 outline-none transition-all shadow-sm"/>
+                          <div class="w-80 bg-white shadow-2xl border border-gray-200 rounded-md flex flex-col max-h-[32rem] overflow-hidden">
+                            <div class="p-3 border-b border-gray-100 bg-white flex justify-between items-center">
+                              <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Subset Builder</span>
+                              <button (click)="clearSubsetCriteria()" class="text-[9px] font-bold text-red-500 hover:text-red-700 uppercase">Clear</button>
                             </div>
-                            <div class="flex flex-col gap-1">
-                              <label class="text-[9px] font-bold text-gray-500 uppercase">Min Conf.</label>
-                              <input type="number" [ngModel]="subsetConfidence()" (ngModelChange)="subsetConfidence.set($event)" step="0.1" min="0" placeholder="Global" class="w-full px-2 py-1 text-[10px] border border-gray-300 rounded focus:ring-1 focus:ring-indigo-500 outline-none transition-all shadow-sm"/>
-                            </div>
-                          </div>
 
-                          <div class="space-y-2 mb-4">
-                            @for (p of group.projects; track p.projectId) {
-                              <div class="flex items-center justify-between group/item py-1">
-                                <span class="text-[10px] text-gray-700 truncate flex-1 mr-2" [title]="p.projectName">{{ p.projectName }}</span>
-                                <div class="flex gap-1">
-                                  <button (click)="toggleSubsetCriterion(p.projectId, 'up')" 
-                                          [class.bg-red-500]="subsetCriteria().get(p.projectId) === 'up'"
-                                          [class.text-white]="subsetCriteria().get(p.projectId) === 'up'"
-                                          [class.bg-gray-100]="subsetCriteria().get(p.projectId) !== 'up'"
-                                          class="w-6 h-6 flex items-center justify-center rounded text-[10px] font-bold transition-all shadow-sm">↑</button>
-                                  <button (click)="toggleSubsetCriterion(p.projectId, 'down')"
-                                          [class.bg-blue-500]="subsetCriteria().get(p.projectId) === 'down'"
-                                          [class.text-white]="subsetCriteria().get(p.projectId) === 'down'"
-                                          [class.bg-gray-100]="subsetCriteria().get(p.projectId) !== 'down'"
-                                          class="w-6 h-6 flex items-center justify-center rounded text-[10px] font-bold transition-all shadow-sm">↓</button>
-                                </div>
+                            <div class="p-3 bg-gray-50 border-b border-gray-100 grid grid-cols-2 gap-2">
+                              <div class="flex flex-col gap-1">
+                                <label class="text-[9px] font-bold text-gray-500 uppercase">Min Log2FC</label>
+                                <input type="number" [ngModel]="subsetLog2fc()" (ngModelChange)="subsetLog2fc.set($event)" step="0.1" min="0" placeholder="Global" class="w-full px-2 py-1 text-[10px] border border-gray-300 rounded focus:ring-1 focus:ring-indigo-500 outline-none transition-all shadow-sm"/>
                               </div>
-                            }
-                          </div>
-                          
-                          <div class="flex gap-2">
-                            <button (click)="createCustomSubset(group.projects, 'intersection')" 
-                                    class="flex-1 px-2 py-1.5 bg-indigo-600 text-white text-[9px] font-bold rounded hover:bg-indigo-700 transition-all uppercase shadow-sm active:scale-95">Intersect (AND)</button>
-                            <button (click)="createCustomSubset(group.projects, 'union')"
-                                    class="flex-1 px-2 py-1.5 bg-gray-600 text-white text-[9px] font-bold rounded hover:bg-gray-600 transition-all uppercase shadow-sm active:scale-95">Union (ANY)</button>
+                              <div class="flex flex-col gap-1">
+                                <label class="text-[9px] font-bold text-gray-500 uppercase">Min Conf.</label>
+                                <input type="number" [ngModel]="subsetConfidence()" (ngModelChange)="subsetConfidence.set($event)" step="0.1" min="0" placeholder="Global" class="w-full px-2 py-1 text-[10px] border border-gray-300 rounded focus:ring-1 focus:ring-indigo-500 outline-none transition-all shadow-sm"/>
+                              </div>
+                            </div>
+
+                            <div class="flex-1 overflow-y-auto p-3 space-y-2">
+                              @for (p of group.projects; track p.projectId) {
+                                <div class="flex items-center justify-between group/item py-1">
+                                  <span class="text-[10px] text-gray-700 truncate flex-1 mr-2" [title]="p.projectName">{{ p.projectName }}</span>
+                                  <div class="flex gap-1">
+                                    <button (click)="toggleSubsetCriterion(p.projectId, 'up')" 
+                                            [class.bg-red-500]="subsetCriteria().get(p.projectId) === 'up'"
+                                            [class.text-white]="subsetCriteria().get(p.projectId) === 'up'"
+                                            [class.bg-gray-100]="subsetCriteria().get(p.projectId) !== 'up'"
+                                            class="w-6 h-6 flex items-center justify-center rounded text-[10px] font-bold transition-all shadow-sm">↑</button>
+                                    <button (click)="toggleSubsetCriterion(p.projectId, 'down')"
+                                            [class.bg-blue-500]="subsetCriteria().get(p.projectId) === 'down'"
+                                            [class.text-white]="subsetCriteria().get(p.projectId) === 'down'"
+                                            [class.bg-gray-100]="subsetCriteria().get(p.projectId) !== 'down'"
+                                            class="w-6 h-6 flex items-center justify-center rounded text-[10px] font-bold transition-all shadow-sm">↓</button>
+                                  </div>
+                                </div>
+                              }
+                            </div>
+
+                            <div class="p-3 border-t border-gray-100 bg-white flex flex-col gap-2">
+                              <div class="flex gap-2">
+                                <button (click)="createCustomSubset(group.projects, 'intersection')" 
+                                        class="flex-1 px-2 py-1.5 bg-indigo-600 text-white text-[9px] font-bold rounded hover:bg-indigo-700 transition-all uppercase shadow-sm active:scale-95">Common to ALL (AND)</button>
+                                <button (click)="createCustomSubset(group.projects, 'union')"
+                                        class="flex-1 px-2 py-1.5 bg-gray-600 text-white text-[9px] font-bold rounded hover:bg-gray-700 transition-all uppercase shadow-sm active:scale-95">ANY of these (OR)</button>
+                              </div>
+                              <button (click)="createCustomSubset(group.projects, 'exclusive')"
+                                      class="w-full px-2 py-1.5 bg-amber-600 text-white text-[9px] font-bold rounded hover:bg-amber-700 transition-all uppercase shadow-sm active:scale-95 border border-amber-500">Exclusive to these (ONLY)</button>
+                              <div class="mt-1 p-2 bg-indigo-50/50 rounded border border-indigo-100/50 text-[8px] leading-tight text-indigo-900/70">
+                                <p><strong>Common to ALL:</strong> Must meet criteria in <u>every</u> toggled experiment.</p>
+                                <p class="mt-1"><strong>ANY of these:</strong> Must meet criteria in <u>at least one</u> toggled experiment.</p>
+                                <p class="mt-1"><strong>Exclusive to these:</strong> Meets criteria in toggled experiments <u>AND</u> is not significant in any others.</p>
+                              </div>
+                            </div>
                           </div>
                         </div>
-                        </div>
-                      </div>                    </div>
+                      </div>
+                    </div>
                   }
                 </div>
                 <div class="flex items-center gap-4 flex-shrink-0">
@@ -417,18 +427,34 @@
                 <div [class]="projectGroups().length > 1 ? 'grid grid-cols-2 gap-4' : 'flex flex-col gap-4'">
                   @for (group of projectGroups(); track group.name) {
                     <div class="border border-gray-200 rounded-lg p-4 bg-gray-50 shadow-sm">
-                      <h3 class="text-md font-bold text-indigo-700 mb-3">{{ group.name }} Experiments ({{ group.projects.length }})</h3>
+                      <h3 class="text-md font-bold text-indigo-700 mb-1">
+                        {{ group.name }} Experiments ({{ group.projects.length }})
+                        @if (effectiveLog2fcCutoff() > 0 || effectiveConfidenceCutoff() > 0) {
+                          <span class="text-[10px] font-normal text-gray-400 ml-1">
+                            [Filtered: Log2FC &ge; {{ effectiveLog2fcCutoff() }}, Conf &ge; {{ effectiveConfidenceCutoff() }}]
+                          </span>
+                        }
+                      </h3>
+                      @if (effectiveLog2fcCutoff() > 0 || effectiveConfidenceCutoff() > 0) {
+                        <p class="text-[9px] text-gray-500 mb-3 italic">Hiding proteins that do not meet significance in at least one shown experiment.</p>
+                      } @else {
+                        <div class="mb-3"></div>
+                      }
                       <app-heatmap [genes]="displayedGenes()" 
                                    [projects]="group.projects" 
                                    [allProjects]="projects()" 
+                                   [tabTitle]="tabs().find(t => t.id === activeTabId())?.name || ''"
                                    [flippedProjectIds]="flippedProjectIds()"
                                    [selectedGeneIds]="selectedHeatmapProteinIds()" 
                                    [summaryDisplayMode]="summaryDisplayMode()" 
                                    [isSwapped]="isHeatmapSwapped()" 
                                    [labelIncrease]="currentDatasetConfig()?.labelIncrease || 'Increase activity'" 
                                    [labelDecrease]="currentDatasetConfig()?.labelDecrease || 'Decrease activity'" 
+                                   [log2fcCutoff]="effectiveLog2fcCutoff()"
+                                   [confidenceCutoff]="effectiveConfidenceCutoff()"
                                    (geneHovered)="onGeneHovered($event)" 
-                                   (geneSelected)="onHeatmapGeneSelected($event)"></app-heatmap>
+                                   (geneSelected)="onHeatmapGeneSelected($event)"
+                                   (exportRequested)="onExportRequested($event)"></app-heatmap>
                       <div class="mt-3 flex flex-col gap-3">
                         @let summary = groupSummaries().get(group.name);
                         @if (summary) {

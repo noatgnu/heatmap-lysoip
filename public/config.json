@@ -10,7 +10,9 @@
       "experimentStartCol": 6,
       "stride": 3,
       "defaultLog2fcCutoff": 0.58,
-      "defaultConfidenceCutoff": 1.3
+      "defaultConfidenceCutoff": 1.3,
+      "defaultRankCutoff": 0,
+      "defaultFlipPatterns": ["mli2", "ko", "knockout"]
     },
     {
       "id": "wcl",
@@ -22,7 +24,9 @@
       "experimentStartCol": 6,
       "stride": 2,
       "defaultLog2fcCutoff": 0.58,
-      "defaultConfidenceCutoff": 1.3
+      "defaultConfidenceCutoff": 1.3,
+      "defaultRankCutoff": 0,
+      "defaultFlipPatterns": ["mli2", "ko", "knockout"]
     }
   ],
   "categorization": [

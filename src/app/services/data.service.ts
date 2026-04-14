@@ -17,6 +17,8 @@ export interface DatasetConfig {
   defaultGenes?: string[];
   defaultLog2fcCutoff?: number;
   defaultConfidenceCutoff?: number;
+  defaultFlipPatterns?: string[];
+  defaultRankCutoff?: number;
 }
 export interface CategorizationRule {
   pattern: string;
@@ -89,7 +91,7 @@ export class DataService {
     const nameRow = rows[dsConfig.nameRow];
     const projects: ProjectMetadata[] = [];
     for (let i = dsConfig.experimentStartCol; i < idRow.length; i += dsConfig.stride) {
-      const projectId = idRow[i];
+      const projectId = (idRow[i] || '').replace(/\n/g, ' ').trim();
       let fullProjectName = (nameRow[i] || '').trim();
       if (!projectId && !fullProjectName) continue;
       let projectName = fullProjectName.replace(/\n/g, ' ').trim();

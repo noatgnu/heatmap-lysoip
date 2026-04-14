@@ -117,6 +117,17 @@ export class CurtainFilterComponent implements OnInit, OnDestroy {
       this.currentPage.update(p => p - 1);
     }
   }
+
+  manualList = signal('');
+
+  addManualList() {
+    const list = this.manualList().trim();
+    if (list) {
+      this.filterSelected.emit(list);
+      this.manualList.set('');
+    }
+  }
+
   selectFilter(filter: DataFilterList) {
     this.filterSelected.emit(filter.data);
     this.globalSearchTerm.set('');

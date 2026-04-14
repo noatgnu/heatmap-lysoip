@@ -24,28 +24,32 @@ describe('PreferencesService', () => {
   });
   describe('savePreset', () => {
     it('should save a new preset', () => {
+      const filterState = new Map<string, Set<string>>([
+        ['organ', new Set(['Brain'])],
+        ['protein', new Set(['LRRK2'])],
+        ['mutation', new Set(['R1441C'])],
+        ['knockout', new Set(['none'])],
+        ['treatment', new Set(['none'])],
+        ['fraction', new Set(['lyso'])]
+      ]);
+
       const preset = service.savePreset(
         'Test Preset',
         'lysoip',
         new Set(['P12345', 'Q67890']),
-        new Set(['Brain']),
-        new Set(['LRRK2']),
-        new Set(['R1441C']),
-        new Set(['none']),
-        new Set(['none']),
-        new Set(['lyso']),
+        filterState,
         defaultSortStack,
         new Set(['1'])
       );
       expect(preset.name).toBe('Test Preset');
       expect(preset.dataset).toBe('lysoip');
       expect(preset.geneIds).toEqual(['P12345', 'Q67890']);
-      expect(preset.organs).toEqual(['Brain']);
-      expect(preset.proteins).toEqual(['LRRK2']);
-      expect(preset.mutations).toEqual(['R1441C']);
-      expect(preset.knockouts).toEqual(['none']);
-      expect(preset.treatments).toEqual(['none']);
-      expect(preset.fractions).toEqual(['lyso']);
+      expect(preset.filterState['organ']).toEqual(['Brain']);
+      expect(preset.filterState['protein']).toEqual(['LRRK2']);
+      expect(preset.filterState['mutation']).toEqual(['R1441C']);
+      expect(preset.filterState['knockout']).toEqual(['none']);
+      expect(preset.filterState['treatment']).toEqual(['none']);
+      expect(preset.filterState['fraction']).toEqual(['lyso']);
       expect(preset.sortStack).toEqual(defaultSortStack);
       expect(preset.flippedProjectIds).toEqual(['1']);
       expect(service.presets().length).toBe(1);
@@ -55,12 +59,7 @@ describe('PreferencesService', () => {
         'Test',
         'wcl',
         new Set(),
-        new Set(),
-        new Set(),
-        new Set(),
-        new Set(),
-        new Set(),
-        new Set(),
+        new Map(),
         defaultSortStack,
         new Set()
       );
@@ -75,12 +74,7 @@ describe('PreferencesService', () => {
           `Preset ${i}`,
           'lysoip',
           new Set(),
-          new Set(),
-          new Set(),
-          new Set(),
-          new Set(),
-          new Set(),
-          new Set(),
+          new Map(),
           defaultSortStack,
           new Set()
         );
@@ -95,12 +89,7 @@ describe('PreferencesService', () => {
         'To Delete',
         'lysoip',
         new Set(),
-        new Set(),
-        new Set(),
-        new Set(),
-        new Set(),
-        new Set(),
-        new Set(),
+        new Map(),
         defaultSortStack,
         new Set()
       );
@@ -114,12 +103,7 @@ describe('PreferencesService', () => {
         'Find Me',
         'lysoip',
         new Set(),
-        new Set(),
-        new Set(),
-        new Set(),
-        new Set(),
-        new Set(),
-        new Set(),
+        new Map(),
         defaultSortStack,
         new Set()
       );
@@ -132,9 +116,9 @@ describe('PreferencesService', () => {
   });
   describe('getPresetsForDataset', () => {
     it('should filter presets by dataset', () => {
-      service.savePreset('LysoIP 1', 'lysoip', new Set(), new Set(), new Set(), new Set(), new Set(), new Set(), new Set(), defaultSortStack, new Set());
-      service.savePreset('WCL 1', 'wcl', new Set(), new Set(), new Set(), new Set(), new Set(), new Set(), new Set(), defaultSortStack, new Set());
-      service.savePreset('LysoIP 2', 'lysoip', new Set(), new Set(), new Set(), new Set(), new Set(), new Set(), new Set(), defaultSortStack, new Set());
+      service.savePreset('LysoIP 1', 'lysoip', new Set(), new Map(), defaultSortStack, new Set());
+      service.savePreset('WCL 1', 'wcl', new Set(), new Map(), defaultSortStack, new Set());
+      service.savePreset('LysoIP 2', 'lysoip', new Set(), new Map(), defaultSortStack, new Set());
       const lysoipPresets = service.getPresetsForDataset('lysoip');
       const wclPresets = service.getPresetsForDataset('wcl');
       expect(lysoipPresets.length).toBe(2);
@@ -143,8 +127,8 @@ describe('PreferencesService', () => {
   });
   describe('clearAllPresets', () => {
     it('should remove all presets', () => {
-      service.savePreset('One', 'lysoip', new Set(), new Set(), new Set(), new Set(), new Set(), new Set(), new Set(), defaultSortStack, new Set());
-      service.savePreset('Two', 'wcl', new Set(), new Set(), new Set(), new Set(), new Set(), new Set(), new Set(), defaultSortStack, new Set());
+      service.savePreset('One', 'lysoip', new Set(), new Map(), defaultSortStack, new Set());
+      service.savePreset('Two', 'wcl', new Set(), new Map(), defaultSortStack, new Set());
       service.clearAllPresets();
       expect(service.presets().length).toBe(0);
     });
@@ -155,12 +139,7 @@ describe('PreferencesService', () => {
         'Old Name',
         'lysoip',
         new Set(),
-        new Set(),
-        new Set(),
-        new Set(),
-        new Set(),
-        new Set(),
-        new Set(),
+        new Map(),
         defaultSortStack,
         new Set()
       );
@@ -176,12 +155,7 @@ describe('PreferencesService', () => {
           name: 'Existing',
           dataset: 'lysoip',
           geneIds: ['P12345'],
-          organs: [],
-          proteins: [],
-          mutations: [],
-          knockouts: [],
-          treatments: [],
-          fractions: [],
+          filterState: {},
           sortStack: defaultSortStack,
           flippedProjectIds: [],
           createdAt: Date.now()
