@@ -58,6 +58,7 @@ export class ExplorerComponent implements OnInit {
   selectedProjectIds = signal<Set<string>>(new Set());
   flippedProjectIds = signal<Set<string>>(new Set());
   manualProjectOrder = signal<ProjectMetadata[]>([]);
+  manualGeneOrder = signal<string[]>([]);
   isInitialized = signal(false);
 
   tabs = signal<HeatmapTab[]>([]);
@@ -235,6 +236,7 @@ export class ExplorerComponent implements OnInit {
   rankCutoff = signal<number>(0);
   geneSortOrder = signal<'none' | 'increase' | 'decrease'>('none');
   showOnlySelectedInRankPlot = signal<boolean>(false);
+  maskSubThreshold = signal<boolean>(true);
 
   selectedHeatmapProteins = signal<Map<string, GeneData>>(new Map());
   uiRevision = signal<number>(0);
@@ -578,7 +580,8 @@ export class ExplorerComponent implements OnInit {
         swapped: this.isHeatmapSwapped() ? 'true' : null,
         sort: this.sortStack().join(','),
         cutoff: log2fcCut !== null && log2fcCut > 0 ? log2fcCut.toString() : null,
-        conf: confCut !== null && confCut > 0 ? confCut.toString() : null
+        conf: confCut !== null && confCut > 0 ? confCut.toString() : null,
+        mask: this.maskSubThreshold() ? null : "false",
       };
       this.filterState().forEach((set, key) => {
         if (set.size > 0) queryParams[key] = Array.from(set).join(',');
@@ -734,6 +737,15 @@ export class ExplorerComponent implements OnInit {
         return passesLog2fc && passesConf;
       });
     });
+
+    if (this.manualGeneOrder().length > 0) {
+      const orderMap = new Map(this.manualGeneOrder().map((id, index) => [id, index]));
+      return [...filtered].sort((a, b) => {
+        const idxA = orderMap.has(a.uniprotId) ? orderMap.get(a.uniprotId)! : 1000000;
+        const idxB = orderMap.has(b.uniprotId) ? orderMap.get(b.uniprotId)! : 1000000;
+        return idxA - idxB;
+      });
+    }
 
     if (sortOrder === 'none') return filtered;
     return [...filtered].sort((a, b) => {
@@ -1042,6 +1054,7 @@ export class ExplorerComponent implements OnInit {
     this.confidenceCutoff.set(dsConfig?.defaultConfidenceCutoff ?? null);
     this.rankCutoff.set(dsConfig?.defaultRankCutoff ?? 0);
     this.geneSortOrder.set('none');
+    this.maskSubThreshold.set(true);
     const idsToFlip = new Set<string>();
     this.projects().forEach(p => {
       if (this.isDefaultFlip(p)) {
@@ -1066,6 +1079,10 @@ export class ExplorerComponent implements OnInit {
     const params = this.route.snapshot.queryParams;
     const config = this.config();
     const dsConfig = this.currentDatasetConfig();
+
+    if (params['mask'] === 'false') {
+      this.maskSubThreshold.set(false);
+    }
 
     if (params['genes']) {
       this.selectedGeneIds.set(new Set(params['genes'].split(',')));

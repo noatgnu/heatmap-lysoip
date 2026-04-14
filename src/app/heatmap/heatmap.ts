@@ -26,6 +26,7 @@ export class HeatmapComponent {
   labelDecrease = input<string>('Decrease activity');
   log2fcCutoff = input<number | null>(null);
   confidenceCutoff = input<number | null>(null);
+  maskSubThreshold = input<boolean>(true);
 
   geneHovered = output<string | null>();
   geneSelected = output<string>();
@@ -260,6 +261,7 @@ export class HeatmapComponent {
     const flippedIds = this.flippedProjectIds();
     const log2fcCut = this.log2fcCutoff();
     const confCut = this.confidenceCutoff();
+    const shouldMask = this.maskSubThreshold();
 
     if (genes.length === 0 || projs.length === 0) return { data: [], layout: { height: 600, width: 800 } };
 
@@ -285,7 +287,7 @@ export class HeatmapComponent {
           if (val !== null) {
             const passesLog2fc = log2fcCut === null || log2fcCut <= 0 || Math.abs(val) >= log2fcCut;
             const passesConf = confCut === null || confCut <= 0 || (conf !== null && conf >= confCut);
-            if (!passesLog2fc || !passesConf) return null;
+            if (shouldMask && (!passesLog2fc || !passesConf)) return null;
             if (flippedIds.has(p.projectId)) val *= -1;
           }
           return val;
@@ -567,7 +569,7 @@ export class HeatmapComponent {
           dtick: 1
         },
         yaxis: {
-          autorange: !swapped ? true : 'reversed',
+          autorange: 'reversed',
           fixedrange: false,
           scaleanchor: 'x',
           scaleratio: 1,
