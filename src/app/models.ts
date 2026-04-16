@@ -22,10 +22,30 @@ export interface RankItem {
   decrease: number;
   total: number;
 }
+
 export interface HeatmapTab {
   id: string;
   name: string;
   geneIds: string[];
-  log2fcCutoff?: number | null;
-  confidenceCutoff?: number | null;
+  log2fcCutoff: number | null;
+  confidenceCutoff: number | null;
+  selectedProjectIds: string[];
+  filterState: Record<string, string[]>;
+  flippedProjectIds: string[];
+  sortStack: string[];
+  manualProjectOrder: string[]; // Array of projectIds
+  manualGeneOrder: string[];    // Array of uniprotIds
+  maskSubThreshold: boolean;
+}
+
+export interface HeatmapSession {
+  version: number;
+  dataset: string;
+  tabs: HeatmapTab[];
+  activeTabId: string;
+  rankCutoff: number;
+  summaryDisplayMode?: 'number' | 'proportion';
+  isHeatmapSwapped?: boolean;
+  geneSortOrder?: 'none' | 'increase' | 'decrease';
+  createdAt: number;
 }

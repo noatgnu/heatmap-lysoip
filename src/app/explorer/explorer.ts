@@ -12,10 +12,10 @@ import { TabsComponent } from '../components/tabs/tabs';
 import { FilterChipsComponent, FilterChip } from '../components/filter-chips/filter-chips';
 import { CollapsibleSectionComponent } from '../components/collapsible-section/collapsible-section';
 import { FindGenePipe } from '../pipes/find-gene.pipe';
-import { GeneData, ProjectMetadata, RankItem, HeatmapTab } from '../models';
+import { GeneData, ProjectMetadata, RankItem, HeatmapTab, HeatmapSession } from '../models';
 import { DataService, AppConfig } from '../services/data.service';
 import { ExportService } from '../services/export.service';
-import { PreferencesService, FilterPreset, SortCriterion } from '../services/preferences';
+import { FilterPreset, SortCriterion } from '../services/preferences';
 import { HistoryService, SelectionHistoryEntry } from '../services/history.service';
 
 @Component({
@@ -28,7 +28,7 @@ import { HistoryService, SelectionHistoryEntry } from '../services/history.servi
 export class ExplorerComponent implements OnInit {
   private dataService = inject(DataService);
   private exportService = inject(ExportService);
-  private preferencesService = inject(PreferencesService);
+
   protected historyService = inject(HistoryService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
@@ -59,6 +59,7 @@ export class ExplorerComponent implements OnInit {
   flippedProjectIds = signal<Set<string>>(new Set());
   manualProjectOrder = signal<ProjectMetadata[]>([]);
   manualGeneOrder = signal<string[]>([]);
+  activeSubsetGroupId = signal<string | null>(null);
   isInitialized = signal(false);
 
   tabs = signal<HeatmapTab[]>([]);
@@ -68,6 +69,11 @@ export class ExplorerComponent implements OnInit {
   subsetLog2fc = signal<number | null>(null);
   subsetConfidence = signal<number | null>(null);
   isSwitching = signal(false);
+
+  toggleSubsetBuilder(groupId: string, event: Event) {
+    event.stopPropagation();
+    this.activeSubsetGroupId.update(current => current === groupId ? null : groupId);
+  }
 
   selectionHistory = computed(() => this.historyService.getHistoryForDataset(this.currentDataset()));
 
@@ -168,10 +174,31 @@ export class ExplorerComponent implements OnInit {
     }
   }
 
+  private getFilterStateAsRecord(): Record<string, string[]> {
+    const record: Record<string, string[]> = {};
+    this.filterState().forEach((set, key) => {
+      if (set.size > 0) record[key] = Array.from(set);
+    });
+    return record;
+  }
+
   createTab(geneIds: string[], name?: string, log2fcCut?: number | null, confCut?: number | null) {
     const id = Math.random().toString(36).substring(2, 9);
     const tabName = name || `Subset (${geneIds.length})`;
-    const newTab: HeatmapTab = { id, name: tabName, geneIds, log2fcCutoff: log2fcCut, confidenceCutoff: confCut };
+    const newTab: HeatmapTab = {
+      id,
+      name: tabName,
+      geneIds,
+      log2fcCutoff: log2fcCut ?? null,
+      confidenceCutoff: confCut ?? null,
+      selectedProjectIds: Array.from(this.selectedProjectIds()),
+      filterState: this.getFilterStateAsRecord(),
+      flippedProjectIds: Array.from(this.flippedProjectIds()),
+      sortStack: [...this.sortStack()],
+      manualProjectOrder: this.manualProjectOrder().map(p => p.projectId),
+      manualGeneOrder: [...this.manualGeneOrder()],
+      maskSubThreshold: this.maskSubThreshold()
+    };
     this.tabs.update(t => [...t, newTab]);
     this.switchTab(id);
   }
@@ -468,9 +495,6 @@ export class ExplorerComponent implements OnInit {
   });
 
   sortStack = signal<SortCriterion[]>([]);
-  showPresetInput = signal(false);
-  presetName = signal('');
-  currentPresets = computed(() => this.preferencesService.getPresetsForDataset(this.currentDataset()));
   hasMultipleDatasets = computed(() => (this.config()?.datasets?.length || 0) > 1);
   currentDatasetConfig = computed(() => this.config()?.datasets.find(d => d.id === this.currentDataset()));
 
@@ -505,7 +529,20 @@ export class ExplorerComponent implements OnInit {
         this.selectedProjectIds.set(new Set());
         this.flippedProjectIds.set(new Set());
         this.manualProjectOrder.set([]);
-        this.tabs.set([{ id: 'default', name: 'Main Heatmap', geneIds: [] }]);
+        this.tabs.set([{
+          id: 'default',
+          name: 'Main Heatmap',
+          geneIds: [],
+          log2fcCutoff: null,
+          confidenceCutoff: null,
+          selectedProjectIds: [],
+          filterState: {},
+          flippedProjectIds: [],
+          sortStack: [],
+          manualProjectOrder: [],
+          manualGeneOrder: [],
+          maskSubThreshold: true
+        }]);
         this.activeTabId.set('default');
         this.log2fcCutoff.set(null);
         this.confidenceCutoff.set(null);
@@ -1206,44 +1243,9 @@ export class ExplorerComponent implements OnInit {
     }
   }
 
-  togglePresetInput() {
-    this.showPresetInput.update(v => !v);
-    if (!this.showPresetInput()) {
-      this.presetName.set('');
-    }
-  }
-
-  saveCurrentPreset() {
-    const name = this.presetName().trim();
-    if (!name) return;
-    this.preferencesService.savePreset(
-      name,
-      this.currentDataset(),
-      this.selectedGeneIds(),
-      this.filterState(),
-      this.sortStack(),
-      this.flippedProjectIds()
-    );
-    this.presetName.set('');
-    this.showPresetInput.set(false);
-  }
-
-  loadPreset(preset: FilterPreset) {
-    this.selectedGeneIds.set(new Set(preset.geneIds));
-    this.filterState.set(new Map(
-      Object.entries(preset.filterState).map(([key, val]) => [key, new Set(val)])
-    ));
-    this.sortStack.set([...preset.sortStack]);
-    this.flippedProjectIds.set(new Set(preset.flippedProjectIds));
-  }
-
   loadHistoryEntry(entry: SelectionHistoryEntry) {
     this.selectedGeneIds.set(new Set(entry.geneIds));
     this.showHistoryDropdown.set(false);
-  }
-
-  deletePreset(preset: FilterPreset) {
-    this.preferencesService.deletePreset(preset.id);
   }
 
   setLog2fcCutoff(value: string) {
@@ -1274,5 +1276,110 @@ export class ExplorerComponent implements OnInit {
 
   setGeneSortOrder(order: 'none' | 'increase' | 'decrease') {
     this.geneSortOrder.set(order);
+  }
+
+  private buildDefaultTab(): HeatmapTab {
+    return {
+      id: 'default',
+      name: 'Main Heatmap',
+      geneIds: Array.from(this.selectedGeneIds()),
+      log2fcCutoff: this.log2fcCutoff(),
+      confidenceCutoff: this.confidenceCutoff(),
+      selectedProjectIds: Array.from(this.selectedProjectIds()),
+      filterState: this.getFilterStateAsRecord(),
+      flippedProjectIds: Array.from(this.flippedProjectIds()),
+      sortStack: [...this.sortStack()],
+      manualProjectOrder: this.manualProjectOrder().map(p => p.projectId),
+      manualGeneOrder: [...this.manualGeneOrder()],
+      maskSubThreshold: this.maskSubThreshold()
+    };
+  }
+
+  exportSession() {
+    const existingTabs = this.tabs();
+    const tabs = existingTabs.map(t => t.id === 'default' ? this.buildDefaultTab() : t);
+    const session: HeatmapSession = {
+      version: 1,
+      dataset: this.currentDataset(),
+      tabs,
+      activeTabId: this.activeTabId(),
+      rankCutoff: this.rankCutoff(),
+      summaryDisplayMode: this.summaryDisplayMode(),
+      isHeatmapSwapped: this.isHeatmapSwapped(),
+      geneSortOrder: this.geneSortOrder(),
+      createdAt: Date.now()
+    };
+    const data = JSON.stringify(session, null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `heatmap_session_${this.currentDataset()}_${new Date().toISOString().slice(0, 10)}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  onImportSession(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      const file = input.files[0];
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const content = e.target?.result as string;
+          const imported = JSON.parse(content);
+
+          if (imported.version && imported.tabs) {
+            this.loadSession(imported as HeatmapSession);
+          } else if (Array.isArray(imported)) {
+            const presets = imported as FilterPreset[];
+            presets.forEach(p => {
+              this.createTab(p.geneIds, p.name);
+            });
+          }
+        } catch (err) {
+          console.error('Import failed', err);
+          alert('Failed to import session. Please ensure the file is a valid JSON.');
+        }
+      };
+      reader.readAsText(file);
+      input.value = '';
+    }
+  }
+
+  loadSession(session: HeatmapSession) {
+    const hasDefault = session.tabs.some(t => t.id === 'default');
+    const tabs = hasDefault ? session.tabs : [
+      { id: 'default', name: 'Main Heatmap', geneIds: [], log2fcCutoff: null, confidenceCutoff: null, selectedProjectIds: [], filterState: {}, flippedProjectIds: [], sortStack: [], manualProjectOrder: [], manualGeneOrder: [], maskSubThreshold: true },
+      ...session.tabs
+    ];
+    this.tabs.set(tabs);
+
+    const tabExists = tabs.some(t => t.id === session.activeTabId);
+    this.activeTabId.set(tabExists ? session.activeTabId : 'default');
+
+    this.rankCutoff.set(session.rankCutoff ?? 0);
+    if (session.summaryDisplayMode !== undefined) this.summaryDisplayMode.set(session.summaryDisplayMode);
+    if (session.isHeatmapSwapped !== undefined) this.isHeatmapSwapped.set(session.isHeatmapSwapped);
+    if (session.geneSortOrder !== undefined) this.geneSortOrder.set(session.geneSortOrder);
+
+    const defaultTab = tabs.find(t => t.id === 'default');
+    if (defaultTab) {
+      this.selectedGeneIds.set(new Set(defaultTab.geneIds || []));
+      this.log2fcCutoff.set(defaultTab.log2fcCutoff ?? null);
+      this.confidenceCutoff.set(defaultTab.confidenceCutoff ?? null);
+      this.selectedProjectIds.set(new Set(defaultTab.selectedProjectIds || []));
+      const filterState = new Map<string, Set<string>>();
+      Object.entries(defaultTab.filterState || {}).forEach(([k, v]) => filterState.set(k, new Set(v)));
+      this.filterState.set(filterState);
+      this.flippedProjectIds.set(new Set(defaultTab.flippedProjectIds || []));
+      this.sortStack.set((defaultTab.sortStack || []) as SortCriterion[]);
+      this.maskSubThreshold.set(defaultTab.maskSubThreshold ?? true);
+      const allProjs = this.projects();
+      const projMap = new Map(allProjs.map(p => [p.projectId, p]));
+      const mProjs = (defaultTab.manualProjectOrder || []).map(id => projMap.get(id)).filter((p): p is ProjectMetadata => !!p);
+      this.manualProjectOrder.set(mProjs);
+      this.manualGeneOrder.set(defaultTab.manualGeneOrder || []);
+    }
   }
 }

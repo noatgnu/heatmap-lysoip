@@ -11,7 +11,7 @@ export interface FilterPreset {
   createdAt: number;
 }
 const STORAGE_KEY = 'heatmap_presets';
-const MAX_PRESETS = 10;
+const MAX_PRESETS = 100;
 /**
  * Service for persisting filter presets to localStorage.
  */
@@ -89,5 +89,38 @@ export class PreferencesService {
       presets.map(p => (p.id === id ? { ...p, name: newName } : p))
     );
     this.saveToStorage();
+  }
+
+  exportSession(): void {
+    const data = JSON.stringify(this.presetsSignal(), null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const date = new Date().toISOString().slice(0, 10);
+    link.href = url;
+    link.download = `heatmap_session_${date}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async importSession(file: File): Promise<FilterPreset[]> {
+    try {
+      const text = await file.text();
+      const importedPresets = JSON.parse(text) as FilterPreset[];
+      if (!Array.isArray(importedPresets)) {
+        throw new Error('Invalid format');
+      }
+      
+      this.presetsSignal.update(existing => {
+        const existingIds = new Set(existing.map(p => p.id));
+        const newPresets = importedPresets.filter(p => !existingIds.has(p.id));
+        return [...newPresets, ...existing].slice(0, MAX_PRESETS);
+      });
+      this.saveToStorage();
+      return importedPresets;
+    } catch (e) {
+      console.error('Session import failed', e);
+      throw e;
+    }
   }
 }

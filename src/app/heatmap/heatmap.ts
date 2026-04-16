@@ -128,11 +128,19 @@ export class HeatmapComponent {
   }));
 
   downloadSvg() {
+    this.downloadImage('svg');
+  }
+
+  downloadPng() {
+    this.downloadImage('png');
+  }
+
+  private downloadImage(format: 'svg' | 'png') {
     const plotly = (window as any).Plotly;
     const element = this.getPlotElement()?.querySelector('.js-plotly-plot');
     if (plotly && element) {
       plotly.downloadImage(element, {
-        format: 'svg',
+        format,
         width: this.graphData().layout.width,
         height: this.graphData().layout.height,
         filename: 'heatmap_export'
