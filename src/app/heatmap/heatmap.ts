@@ -41,6 +41,11 @@ export class HeatmapComponent {
   stickyLeft = signal(0);
   toolbarOffset = signal(64);
 
+  customColorMin = signal<number | null>(null);
+  customColorMax = signal<number | null>(null);
+  customCellSize = signal<number | null>(null);
+  labelFontSize = signal<number>(9);
+
   manualGeneOrder = signal<string[]>([]);
   showOrderModal = signal(false);
   bulkOrderText = signal('');
@@ -270,6 +275,10 @@ export class HeatmapComponent {
     const log2fcCut = this.log2fcCutoff();
     const confCut = this.confidenceCutoff();
     const shouldMask = this.maskSubThreshold();
+    const customMin = this.customColorMin();
+    const customMax = this.customColorMax();
+    const customCell = this.customCellSize();
+    const labelFont = this.labelFontSize();
 
     if (genes.length === 0 || projs.length === 0) return { data: [], layout: { height: 600, width: 800 } };
 
@@ -373,7 +382,9 @@ export class HeatmapComponent {
     }));
     if (maxAbs === 0) maxAbs = 1;
 
-    const cellSize = swapped ? 30 : 25;
+    const cellSize = customCell ?? (swapped ? 30 : 25);
+    const zMin = customMin !== null ? customMin : -maxAbs;
+    const zMax = customMax !== null ? customMax : maxAbs;
     const maxProjNameLen = Math.max(...projLabels.map(n => n.length));
     const maxGeneNameLen = Math.max(...geneLabels.map(n => n.length));
 
@@ -537,8 +548,8 @@ export class HeatmapComponent {
             [0.75, 'rgb(214, 96, 77)'],
             [1, 'rgb(103, 0, 31)']
           ],
-          zmin: -maxAbs,
-          zmax: maxAbs,
+          zmin: zMin,
+          zmax: zMax,
           zauto: false,
           xgap: 1,
           ygap: 1,
@@ -554,8 +565,8 @@ export class HeatmapComponent {
             yanchor: 'top',
             y: 0,
             ypad: !swapped ? 20 : 100,
-            tickvals: [-maxAbs, 0, maxAbs],
-            ticktext: [(-maxAbs).toFixed(1), '0', maxAbs.toFixed(1)],
+            tickvals: [zMin, 0, zMax],
+            ticktext: [zMin.toFixed(1), '0', zMax.toFixed(1)],
             tickfont: { size: 9 }
           }
         }
@@ -574,6 +585,7 @@ export class HeatmapComponent {
           scaleratio: 1,
           tickvals: xCoords,
           ticktext: xLabels,
+          tickfont: { size: labelFont },
           dtick: 1
         },
         yaxis: {
@@ -586,6 +598,7 @@ export class HeatmapComponent {
           constrain: 'domain',
           tickvals: yCoords,
           ticktext: yLabels,
+          tickfont: { size: labelFont },
           dtick: 1
         },
         shapes: shapes,

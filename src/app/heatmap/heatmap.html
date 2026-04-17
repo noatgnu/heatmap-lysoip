@@ -64,6 +64,60 @@
           Order
         </button>
       </div>
+
+      <div class="h-px bg-gray-100 mx-1"></div>
+
+      <!-- Display Settings -->
+      <div class="flex flex-col gap-1.5">
+        <span class="text-[7px] font-black text-violet-500 uppercase text-center tracking-tighter">Display</span>
+        <div class="flex flex-col gap-1">
+          <label class="text-[7px] text-gray-400 uppercase tracking-tighter">Color Min</label>
+          <input
+            type="number"
+            [ngModel]="customColorMin()"
+            (ngModelChange)="customColorMin.set($event === null || $event === '' ? null : +$event)"
+            placeholder="auto"
+            class="w-full text-[9px] border border-gray-200 rounded px-1.5 py-0.5 outline-none focus:border-violet-400 bg-white"
+          />
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-[7px] text-gray-400 uppercase tracking-tighter">Color Max</label>
+          <input
+            type="number"
+            [ngModel]="customColorMax()"
+            (ngModelChange)="customColorMax.set($event === null || $event === '' ? null : +$event)"
+            placeholder="auto"
+            class="w-full text-[9px] border border-gray-200 rounded px-1.5 py-0.5 outline-none focus:border-violet-400 bg-white"
+          />
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-[7px] text-gray-400 uppercase tracking-tighter">Cell Size</label>
+          <input
+            type="number"
+            [ngModel]="customCellSize()"
+            (ngModelChange)="customCellSize.set($event === null || $event === '' ? null : +$event)"
+            placeholder="auto"
+            min="5"
+            max="200"
+            class="w-full text-[9px] border border-gray-200 rounded px-1.5 py-0.5 outline-none focus:border-violet-400 bg-white"
+          />
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-[7px] text-gray-400 uppercase tracking-tighter">Font Size</label>
+          <input
+            type="number"
+            [ngModel]="labelFontSize()"
+            (ngModelChange)="labelFontSize.set(+$event)"
+            min="4"
+            max="24"
+            class="w-full text-[9px] border border-gray-200 rounded px-1.5 py-0.5 outline-none focus:border-violet-400 bg-white"
+          />
+        </div>
+        <button
+          (click)="customColorMin.set(null); customColorMax.set(null); customCellSize.set(null); labelFontSize.set(9)"
+          class="text-[7px] font-bold text-violet-500 hover:text-violet-700 uppercase tracking-tighter text-center py-0.5"
+        >Reset</button>
+      </div>
     </div>
   </div>
 
