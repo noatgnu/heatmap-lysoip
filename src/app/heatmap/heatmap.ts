@@ -1,4 +1,4 @@
-import { Component, input, computed, signal, effect, untracked, ElementRef, viewChild, output, HostListener, inject } from '@angular/core';
+import { Component, input, model, computed, signal, effect, untracked, ElementRef, viewChild, output, HostListener, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { PlotlyModule } from 'angular-plotly.js';
@@ -41,10 +41,10 @@ export class HeatmapComponent {
   stickyLeft = signal(0);
   toolbarOffset = signal(64);
 
-  customColorMin = signal<number | null>(null);
-  customColorMax = signal<number | null>(null);
-  customCellSize = signal<number | null>(null);
-  labelFontSize = signal<number>(9);
+  customColorMin = model<number | null>(null);
+  customColorMax = model<number | null>(null);
+  customCellSize = model<number | null>(null);
+  labelFontSize = model<number>(9);
 
   manualGeneOrder = signal<string[]>([]);
   showOrderModal = signal(false);

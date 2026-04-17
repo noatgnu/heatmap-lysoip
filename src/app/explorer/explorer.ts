@@ -70,6 +70,11 @@ export class ExplorerComponent implements OnInit {
   subsetConfidence = signal<number | null>(null);
   isSwitching = signal(false);
 
+  displayColorMin = signal<number | null>(null);
+  displayColorMax = signal<number | null>(null);
+  displayCellSize = signal<number | null>(null);
+  displayLabelFontSize = signal<number>(9);
+
   toggleSubsetBuilder(groupId: string, event: Event) {
     event.stopPropagation();
     this.activeSubsetGroupId.update(current => current === groupId ? null : groupId);
@@ -205,8 +210,17 @@ export class ExplorerComponent implements OnInit {
 
   switchTab(tabId: string) {
     this.isSwitching.set(true);
+    const currentId = this.activeTabId();
+    this.tabs.update(tabs => tabs.map(t =>
+      t.id === currentId ? { ...t, colorMin: this.displayColorMin(), colorMax: this.displayColorMax(), cellSize: this.displayCellSize(), labelFontSize: this.displayLabelFontSize() } : t
+    ));
     setTimeout(() => {
       this.activeTabId.set(tabId);
+      const newTab = this.tabs().find(t => t.id === tabId);
+      this.displayColorMin.set(newTab?.colorMin ?? null);
+      this.displayColorMax.set(newTab?.colorMax ?? null);
+      this.displayCellSize.set(newTab?.cellSize ?? null);
+      this.displayLabelFontSize.set(newTab?.labelFontSize ?? 9);
       this.isSwitching.set(false);
     }, 50);
   }
@@ -1291,13 +1305,22 @@ export class ExplorerComponent implements OnInit {
       sortStack: [...this.sortStack()],
       manualProjectOrder: this.manualProjectOrder().map(p => p.projectId),
       manualGeneOrder: [...this.manualGeneOrder()],
-      maskSubThreshold: this.maskSubThreshold()
+      maskSubThreshold: this.maskSubThreshold(),
+      colorMin: this.displayColorMin(),
+      colorMax: this.displayColorMax(),
+      cellSize: this.displayCellSize(),
+      labelFontSize: this.displayLabelFontSize()
     };
   }
 
   exportSession() {
     const existingTabs = this.tabs();
-    const tabs = existingTabs.map(t => t.id === 'default' ? this.buildDefaultTab() : t);
+    const activeId = this.activeTabId();
+    const tabs = existingTabs.map(t => {
+      if (t.id === 'default') return this.buildDefaultTab();
+      if (t.id === activeId) return { ...t, colorMin: this.displayColorMin(), colorMax: this.displayColorMax(), cellSize: this.displayCellSize(), labelFontSize: this.displayLabelFontSize() };
+      return t;
+    });
     const session: HeatmapSession = {
       version: 1,
       dataset: this.currentDataset(),
@@ -1381,5 +1404,11 @@ export class ExplorerComponent implements OnInit {
       this.manualProjectOrder.set(mProjs);
       this.manualGeneOrder.set(defaultTab.manualGeneOrder || []);
     }
+
+    const activeTab = tabs.find(t => t.id === (tabExists ? session.activeTabId : 'default'));
+    this.displayColorMin.set(activeTab?.colorMin ?? null);
+    this.displayColorMax.set(activeTab?.colorMax ?? null);
+    this.displayCellSize.set(activeTab?.cellSize ?? null);
+    this.displayLabelFontSize.set(activeTab?.labelFontSize ?? 9);
   }
 }

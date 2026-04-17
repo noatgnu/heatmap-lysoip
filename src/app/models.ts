@@ -33,9 +33,13 @@ export interface HeatmapTab {
   filterState: Record<string, string[]>;
   flippedProjectIds: string[];
   sortStack: string[];
-  manualProjectOrder: string[]; // Array of projectIds
-  manualGeneOrder: string[];    // Array of uniprotIds
+  manualProjectOrder: string[];
+  manualGeneOrder: string[];
   maskSubThreshold: boolean;
+  colorMin?: number | null;
+  colorMax?: number | null;
+  cellSize?: number | null;
+  labelFontSize?: number;
 }
 
 export interface HeatmapSession {
