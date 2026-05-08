@@ -75,6 +75,8 @@ export class ExplorerComponent implements OnInit {
   displayCellSize = signal<number | null>(null);
   displayLabelFontSize = signal<number>(9);
 
+  hiddenGroups = signal<Set<string>>(new Set());
+
   toggleSubsetBuilder(groupId: string, event: Event) {
     event.stopPropagation();
     this.activeSubsetGroupId.update(current => current === groupId ? null : groupId);
@@ -893,6 +895,20 @@ export class ExplorerComponent implements OnInit {
       return pA - pB;
     });
   });
+
+  visibleGroups = computed(() => {
+    const hidden = this.hiddenGroups();
+    return this.projectGroups().filter(g => !hidden.has(g.name));
+  });
+
+  toggleGroup(name: string) {
+    this.hiddenGroups.update(s => {
+      const next = new Set(s);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
+  }
 
   groupRankData = computed(() => {
     const groups = this.projectGroups();
