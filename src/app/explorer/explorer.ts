@@ -852,8 +852,11 @@ export class ExplorerComponent implements OnInit {
     });
 
     if (manualOrder.length > 0) {
-      const filteredIds = new Set(filtered.map(p => p.projectId));
-      return manualOrder.filter(p => filteredIds.has(p.projectId));
+      const filteredIds = new Set(filtered.map((p: ProjectMetadata) => p.projectId));
+      const projMap = new Map(projs.map((p: ProjectMetadata) => [p.projectId, p]));
+      return manualOrder
+        .map((p: ProjectMetadata) => projMap.get(p.projectId))
+        .filter((p): p is ProjectMetadata => p !== undefined && filteredIds.has(p.projectId));
     }
 
     return [...filtered].sort((a: any, b: any) => {
